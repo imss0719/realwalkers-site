@@ -1,0 +1,2791 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>리얼워커스 마포부동산 | 아파트·상가·건물·토지 매물 지도</title>
+<meta name="description" content="서울 마포·서대문·은평, 김포·고양 지역 아파트·상가·건물·토지 매매와 임대. 리얼워커스 공인중개사사무소가 정확한 시세 분석과 투자 상담을 제공합니다. 지도에서 전체 매물을 한눈에 확인하세요.">
+<meta name="keywords" content="마포부동산,마포 공인중개사,아현 아파트,공덕 상가,신촌 건물,마포 재개발,김포 토지,고양 부동산,리얼워커스">
+<meta name="author" content="리얼워커스 공인중개사사무소">
+<link rel="canonical" href="https://realwalkers.com/">
+
+<!-- 브라우저 탭 아이콘 -->
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+<!-- 카카오톡·페이스북 등에 링크를 보낼 때 표시되는 정보 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="리얼워커스 마포부동산">
+<meta property="og:title" content="리얼워커스 마포부동산 | 매물 지도">
+<meta property="og:description" content="서울 마포·서대문·은평, 김포·고양 아파트·상가·건물·토지 매매·임대. 지도에서 전체 매물을 한눈에 확인하세요.">
+<meta property="og:image" content="https://realwalkers.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://realwalkers.com/">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="리얼워커스 마포부동산 | 매물 지도">
+<meta name="twitter:description" content="서울 마포·서대문·은평, 김포·고양 아파트·상가·건물·토지 매매·임대.">
+<meta name="twitter:image" content="https://realwalkers.com/og-image.png">
+
+<!-- 검색엔진에 사무소 정보를 구조화해서 전달 (네이버·구글 지역 검색에 도움) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "RealEstateAgent",
+  "name": "리얼워커스 공인중개사사무소",
+  "alternateName": "리얼워커스 마포부동산",
+  "image": "https://realwalkers.com/og-image.png",
+  "url": "https://realwalkers.com/",
+  "telephone": "+82-2-393-7676",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "신촌로34길 39",
+    "addressLocality": "마포구",
+    "addressRegion": "서울특별시",
+    "addressCountry": "KR"
+  },
+  "areaServed": ["서울 마포구","서울 서대문구","서울 은평구","경기 김포시","경기 고양시"],
+  "founder": { "@type": "Person", "name": "임승재" }
+}
+</script>
+<style>
+  :root{
+    --navy:#1B2A4A; --navy-deep:#12203B;
+    --gold:#C9A227; --gold-soft:#E8D9A8;
+    --brand-yellow:#F5CC0D;
+    --paper:#F7F6F2; --ink:#22293A; --line:#DDD9CE;
+    /* 지도 축소 시 나오는 매물 건수 동그라미 색 (R,G,B 순서)
+       하늘색 46,155,223 / 청록 28,168,168 / 남색 27,42,74 */
+    --cluster-rgb:46,155,223;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:'Malgun Gothic','맑은 고딕','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+    color:var(--ink);background:var(--paper);font-size:16px;
+    display:flex;flex-direction:column;
+  }
+  header{
+    background:var(--brand-yellow);color:var(--navy);padding:14px 22px;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;border-bottom:3px solid var(--navy);
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand h1{font-size:1.35rem;letter-spacing:.02em;font-weight:800;color:var(--navy);}
+  .brand h1 .gold{color:var(--navy);}
+  .brand .sub{font-size:.82rem;color:rgba(27,42,74,.72);}
+  .head-contact{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .head-contact .tel{
+    font-size:1.05rem;font-weight:800;color:#fff;text-decoration:none;letter-spacing:.02em;
+    background:var(--navy);padding:7px 16px;border-radius:999px;
+  }
+  .head-contact .addr{font-size:.82rem;color:rgba(27,42,74,.72);}
+  .wrap{flex:1;display:flex;min-height:0;}
+  aside{
+    width:390px;min-width:320px;background:#fff;
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;min-height:0;
+  }
+  .filters{padding:12px 16px 10px;border-bottom:1px solid var(--line);background:#fff;}
+  .filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;}
+  .filter-group{flex:1;min-width:0;}
+  .filter-group label{display:block;font-size:.76rem;color:#7A8299;margin-bottom:5px;font-weight:700;}
+  .filter-group select{
+    width:100%;border:1.5px solid var(--line);background:#fff;color:var(--navy);
+    padding:9px 10px;border-radius:8px;font-size:.95rem;font-weight:700;
+    cursor:pointer;font-family:inherit;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231B2A4A' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;
+    padding-right:28px;
+  }
+  .filter-group select:focus{outline:none;border-color:var(--gold);}
+
+  /* 상세검색 여닫기 — 기존 버튼들과 같은 줄에 놓습니다 */
+  .more-toggle{
+    flex:1;min-width:0;
+    display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;
+    border:1.5px solid var(--line);background:#fff;color:var(--navy);
+    padding:9px 11px;border-radius:8px;font-size:.88rem;font-weight:700;
+    cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;
+  }
+  .more-toggle:hover{border-color:var(--gold);}
+  .more-toggle.open{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .more-toggle.open .more-count{background:var(--brand-yellow);color:var(--navy);}
+  .more-count{
+    background:var(--navy);color:var(--brand-yellow);border-radius:9px;
+    padding:0 6px;font-size:.74rem;font-weight:800;line-height:1.5;
+  }
+
+  /* 펼친 칸 — 폭에 맞춰 알아서 줄이 나뉩니다.
+     각 칸은 최소 108px 를 확보하고, 그보다 좁아지면 다음 줄로 넘어갑니다. */
+  .more-box{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:7px;}
+  /* display 를 지정하면 hidden 표시가 무시되므로 따로 숨김을 지정합니다 */
+  .more-box[hidden]{display:none;}
+  .more-box select{
+    flex:1 1 108px;min-width:108px;
+    border:1.5px solid var(--line);background:#fff;color:var(--navy);
+    padding:7px 22px 7px 9px;border-radius:8px;font-size:.86rem;font-weight:700;
+    cursor:pointer;font-family:inherit;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231B2A4A' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 8px center;
+  }
+  .more-box select:focus{outline:none;border-color:var(--gold);}
+  .filter-reset{
+    flex:0 0 auto;border:1.5px solid var(--line);background:#fff;color:#7A8299;
+    padding:7px 10px;border-radius:8px;font-size:.82rem;font-weight:700;
+    cursor:pointer;font-family:inherit;white-space:nowrap;
+  }
+  .filter-reset:hover{border-color:var(--navy);color:var(--navy);}
+  .count{padding:10px 18px 6px;font-size:.85rem;color:#7A8299;}
+  .count b{color:var(--navy);font-size:1rem;}
+  .list{flex:1;overflow-y:auto;padding:6px 12px 16px;}
+  .notice{margin:14px;padding:14px;border:1px dashed var(--line);border-radius:10px;font-size:.9rem;color:#666E82;line-height:1.6;}
+  .card{
+    border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:8px 2px;
+    cursor:pointer;background:#fff;overflow:hidden;position:relative;
+    transition:box-shadow .15s ease,border-color .15s ease;
+  }
+  .card:hover{border-color:var(--navy);box-shadow:0 3px 10px rgba(27,42,74,.10);}
+  .card.active{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-soft),0 4px 12px rgba(27,42,74,.12);}
+  /* 찜하기(하트) — 거래유형 글자 바로 옆에 작게, 다른 글자와 겹칠 일이 없도록 인라인으로 배치 */
+  .fav-inline{
+    border:none;background:none;color:#c94a4a;font-size:1.05rem;
+    cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0;
+    transition:transform .1s ease;
+  }
+  .fav-inline:active{transform:scale(.8);}
+  /* 필터 바에 넣는 압축형 찜 토글 — 텍스트 없이 하트+숫자만, 드롭다운과 한 줄에 나란히 */
+  .fav-toggle{
+    flex:0 0 auto;display:flex;align-items:center;gap:4px;
+    border:1.5px solid var(--line);background:#fff;color:var(--ink);
+    padding:0 12px;height:38px;border-radius:8px;font-size:.92rem;font-weight:800;
+    cursor:pointer;font-family:inherit;white-space:nowrap;align-self:flex-end;
+  }
+  .fav-toggle.on{background:#c94a4a;color:#fff;border-color:#c94a4a;}
+  /* 거래완료 매물 모아보기 토글 (찜하기 버튼과 같은 크기·형태) */
+  .done-toggle{
+    flex:0 0 auto;display:flex;align-items:center;gap:4px;
+    border:1.5px solid var(--line);background:#fff;color:var(--ink);
+    padding:0 12px;height:38px;border-radius:8px;font-size:.92rem;font-weight:800;
+    cursor:pointer;font-family:inherit;white-space:nowrap;align-self:flex-end;
+  }
+  .done-toggle.on{background:#5A6478;color:#fff;border-color:#5A6478;}
+  /* 거래완료 뱃지 */
+  .done-badge{
+    font-size:.72rem;font-weight:800;padding:3px 8px;border-radius:5px;
+    background:#5A6478;color:#fff;letter-spacing:.02em;flex-shrink:0;
+  }
+  .card.is-done{background:#FAFAF8;}
+  .card.is-done .card-photo{filter:grayscale(.55);opacity:.85;}
+  .card.is-done h3, .card.is-done .price{color:#7A8299;}
+  .card-photo{
+    display:block;width:calc(100% + 32px);height:150px;object-fit:cover;
+    margin:-14px -16px 10px;background:#EEE;
+  }
+  .card .top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .badge{font-size:.75rem;font-weight:800;padding:3px 9px;border-radius:5px;color:#fff;letter-spacing:.02em;}
+  .badge.apt{background:#2E4A7A;}
+  .badge.bld{background:#8A6D1F;}
+  .badge.shop{background:#5C7A4A;}
+  .badge.land{background:#7A4A4A;}
+  .badge.etc{background:#5A6478;}
+  .deal{font-size:.82rem;font-weight:700;color:#7A8299;}
+  .card h3{font-size:1.08rem;font-weight:800;color:var(--navy);margin-bottom:4px;line-height:1.35;}
+  .card .price{font-size:1.15rem;font-weight:800;color:var(--ink);margin-bottom:4px;}
+  .card .meta{font-size:.88rem;color:#666E82;line-height:1.5;}
+  .map-area{flex:1;position:relative;min-height:0;}
+  #map{width:100%;height:100%;background:#E9E7E0;}
+  .price-tag{
+    color:#fff;border:2px solid #fff;border-radius:8px;
+    padding:5px 10px;font-size:.85rem;font-weight:800;white-space:nowrap;
+    box-shadow:0 2px 8px rgba(0,0,0,.28);
+    font-family:'Malgun Gothic','맑은 고딕',sans-serif;line-height:1.25;text-align:center;
+    cursor:pointer;display:inline-block;
+    transition:box-shadow .15s ease, transform .15s ease;
+  }
+  .price-tag small{display:block;font-weight:600;font-size:.68rem;color:rgba(255,255,255,.85);}
+  .price-tag.picked{
+    box-shadow:0 0 0 3px var(--gold), 0 2px 10px rgba(0,0,0,.35);
+    transform:scale(1.06);
+  }
+  /* 축소했을 때 나오는 매물 건수 동그라미
+     - 건수가 많을수록 원이 커집니다 (크기는 자바스크립트에서 계산)
+     - 지도가 비쳐 보이도록 반투명 처리하고, 바깥쪽에 옅은 테두리를 한 겹 둘렀습니다
+     - flex 중앙 정렬이라 숫자가 항상 원 한가운데에 옵니다
+     - 색을 바꾸시려면 위 :root의 --cluster-rgb 값만 고치시면 됩니다 */
+  .cluster-dot{
+    display:flex;align-items:center;justify-content:center;
+    border-radius:50%;
+    background:rgba(var(--cluster-rgb),.78);
+    color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.22);
+    font-weight:900;letter-spacing:-.02em;line-height:1;
+    border:2px solid rgba(255,255,255,.95);
+    box-shadow:0 0 0 7px rgba(var(--cluster-rgb),.20), 0 2px 10px rgba(0,0,0,.20);
+    font-family:'Malgun Gothic','맑은 고딕',sans-serif;
+    cursor:pointer;
+    -webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px);
+    transition:transform .12s ease, background .12s ease;
+  }
+  .cluster-dot:hover{background:rgba(var(--cluster-rgb),.94);transform:scale(1.06);}
+  .tag-bundle-wrap{position:relative;display:inline-block;}
+  .bundle-count{
+    position:absolute;top:-8px;right:-8px;
+    min-width:20px;height:20px;padding:0 4px;
+    border-radius:50%;background:var(--gold);color:var(--navy);
+    font-size:.72rem;font-weight:900;line-height:20px;text-align:center;
+    border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);
+  }
+  .pop{font-family:'Malgun Gothic','맑은 고딕',sans-serif;min-width:230px;max-width:280px;position:relative;}
+  .pop-scroll{padding:14px 16px;}
+  .pop-close-btn{
+    position:absolute;top:-10px;right:-10px;
+    width:26px;height:26px;border-radius:50%;
+    background:var(--navy);color:#fff;border:2px solid #fff;
+    font-size:1.05rem;font-weight:700;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 6px rgba(0,0,0,.35);
+    z-index:6;transition:transform .1s ease, filter .1s ease;
+  }
+  .pop-close-btn:active{transform:scale(.86);filter:brightness(.85);}
+  .pop-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  /* 같은 자리 매물이 여럿일 때: 맨 위 중앙에 진하게 "1/2" 표시, 화살표는 양옆으로 넓게 */
+  .pop-groupbar{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-top:14px;padding-top:12px;border-top:1px solid var(--line);
+  }
+  .pop-groupcount{font-size:1rem;font-weight:800;color:var(--navy);}
+  .pop-groupnav-btn{
+    width:27px;height:27px;border-radius:50%;flex-shrink:0;
+    background:rgba(27,42,74,.88);color:#fff;border:2px solid #fff;
+    font-size:1.05rem;font-weight:700;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+    transition:transform .1s ease, filter .1s ease;
+  }
+  .pop-groupnav-btn:active{transform:scale(.86);filter:brightness(.85);}
+  .pop-photo-wrap{
+    position:relative;width:calc(100% + 32px);aspect-ratio:1/1;
+    margin:-14px -16px 10px;border-radius:10px 10px 0 0;
+    overflow:hidden;background:var(--gold-soft);
+  }
+  .pop-photo{display:block;width:100%;height:100%;object-fit:contain;}
+  .pop-photo-btn{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:26px;height:26px;border-radius:50%;
+    background:rgba(0,0,0,.45);color:#fff;border:none;
+    font-size:1rem;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .1s ease, filter .1s ease;
+  }
+  .pop-photo-btn.prev{left:8px;}
+  .pop-photo-btn.next{right:8px;}
+  .pop-photo-btn:active{transform:translateY(-50%) scale(.86);filter:brightness(.8);}
+  .pop-photo-dots{
+    position:absolute;bottom:8px;left:0;right:0;
+    display:flex;justify-content:center;gap:5px;
+  }
+  .pop-photo-dots span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55);}
+  .pop-photo-dots span.on{background:#fff;}
+  .pop h4{color:var(--navy);font-size:1.02rem;margin-bottom:4px;}
+  .pop .p-region{font-size:.85rem;color:#7A8299;font-weight:700;}
+  .pop .p-price{font-weight:800;font-size:1.05rem;margin-bottom:4px;}
+  .pop .p-meta{font-size:.85rem;color:#666E82;margin-bottom:10px;line-height:1.5;}
+  .pop .contact-row{display:flex;flex-direction:column;gap:7px;}
+  .pop a.sms{
+    display:block;text-align:center;background:var(--gold);color:var(--navy);
+    font-weight:800;text-decoration:none;padding:10px 0;border-radius:7px;font-size:.95rem;
+  }
+  .pop a.call{
+    display:block;text-align:center;background:#fff;color:var(--navy);
+    border:1.5px solid var(--line);
+    font-weight:700;text-decoration:none;padding:8px 0;border-radius:7px;font-size:.88rem;
+  }
+  .pop .ask-property{
+    display:block;text-align:center;background:var(--brand-yellow);color:var(--navy);
+    border:none;font-weight:800;padding:9px 0;border-radius:7px;font-size:.9rem;
+    cursor:pointer;transition:filter .15s ease;
+  }
+  .pop .ask-property:hover{filter:brightness(.92);}
+  .pop .ask-property:active{filter:brightness(.85);}
+  /* 매물 상세 블로그 글 연결 버튼 (시트에 링크가 있는 매물만 표시) */
+  .pop a.blog{
+    display:block;text-align:center;background:#03C75A;color:#fff;
+    font-weight:800;text-decoration:none;padding:9px 0;border-radius:7px;font-size:.9rem;
+    margin-bottom:7px;
+  }
+  /* 이 매물 링크 복사 */
+  .pop .copy-link{
+    display:block;width:100%;text-align:center;background:none;color:#7A8299;
+    border:none;font-weight:700;padding:7px 0 0;font-size:.82rem;
+    cursor:pointer;font-family:inherit;text-decoration:underline;
+  }
+  .pop .link-row{
+    display:flex;gap:8px;align-items:stretch;margin-top:10px;margin-bottom:12px;flex-wrap:wrap;
+  }
+  .pop .blog{
+    flex:1;min-width:0;display:flex;align-items:center;justify-content:center;text-decoration:none;
+    background:#03C75A;color:#fff;padding:0 12px;
+    font-weight:800;font-size:.82rem;cursor:pointer;border-radius:5px;
+    height:38px;border:none;font-family:inherit;transition:filter .15s ease;
+  }
+  .pop .blog:hover{filter:brightness(.92);}
+  .pop .blog:active{filter:brightness(.85);}
+  .pop .roadview-btn{
+    flex:0 0 auto;padding:0 14px;background:#2563EB;color:#fff;
+    border:none;font-size:.82rem;font-weight:800;cursor:pointer;font-family:inherit;
+    border-radius:5px;white-space:nowrap;transition:filter .15s ease;
+    height:38px;display:flex;align-items:center;justify-content:center;
+  }
+  .pop .roadview-btn:hover{filter:brightness(.92);}
+  .pop .roadview-btn:active{filter:brightness(.85);}
+  .pop .contact-row{margin-top:0;}
+  .leaflet-popup-content-wrapper{border-radius:10px;}
+  .leaflet-popup-content{margin:0;font-family:inherit;}
+  footer{background:var(--brand-yellow);color:rgba(27,42,74,.85);font-size:.82rem;padding:12px 22px;line-height:1.6;border-top:2px solid var(--navy);}
+  footer b{color:var(--navy);}
+
+  /* ── 사무소 소개 패널 (PC·모바일 공통, 전체화면 오버레이) ── */
+  .about-link{
+    background:none;border:1.5px solid var(--navy);color:var(--navy);
+    padding:6px 14px;border-radius:999px;font-size:.85rem;font-weight:800;
+    cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;
+  }
+  .about-overlay{
+    display:none;position:fixed;inset:0;z-index:2000;
+    background:rgba(18,32,59,.55);
+    align-items:flex-start;justify-content:center;
+    padding:24px 16px;overflow-y:auto;
+  }
+  .about-overlay.open{display:flex;}
+  .about-box{
+    background:#fff;border-radius:14px;max-width:720px;width:100%;
+    box-shadow:0 12px 40px rgba(0,0,0,.3);position:relative;
+    overflow:hidden;
+  }
+  .about-head{
+    background:var(--brand-yellow);color:var(--navy);
+    padding:20px 24px;border-bottom:3px solid var(--navy);
+  }
+  .about-head h2{font-size:1.35rem;font-weight:800;margin-bottom:4px;}
+  .about-head .rep{font-size:.95rem;font-weight:700;}
+  .about-close{
+    position:absolute;top:12px;right:12px;
+    width:30px;height:30px;border-radius:50%;
+    background:var(--navy);color:#fff;border:2px solid #fff;
+    font-size:1.1rem;font-weight:700;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;z-index:3;
+  }
+  .about-body{padding:22px 24px 26px;}
+  .about-body section{margin-bottom:22px;}
+  .about-body section:last-child{margin-bottom:0;}
+  .about-body h3{
+    font-size:1rem;color:var(--navy);font-weight:800;margin-bottom:10px;
+    padding-bottom:6px;border-bottom:2px solid var(--navy);
+  }
+  .about-body p{font-size:.92rem;line-height:1.75;color:var(--ink);margin-bottom:9px;}
+  .about-body p:last-child{margin-bottom:0;}
+  .about-info{display:grid;grid-template-columns:88px 1fr;gap:8px 12px;font-size:.92rem;}
+  .about-info dt{font-weight:800;color:#7A8299;}
+  .about-info dd{color:var(--ink);}
+  .about-info dd a{color:var(--navy);font-weight:700;text-decoration:none;}
+  .field-list{display:flex;flex-direction:column;gap:8px;}
+  .field-row{display:flex;align-items:center;gap:10px;font-size:.92rem;}
+  .field-row .fname{font-weight:800;min-width:56px;}
+  .field-bar{
+    flex:1;height:9px;border-radius:999px;background:#EFEDE6;overflow:hidden;
+  }
+  .field-bar span{display:block;height:100%;border-radius:999px;}
+  .field-row .fcnt{color:#7A8299;font-weight:700;min-width:38px;text-align:right;}
+  .about-links{display:flex;gap:9px;flex-wrap:wrap;}
+  .about-links a{
+    display:inline-block;background:var(--navy);color:#fff;
+    padding:9px 16px;border-radius:8px;font-size:.9rem;font-weight:800;
+    text-decoration:none;
+  }
+  .about-links a.line{background:#fff;color:var(--navy);border:1.5px solid var(--navy);}
+  @media (max-width:820px){
+    .about-overlay{padding:0;}
+    .about-box{border-radius:0;min-height:100%;}
+    .about-head{padding:16px 18px;}
+    .about-head h2{font-size:1.15rem;}
+    .about-body{padding:18px 18px 24px;}
+    .about-info{grid-template-columns:76px 1fr;font-size:.88rem;}
+  }
+
+  /* ── 문의하기 (플로팅 버튼 + 양식 패널) ── */
+  .ask-fab{
+    position:fixed;right:20px;bottom:62px;z-index:1500;
+    display:flex;align-items:center;gap:8px;
+    background:var(--brand-yellow);color:var(--navy);
+    border:2.5px solid var(--navy);
+    padding:15px 24px;border-radius:999px;
+    font-size:1.06rem;font-weight:900;font-family:inherit;cursor:pointer;
+    letter-spacing:.01em;
+    box-shadow:0 6px 20px rgba(18,32,59,.35);
+    transition:transform .12s ease, box-shadow .12s ease;
+    animation:fabPulse 2.8s ease-in-out infinite;
+  }
+  /* 은근하게 번지는 링으로 시선을 끌되, 과하지 않게 */
+  @keyframes fabPulse{
+    0%   { box-shadow:0 6px 20px rgba(18,32,59,.35), 0 0 0 0 rgba(245,204,13,.55); }
+    70%  { box-shadow:0 6px 20px rgba(18,32,59,.35), 0 0 0 16px rgba(245,204,13,0); }
+    100% { box-shadow:0 6px 20px rgba(18,32,59,.35), 0 0 0 0 rgba(245,204,13,0); }
+  }
+  .ask-fab:hover{transform:translateY(-2px);box-shadow:0 9px 26px rgba(18,32,59,.42);}
+  .ask-fab:active{transform:scale(.94);}
+  .ask-fab .ico{font-size:1.18rem;}
+  /* 움직임을 줄이는 설정을 켠 사용자에게는 애니메이션을 끕니다 */
+  @media (prefers-reduced-motion:reduce){
+    .ask-fab{animation:none;}
+  }
+
+  .ask-body{padding:20px 24px 26px;}
+  .ask-type-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:18px;}
+  .ask-type{
+    border:2px solid var(--line);background:#fff;color:var(--ink);
+    padding:13px 8px;border-radius:10px;font-size:.95rem;font-weight:800;
+    cursor:pointer;font-family:inherit;text-align:center;line-height:1.4;
+    transition:all .12s ease;
+  }
+  .ask-type small{display:block;font-size:.74rem;font-weight:600;color:#9AA3B8;margin-top:3px;}
+  .ask-type:hover{border-color:var(--navy);}
+  .ask-type.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .ask-type.on small{color:rgba(255,255,255,.75);}
+
+  .ask-field{margin-bottom:13px;}
+  .ask-field label{display:block;font-size:.86rem;font-weight:800;color:var(--navy);margin-bottom:5px;}
+  .ask-field label .req{color:#c94a4a;}
+  .ask-field input, .ask-field textarea, .ask-field select{
+    width:100%;border:1.5px solid var(--line);border-radius:8px;
+    padding:10px 12px;font-size:.95rem;font-family:inherit;color:var(--ink);
+    background:#fff;
+  }
+  .ask-field textarea{min-height:88px;resize:vertical;line-height:1.6;}
+  .ask-field input:focus, .ask-field textarea:focus, .ask-field select:focus{
+    outline:none;border-color:var(--gold);
+  }
+  .ask-hint{font-size:.78rem;color:#9AA3B8;margin-top:4px;}
+  /* 체크박스형 항목 — 누르기 쉽도록 영역을 넉넉하게 잡습니다 */
+  .ask-check-wrap{background:#FAF9F5;border:1.5px solid var(--line);border-radius:9px;padding:12px 14px;}
+  .ask-check{display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0;}
+  .ask-check input[type="checkbox"]{
+    width:20px;height:20px;flex-shrink:0;cursor:pointer;
+    accent-color:var(--navy);margin:0;
+  }
+  .ask-check span{font-size:.92rem;font-weight:800;color:var(--navy);line-height:1.4;}
+  .ask-send{
+    display:block;width:100%;text-align:center;
+    background:var(--gold);color:var(--navy);border:none;
+    font-weight:800;padding:14px 0;border-radius:9px;font-size:1rem;
+    cursor:pointer;font-family:inherit;margin-top:6px;
+  }
+  .ask-send:active{filter:brightness(.94);}
+  .ask-note{
+    font-size:.8rem;color:#7A8299;line-height:1.6;margin-top:12px;
+    padding-top:12px;border-top:1px solid var(--line);
+  }
+  .ask-error{
+    background:#FDECEC;color:#A63B3B;border:1px solid #F3C9C9;
+    padding:10px 12px;border-radius:8px;font-size:.86rem;font-weight:700;
+    margin-bottom:12px;display:none;
+  }
+  @media (max-width:820px){
+    .ask-fab{right:14px;bottom:70px;padding:13px 20px;font-size:.98rem;}
+    .ask-body{padding:16px 18px 24px;}
+    .ask-type-grid{gap:7px;margin-bottom:14px;}
+    .ask-type{padding:11px 6px;font-size:.88rem;}
+  }
+
+  /* 모바일 전용 지도/목록 전환 탭 (PC에서는 숨김) */
+  .mobile-tabs{display:none;}
+  @media (max-width:820px){
+    .mobile-tabs{
+      display:flex;background:#fff;border-bottom:1px solid var(--line);
+    }
+    .mobile-tabs button{
+      flex:1;border:none;background:none;padding:9px 0;
+      font-size:.86rem;font-weight:800;color:#9AA3B8;
+      font-family:inherit;cursor:pointer;white-space:nowrap;
+      border-bottom:3px solid transparent;
+    }
+    .mobile-tabs button.active{color:var(--navy);border-bottom-color:var(--gold);}
+    /* 모바일 헤더는 로고+전화번호가 한 줄에 겨우 들어가므로,
+       '사무소 소개'는 헤더 버튼 대신 위 탭으로 접근합니다 */
+    .about-link{display:none;}
+    .wrap{flex-direction:column;}
+    aside{width:100%;min-width:0;flex:1;min-height:0;}
+    .map-area{flex:1;min-height:0;}
+    /* 기본은 목록 화면. body에 show-map이 붙으면 지도 화면으로 전환 */
+    aside{display:flex;}
+    .map-area{display:none;}
+    body.show-map .map-area{display:block;}
+    body.show-map aside{display:none;}
+    body{font-size:15px;}
+
+    /* 헤더·필터 영역을 압축해 목록이 보이는 공간을 최대한 확보 */
+    /* 내용은 그대로 두고, 화면이 좁을수록 글자가 자동으로 작아지게 해서 한 줄을 유지합니다 */
+    header{padding:8px 12px;gap:6px;flex-wrap:nowrap;}
+    .brand{gap:clamp(3px,1vw,7px);min-width:0;}
+    .brand h1{font-size:clamp(.66rem,4.3vw,.98rem);white-space:nowrap;}
+    .brand .sub{display:none;}
+    .head-contact{gap:clamp(4px,1.5vw,8px);flex-shrink:0;}
+    .head-contact .addr{display:none;}
+    .head-contact .tel{font-size:clamp(.66rem,3.4vw,.92rem);padding:6px clamp(8px,2.2vw,12px);white-space:nowrap;}
+    .filters{padding:8px 14px 6px;}
+    .filter-row{gap:7px;}
+    .filter-group label{margin-bottom:3px;font-size:.7rem;}
+    .filter-group select{padding:7px 8px;padding-right:24px;font-size:.88rem;}
+    .fav-toggle, .done-toggle{height:33px;padding:0 8px;font-size:.78rem;gap:3px;}
+    /* 좁은 화면에서는 상세검색 칸을 더 줄입니다 */
+    .more-toggle{height:33px;padding:0 8px;font-size:.78rem;gap:4px;}
+    .more-count{font-size:.68rem;padding:0 5px;}
+    .more-box{gap:5px;margin-top:6px;}
+    .more-box select{flex:1 1 92px;min-width:92px;padding:6px 20px 6px 8px;font-size:.8rem;}
+    .filter-reset{padding:6px 8px;font-size:.76rem;}
+    .count{padding:6px 14px 4px;font-size:.8rem;}
+
+    /* 하단 정보도 내용은 그대로, 화면 폭에 맞춰 글자만 자동으로 줄어들게 합니다 */
+    footer{padding:8px 14px;font-size:clamp(.62rem,3vw,.82rem);line-height:1.45;}
+    .footer-reg{font-size:clamp(.5rem,2.2vw,.7rem);opacity:.75;}
+
+    /* 모바일은 지도 화면 자체가 작아서, 정사각형 사진을 그대로 쓰면
+       정보창이 화면 밖으로 넘쳐 아래쪽 글씨가 가려집니다. 비율은 유지하되
+       최대 높이를 제한해서 사진이 화면을 너무 많이 차지하지 않게 합니다. */
+    .pop-photo-wrap{aspect-ratio:auto;height:38vh;max-height:170px;}
+
+    /* 여백만 줄여서 공간을 확보하고, 글자 크기는 그대로 유지합니다(시니어 방문자 고려).
+       혹시 그래도 화면보다 내용이 길면 정보창 안에서 스크롤해서 볼 수 있게 합니다. */
+    .pop-scroll{padding:12px 14px;max-height:62vh;overflow-y:auto;}
+    .pop-top{margin-bottom:4px;}
+    .pop .p-meta{margin-bottom:8px;}
+    .pop-groupbar{margin-top:10px;padding-top:8px;}
+  }
+
+  /* ══════════════════════════════════════════════
+     거리뷰 모달
+     ══════════════════════════════════════════════ */
+  .roadview-modal{
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;
+    z-index:9999;backdrop-filter:blur(2px);
+  }
+  .roadview-modal-content{
+    background:#fff;border-radius:12px;width:90%;max-width:900px;height:85vh;
+    display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3);
+    animation:slideUp .3s ease;
+  }
+  @keyframes slideUp{
+    from{transform:translateY(30px);opacity:0;}
+    to{transform:translateY(0);opacity:1;}
+  }
+  .roadview-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px;border-bottom:1px solid var(--line);background:var(--brand-yellow);
+    flex-shrink:0;
+  }
+  .roadview-header h2{
+    font-size:1.3rem;font-weight:800;color:var(--navy);margin:0;
+  }
+  .roadview-close-btn{
+    width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;
+    border:none;font-size:1.5rem;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .1s ease, filter .1s ease;
+  }
+  .roadview-close-btn:hover{filter:brightness(1.1);}
+  .roadview-close-btn:active{transform:scale(.9);}
+  .roadview-container{
+    flex:1;overflow:hidden;background:#f0f0f0;position:relative;
+  }
+  .roadview-container iframe{
+    width:100%;height:100%;border:none;
+  }
+  @media (max-width:768px){
+    .roadview-modal-content{width:95%;height:90vh;}
+    .roadview-header h2{font-size:1.1rem;}
+  }
+</style>
+
+<!-- 구글 애널리틱스(GA4) — 방문자 수와 매물별 클릭을 확인하기 위한 코드입니다.
+     방문자 개인정보(이름, 연락처 등)는 수집하지 않으며 통계만 집계됩니다. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VXV88S2RZJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-VXV88S2RZJ');
+</script>
+</head>
+<body class="show-map">
+
+<header>
+  <div class="brand">
+    <h1><span class="brand-en">REAL<span class="gold">WALKERS</span></span> 리얼워커스</h1>
+    <span class="sub">공인중개사사무소 · 마포</span>
+  </div>
+  <div class="head-contact">
+    <span class="addr">서울 마포구 신촌로34길 39</span>
+    <button class="about-link" id="aboutOpen">사무소 소개</button>
+    <a class="tel" href="tel:023937676">02-393-7676</a>
+  </div>
+</header>
+
+<!-- ── 사무소 소개 패널 ── -->
+<div class="about-overlay" id="aboutOverlay">
+  <div class="about-box">
+    <button class="about-close" id="aboutClose">×</button>
+    <div class="about-head">
+      <h2>리얼워커스 공인중개사사무소</h2>
+      <div class="rep">임승재 대표 공인중개사</div>
+    </div>
+    <div class="about-body">
+      <section>
+        <h3>마포 권역 부동산 중개 전문</h3>
+        <p>
+          리얼워커스는 마포 권역을 중심으로 아파트·상가·건물 중개를 전문으로 하는
+          공인중개사사무소입니다. 아현·공덕·염리·신촌 일대의 단지별 시세 흐름과
+          재개발·재건축 추진 현황을 꾸준히 직접 조사하고 기록해 왔으며,
+          그 자료를 바탕으로 상담을 진행합니다.
+        </p>
+        <p>
+          단순히 매물을 연결하는 데 그치지 않고, 해당 물건이 왜 지금 이 가격인지,
+          앞으로 어떤 변수가 있는지를 함께 검토해 드립니다.
+          호가와 실거래가의 차이, 주변 개발 계획, 임대 수익 구조 등
+          판단에 필요한 근거를 숨기지 않고 말씀드리는 것을 원칙으로 합니다.
+        </p>
+        <p>
+          대표가 모든 물건을 직접 확인하고 응대합니다. 처음 문의하신 분과
+          계약까지 함께 가는 담당자가 바뀌지 않습니다.
+        </p>
+      </section>
+
+      <section>
+        <h3>서비스 지역</h3>
+        <p>
+          서울에서는 <b>마포·서대문·은평</b>을 중심으로 활동하며,
+          수도권에서는 <b>김포·고양</b> 지역의 토지와 공장·창고 물건까지 함께 다룹니다.
+          김포에서 중개업을 운영하던 시기에 축적한 토지·공장 실무 경험이 있어,
+          도심 주거용 부동산과 수도권 토지·산업용 부동산을 함께 상담드릴 수 있습니다.
+        </p>
+      </section>
+
+      <section>
+        <h3>제공 서비스</h3>
+        <p>
+          <b>매매·임대차 중개</b> — 아파트, 상가, 건물, 토지, 공장·창고의
+          매매와 임대차 전 과정을 진행합니다.
+        </p>
+        <p>
+          <b>시세 분석 및 투자 검토</b> — 실거래가와 호가의 차이, 단지·지역별 가격 흐름,
+          임대 수익률 구조를 정리해 판단 근거를 함께 드립니다.
+        </p>
+        <p>
+          <b>맞춤 상담</b> — 실거주와 투자, 단기와 장기 등 목적에 따라
+          접근 방식이 달라지므로 상황에 맞게 검토해 드립니다.
+        </p>
+        <p>
+          <b>계약 절차와 사후관리</b> — 계약 조건 조율부터 잔금·명도까지
+          진행 상황을 투명하게 공유하고, 계약 이후 발생하는 사안도 함께 챙깁니다.
+        </p>
+      </section>
+
+      <section>
+        <h3>취급 분야</h3>
+        <div class="field-list" id="aboutFields">
+          <p style="color:#7A8299;font-size:.88rem;">매물 정보를 불러오는 중입니다…</p>
+        </div>
+        <p style="font-size:.82rem;color:#7A8299;margin-top:10px;">
+          현재 보유 매물 기준이며, 토지·공장·창고 등 위 분야 외 물건도 상담 가능합니다.
+        </p>
+      </section>
+
+      <section>
+        <h3>사무소 정보</h3>
+        <dl class="about-info">
+          <dt>주소</dt><dd>서울특별시 마포구 신촌로34길 39</dd>
+          <dt>대표전화</dt><dd><a href="tel:023937676">02-393-7676</a></dd>
+          <dt>휴대전화</dt><dd><a href="tel:01042800869">010-4280-0869</a></dd>
+          <dt>등록번호</dt><dd>11440-2025-00089</dd>
+        </dl>
+      </section>
+
+      <section>
+        <h3>콘텐츠 채널</h3>
+        <p style="font-size:.88rem;color:#666E82;">
+          지역 시세 분석과 부동산 정책 해설을 꾸준히 기록하고 있습니다.
+        </p>
+        <div class="about-links">
+          <a href="https://blog.naver.com/realwalkers" target="_blank" rel="noopener">네이버 블로그</a>
+          <a class="line" href="https://www.instagram.com/" target="_blank" rel="noopener">인스타그램</a>
+        </div>
+      </section>
+
+      <section>
+        <h3>원하시는 조건이 있으신가요?</h3>
+        <p style="font-size:.9rem;">
+          지도에 없는 물건도 찾아드립니다. 매수·매도·임대차·사업제휴 문의를
+          남겨주시면 조건에 맞는 물건을 확인해 연락드립니다.
+        </p>
+        <div class="about-links">
+          <a href="#" id="aboutToAsk">✉️ 문의 남기기</a>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ── 문의하기 양식 ── -->
+<div class="about-overlay" id="askOverlay">
+  <div class="about-box">
+    <button class="about-close" id="askClose">×</button>
+    <div class="about-head">
+      <h2>문의하기</h2>
+      <div class="rep">원하시는 조건을 남겨주시면 맞는 물건을 찾아 연락드립니다</div>
+    </div>
+    <div class="ask-body" id="askForm">
+      <div class="ask-error" id="askError"></div>
+
+      <!-- 매물별 문의일 때 선택하신 매물 정보 표시 (읽기 전용) -->
+      <div id="askListingInfo" style="display:none; background:#f5f5f5; border:1px solid #ddd; border-radius:8px; padding:12px; margin-bottom:16px; font-size:.9rem;">
+        <div style="color:#7A8299; font-weight:700; margin-bottom:8px;">선택하신 매물</div>
+        <div style="color:var(--navy); font-weight:700; margin-bottom:6px;" id="askListingInfoName"></div>
+        <div style="color:#666; font-size:.85rem;">
+          <span id="askListingInfoDeal"></span>
+          <span id="askListingInfoPrice" style="margin-left:8px;"></span>
+        </div>
+      </div>
+
+      <div class="ask-type-grid" id="askTypeGrid"></div>
+
+      <div id="askFields"></div>
+
+      <div class="ask-field">
+        <label for="askName">성명 <span class="req">*</span></label>
+        <input type="text" id="askName" placeholder="홍길동" autocomplete="name">
+      </div>
+      <div class="ask-field">
+        <label for="askPhone">연락처 <span class="req">*</span></label>
+        <input type="tel" id="askPhone" placeholder="010-0000-0000" autocomplete="tel">
+        <div class="ask-hint">연락 가능한 번호를 남겨주세요.</div>
+      </div>
+
+      <!-- 매물정보 (숨겨진 필드 - 매물별 문의에서만 채워집니다) -->
+      <input type="hidden" id="askListingNum" value="">
+      <input type="hidden" id="askListingName" value="">
+      <input type="hidden" id="askListingPrice" value="">
+      <input type="hidden" id="askListingDeal" value="">
+
+      <button class="ask-send" id="askSend">문자로 문의 보내기</button>
+
+      <div class="ask-note" id="askNote">
+        보내기를 누르면 <b>문자 앱이 열리면서 작성 내용이 자동으로 입력</b>됩니다.
+        내용을 확인하신 뒤 전송 버튼을 눌러주세요.<br>
+        접수된 문의는 영업시간 내 순차적으로 연락드립니다.
+      </div>
+
+      <!-- 완료 메시지 (기본 숨김) -->
+      <div id="askSuccess" style="display:none; text-align:center; padding:30px 20px;">
+        <div style="font-size:3rem; margin-bottom:16px; animation:bounce 0.6s ease;">✓</div>
+        <div style="font-size:1.1rem; color:var(--navy); font-weight:700; margin-bottom:8px;">문의가 접수되었습니다</div>
+        <div style="font-size:.9rem; color:#666;">영업시간 내 순차적으로 연락드리겠습니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="ask-fab" id="askOpen"><span class="ico">✉️</span> 문의하기</button>
+
+<div class="mobile-tabs">
+  <button id="tabList">📋 목록</button>
+  <button id="tabMap" class="active">🗺️ 지도</button>
+  <button id="tabAbout">ℹ️ 소개</button>
+</div>
+
+<div class="filters">
+  <!-- 평소에는 이 줄만 보입니다. 나머지 조건은 상세검색 안에 있습니다. -->
+  <div class="filter-row">
+    <button id="moreToggle" class="more-toggle" aria-expanded="false" title="유형·지역·가격으로 찾기">
+      <span class="more-label">＋ 상세검색</span>
+      <span id="moreCount" class="more-count" hidden>0</span>
+    </button>
+    <button id="favToggle" class="fav-toggle" title="찜한 매물만 보기">♡ 찜</button>
+    <button id="doneToggle" class="done-toggle" title="거래완료된 매물만 보기">✓ 완료</button>
+  </div>
+
+  <!-- 칸 수를 고정하지 않습니다. 폭이 넉넉하면 한 줄에 늘어서고,
+       좁아져 글씨가 잘릴 정도가 되면 자동으로 다음 줄로 넘어갑니다. -->
+  <div id="moreBox" class="more-box" hidden>
+    <select id="dealFilter" title="거래유형"><option value="all">거래 전체</option></select>
+    <select id="typeFilter" title="매물유형"><option value="all">유형 전체</option></select>
+    <select id="regionFilter" title="지역"><option value="all">전체 지역</option></select>
+    <select id="priceFilter" title="가격대"><option value="all">전체 가격</option></select>
+    <button id="filterReset" class="filter-reset" title="조건 모두 지우기">초기화</button>
+  </div>
+</div>
+
+<!-- 거리뷰 모달 -->
+<div id="roadviewModal" class="roadview-modal" style="display:none;">
+  <div class="roadview-modal-content">
+    <div class="roadview-header">
+      <h2 id="roadviewTitle">거리뷰</h2>
+      <button class="roadview-close-btn" onclick="closeRoadview()">✕</button>
+    </div>
+    <div id="roadviewContainer" class="roadview-container"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <aside>
+    <div class="count" id="countMsg">현재 <b id="cnt">0</b>건의 매물이 표시되고 있습니다</div>
+    <div class="list" id="list"><div class="notice" id="loading">매물 정보를 불러오는 중입니다…</div></div>
+  </aside>
+  <div class="map-area"><div id="map"></div></div>
+</div>
+
+<footer>
+  <b>리얼워커스 공인중개사사무소</b> · 대표전화 02-393-7676 · 휴대전화 010-4280-0869 ·
+  서울특별시 마포구 신촌로34길 39 · <span class="footer-reg">등록번호 11440-2025-00089</span>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   ★ 설정 구역 — 선배가 손대실 곳은 이 세 줄뿐입니다 ★
+
+   1) NAVER_CLIENT_ID
+      네이버 클라우드 플랫폼에서 발급받은 Client ID를
+      따옴표 안에 붙여넣으세요. 비워두면 임시 무료 지도로 표시됩니다.
+
+   2) SHEET_CSV_URL
+      구글 스프레드시트를 "웹에 게시(CSV)"한 주소를 붙여넣으세요.
+      비워두면 아래 예시 매물이 표시됩니다.
+
+   3) INQUIRY_ENDPOINT
+      Apps Script를 "웹 앱"으로 배포하면 나오는 주소를 붙여넣으세요.
+      문의하기에서 보내기를 누르면 이 주소로 문의 내용이 전달되어
+      시트에 기록되고 이메일로 알림이 갑니다.
+      비워두면 이 기능 없이 지금처럼 문자·이메일 앱만 열립니다
+      (방문자의 문의 전송 자체에는 지장이 없습니다).
+   ═══════════════════════════════════════════════════════════ */
+const CONFIG = {
+  NAVER_CLIENT_ID: "g9mpxzpbwo",
+  SHEET_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-V_ZJtPtye1Or9bEkQpDOxyofS-x837-NyuaRDR948PvkRRc9-MivFlDWC7sjlGCyucPvRg_fs8tt/pub?gid=0&single=true&output=csv",
+};
+const INQUIRY_ENDPOINT = "https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
+
+/* ── PC용 문의하기: 구글 폼 자동입력 ──
+   PC에는 문자 앱이 없어 예전에는 이메일 앱을 대신 열었는데, 이메일이
+   설정 안 된 PC가 많아 사실상 문의가 안 되는 경우가 많았습니다.
+   대신 매물 도우미(구글시트) → 설정 → 문의 폼 만들기로 만들어둔 구글 폼을
+   방문자가 적은 내용으로 미리 채워서 새 창으로 엽니다. 방문자는 내용만
+   확인하고 폼에서 "제출"만 누르면 되고, 결과는 시트에 자동으로 쌓이고
+   메일 알림도 갑니다 (구글시트 Apps Script 쪽에 이미 연결되어 있습니다).
+   ACTION 값이 비어 있으면 이 기능 없이 예전처럼 이메일 앱을 엽니다. */
+const INQUIRY_FORM = {
+  ACTION: "https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
+  ENTRY_TYPE: "entry.1301252049",
+  ENTRY_NAME: "entry.937381770",
+  ENTRY_PHONE: "entry.1036584187",
+  ENTRY_CONTENT: "entry.1899967904",
+  ENTRY_DEVICE: "entry.2116220552",
+  ENTRY_LISTING: "entry.1786545952",
+};
+
+/* ── 예시 매물 (구글시트 연결 전까지만 사용됩니다) ── */
+const SAMPLE_LISTINGS = [
+  {type:"아파트",deal:"전세",name:"마포래미안푸르지오 34평",price:"9억",meta:"전용 84㎡ · 중층 · 남향 · 즉시 입주 가능",lat:37.5529,lng:126.9552},
+  {type:"아파트",deal:"매매",name:"공덕자이 25평",price:"15억 5,000",meta:"전용 59㎡ · 고층 · 역세권 · 올수리",lat:37.5449,lng:126.9509},
+  {type:"아파트",deal:"전세",name:"래미안웰스트림 33평",price:"8억 5,000",meta:"전용 84㎡ · 한강 조망 · 8월 말 입주",lat:37.5412,lng:126.9438},
+  {type:"건물",deal:"매매",name:"신공덕동 9층 빌딩",price:"85억",meta:"대지 231㎡ · 연면적 1,420㎡ · 임대수익률 안내 가능",lat:37.5436,lng:126.9541},
+  {type:"상가",deal:"임대",name:"대흥동 1층 코너 상가",price:"보증금 5,000 / 월 280",meta:"전용 42㎡ · 대로변 코너 · 음식점 가능",lat:37.5478,lng:126.9436},
+  {type:"토지",deal:"매매",name:"김포 통진읍 계획관리 토지",price:"12억",meta:"1,650㎡ · 계획관리지역 · 도로 접함",lat:37.7042,lng:126.5920},
+];
+
+/* ── 유형별 뱃지 색상 ──
+   시트의 유형 칸에 어떤 이름을 쓰든 필터 버튼이 자동으로 생깁니다.
+   아래에 색이 정해진 유형은 그 색을, 새로운 유형은 예비 색상을 순서대로 씁니다.
+   원하는 유형의 색을 지정하고 싶으면 아래에 "유형이름":"#색상코드" 를 추가하세요. */
+const TYPE_COLORS = {
+  "아파트":"#2E4A7A", "건물":"#8A6D1F", "빌딩":"#8A6D1F",
+  "상가":"#5C7A4A", "토지":"#7A4A4A", "공장":"#4A6E7A",
+  "창고":"#3F6060", "주택":"#6E4A7A", "오피스텔":"#5A6478",
+};
+const EXTRA_COLORS = ["#5A6478","#7A6A4A","#4A5E7A","#7A4A5E","#4F7A5E","#6B5A7A"];
+let extraColorIdx = 0;
+function typeColor(name){
+  if (!TYPE_COLORS[name]){
+    TYPE_COLORS[name] = EXTRA_COLORS[extraColorIdx % EXTRA_COLORS.length];
+    extraColorIdx++;
+  }
+  return TYPE_COLORS[name];
+}
+
+let LISTINGS = [];
+let currentType = "all";
+let currentDeal = "all";
+let favOnly = false;
+let doneOnly = false;
+let currentRegion = "all";   // 상세검색: 지역
+let currentPrice = "all";    // 상세검색: 가격대
+let activeId = null;
+let mapApi = null; // 지도 어댑터 (naver 또는 leaflet)
+
+/* ── 찜하기 ──
+   매물번호가 있으면 그걸로, 없으면 매물명+주소로 식별합니다.
+   (시트 행 순서가 바뀌어도 같은 매물을 계속 같은 매물로 인식하기 위함) */
+function favKey(item){
+  return item.no ? `no:${item.no}` : `na:${item.name}|${item.addr||""}`;
+}
+let favorites = new Set();
+try { favorites = new Set(JSON.parse(localStorage.getItem("rw_favorites") || "[]")); }
+catch(e) { favorites = new Set(); }
+function isFav(item){ return favorites.has(favKey(item)); }
+function saveFavorites(){
+  try { localStorage.setItem("rw_favorites", JSON.stringify([...favorites])); } catch(e){}
+}
+function toggleFav(item, e){
+  if(e) e.stopPropagation();
+  const key = favKey(item);
+  if (favorites.has(key)) favorites.delete(key); else favorites.add(key);
+  saveFavorites();
+  render();
+  // 정보창이 열려있으면 하트 상태도 즉시 갱신
+  if (popupGroup.length) renderPopup();
+}
+
+/* ── CSV 파서 (따옴표 포함 셀 처리) ── */
+function parseCSV(text){
+  const rows = [];
+  let row = [], cell = "", inQ = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (inQ){
+      if (c === '"' && text[i+1] === '"'){ cell += '"'; i++; }
+      else if (c === '"'){ inQ = false; }
+      else cell += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ','){ row.push(cell); cell = ""; }
+      else if (c === '\n'){ row.push(cell); rows.push(row); row = []; cell = ""; }
+      else if (c !== '\r') cell += c;
+    }
+  }
+  if (cell !== "" || row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+
+/* ── 구글드라이브 공유링크 → 이미지 표시용 주소로 자동 변환 ──
+   드라이브에서 "링크 보기" 공유 후 복사한 주소는 그대로 넣으면 됩니다.
+   예) https://drive.google.com/file/d/파일ID/view?usp=sharing
+   → https://drive.google.com/thumbnail?id=파일ID&sz=w900 형태로 자동 변환합니다.
+
+   size(가로 픽셀)를 쓰임새에 맞게 다르게 줘서 불필요하게 큰 사진을 받지 않게 합니다.
+   - 목록 카드 썸네일은 실제 표시 높이가 150px 정도라 480이면 충분히 선명합니다.
+   - 지도 정보창 사진은 이보다 크게 보이므로 900을 씁니다.
+   매물이 많아질수록 목록에서 받는 사진 용량이 커지므로, 여기서 크기를 줄이는 것이
+   초기 로딩 속도에 가장 크게 영향을 줍니다.
+   다른 이미지 호스팅(imgbb 등) 주소는 변환 없이 그대로 사용됩니다(크기 지정 불가). */
+const CARD_PHOTO_SIZE = 480;
+const POPUP_PHOTO_SIZE = 900;
+
+function toImageUrl(url, size){
+  if (!url) return "";
+  const m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
+  // uc?export=view 방식은 같은 사진을 카드·정보창에서 중복 요청하면
+  // 구글이 두 번째 요청을 막아버리는 경우가 있어, 더 안정적인 썸네일 주소를 씁니다.
+  if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w${size || POPUP_PHOTO_SIZE}`;
+  return url;
+}
+
+/* ── 구글시트 → 매물 목록 변환 ──
+   시트 열 구성(1행 제목): 매물번호 | 유형 | 거래 | 매물명 | 가격 | 설명 | 주소 | 위도 | 경도 | 사진1 | 사진2 | 사진3 | 사진4 | 사진5 | 노출
+   ▶ '매물번호'는 선택사항입니다. 입력하면 목록·팝업에 표시됩니다.
+   ▶ '주소'만 입력해도 됩니다. 네이버 지도가 주소로 위치를 자동으로 찾습니다.
+   ▶ 위도·경도를 직접 입력한 매물은 그 좌표를 우선 사용합니다.
+   ▶ '사진1'~'사진5'는 선택사항입니다. 목록 카드에는 사진1(대표사진)만 쓰이고,
+     지도 정보창에서는 넣은 사진 전부를 넘겨볼 수 있습니다. (예전의 '사진' 단일 칸도 계속 인식합니다) */
+function rowsToListings(rows){
+  const head = rows[0].map(h=>h.trim());
+  const idx = name => head.indexOf(name);
+  const iNo=idx("매물번호"), iT=idx("유형"), iD=idx("거래"), iN=idx("매물명"), iP=idx("가격"),
+        iM=idx("설명"), iAddr=idx("주소"), iLat=idx("위도"), iLng=idx("경도"), iShow=idx("노출");
+  const iBlog = idx("블로그링크");
+  const legacyPhotoIdx = idx("사진");
+  const photoIdxs = ["사진1","사진2","사진3","사진4","사진5"].map(idx).filter(i=>i>=0);
+
+  const out = [];
+  for (let r = 1; r < rows.length; r++){
+    const row = rows[r];
+    if (!row[iN] || !row[iN].trim()) continue;
+
+    /* 노출 칸 처리
+       - "N"        : 완전히 숨김 (지금까지와 동일)
+       - "완료"/"C" : 거래완료 매물로 표시 (기본 목록에서는 빠지고, '완료' 필터를 켜면 보임)
+       - 그 외/빈칸 : 정상 노출 */
+    const showVal = iShow >= 0 ? (row[iShow]||"").trim().toUpperCase() : "";
+    if (showVal === "N") continue;
+    const done = (showVal === "완료" || showVal === "C" || showVal === "거래완료");
+
+    const lat = parseFloat(row[iLat]), lng = parseFloat(row[iLng]);
+    const addr = iAddr >= 0 ? (row[iAddr]||"").trim() : "";
+    if ((isNaN(lat) || isNaN(lng)) && !addr) continue; // 좌표도 주소도 없으면 건너뜀
+
+    // 원본 사진 주소를 먼저 모아두고, 쓰임새(목록 썸네일/정보창)에 맞는 크기로 각각 변환합니다
+    let rawPhotos = photoIdxs.map(i => (row[i]||"").trim()).filter(Boolean);
+    if (!rawPhotos.length && legacyPhotoIdx >= 0){
+      const p = (row[legacyPhotoIdx]||"").trim();
+      if (p) rawPhotos = [p];
+    }
+    const photos = rawPhotos.map(u => toImageUrl(u, POPUP_PHOTO_SIZE)).filter(Boolean);
+    const photoThumb = rawPhotos.length ? toImageUrl(rawPhotos[0], CARD_PHOTO_SIZE) : "";
+
+    out.push({
+      no: iNo >= 0 ? (row[iNo]||"").trim() : "",
+      type: (row[iT]||"").trim() || "기타",
+      deal: (row[iD]||"").trim(),
+      name: row[iN].trim(),
+      price: (row[iP]||"").trim(),
+      meta: (row[iM]||"").trim(),
+      addr,
+      lat: isNaN(lat) ? null : lat,
+      lng: isNaN(lng) ? null : lng,
+      photos,
+      photo: photoThumb,
+      blog: iBlog >= 0 ? (row[iBlog]||"").trim() : "",
+      done,
+    });
+  }
+  return out;
+}
+
+/* ── 주소 → 좌표 자동 변환 (네이버 지도 사용 시) ── */
+function geocodeMissing(done){
+  const targets = LISTINGS.filter(it => (it.lat == null || it.lng == null) && it.addr);
+  if (!targets.length || !window.naver){ done(); return; }
+
+  /* 네이버 지도 본체보다 주소 변환 모듈이 늦게 도착할 수 있으므로,
+     준비될 때까지 최대 8초 기다렸다가 실행합니다. */
+  let tries = 0;
+  (function waitForGeocoder(){
+    if (naver.maps.Service && naver.maps.Service.geocode){ run(); }
+    else if (++tries < 80){ setTimeout(waitForGeocoder, 100); }
+    else {
+      console.warn("주소 변환 모듈을 불러오지 못했습니다. 네이버 콘솔에서 Geocoding 서비스가 체크되어 있는지 확인하세요.");
+      done();
+    }
+  })();
+
+  /* ── 주소를 단계적으로 단순하게 만듭니다 ──
+     "○○동 101-1 3동 902호"처럼 뒤에 붙은 표기나 "산26" 같은 형태는
+     주소 변환에서 실패하는 경우가 있어, 실패하면 조금씩 줄여 다시 물어봅니다. */
+  function addrCandidates(addr){
+    const list = [];
+    const push = v => { v = String(v||"").replace(/\s+/g," ").trim(); if(v && list.indexOf(v)===-1) list.push(v); };
+    push(addr);
+    // 쉼표 뒤, 동·호·층 표기 제거
+    let a = String(addr).split(",")[0];
+    a = a.replace(/\b[0-9A-Za-z가-힣\-]*\s*(동|호|층)\b(?![가-힣])/g, m => /[0-9]/.test(m) ? " " : m);
+    push(a);
+    // 건물 이름처럼 보이는 뒤쪽 낱말 제거 (지번까지만 남김)
+    const m = a.match(/^(.*?[0-9]+(?:-[0-9]+)?)(\s|$)/);
+    if (m) push(m[1]);
+    // "산26" → "산 26"
+    push(a.replace(/산\s*([0-9])/g, "산 $1"));
+    return list;
+  }
+
+  function run(){
+    let finished = 0;
+    const failed = [];
+    const step = () => { if (++finished === targets.length){ reportFailed(failed); done(); } };
+
+    targets.forEach(it => {
+      const cands = addrCandidates(it.addr);
+      let ci = 0;
+      (function tryNext(){
+        if (ci >= cands.length){            // 후보를 다 써도 못 찾은 경우
+          it.geoFail = true;
+          failed.push(it);
+          console.warn("주소를 찾지 못했습니다:", it.addr);
+          step();
+          return;
+        }
+        const q = cands[ci++];
+        naver.maps.Service.geocode({ query: q }, (status, res) => {
+          if (status === naver.maps.Service.Status.OK && res.v2.addresses.length){
+            it.lat = parseFloat(res.v2.addresses[0].y);
+            it.lng = parseFloat(res.v2.addresses[0].x);
+            it.geoFrom = q;                 // 어떤 형태로 찾았는지 남겨둡니다
+            step();
+          } else tryNext();
+        });
+      })();
+    });
+  }
+
+  /* 좌표를 못 찾은 매물은 화면에 띄우지 않습니다.
+     방문객에게 보일 이유가 없고 매물명이 노출되므로,
+     기록만 남겨두고 관리자가 확인할 때만 꺼내 봅니다.
+
+     [확인 방법]
+     주소 끝에 ?admin=1 을 붙여 접속하시면 목록이 화면에 나옵니다.
+       예) realwalkers.com/?admin=1
+     또는 브라우저 개발자도구 콘솔에서 지도오류() 를 입력하셔도 됩니다. */
+  function reportFailed(list){
+    if (!list.length) return;
+    GEO_FAILED = list.map(it => ({
+      no: it.no || "", name: it.name || "", addr: it.addr || "",
+    }));
+    console.warn("[관리자] 지도에 표시하지 못한 매물 " + list.length + "건. " +
+      "주소 끝에 ?admin=1 을 붙여 접속하시거나 지도오류() 를 입력하시면 목록을 보실 수 있습니다.");
+    // 관리자로 접속한 경우에만 화면에 띄웁니다
+    if (new URLSearchParams(location.search).get("admin") === "1") showGeoFailed();
+  }
+}
+
+/* 좌표를 못 찾은 매물 목록 (관리자 확인용) */
+let GEO_FAILED = [];
+
+/* 관리자용 안내창. 방문객에게는 절대 뜨지 않습니다. */
+function showGeoFailed(){
+  if (!GEO_FAILED.length){ alert("지도에 표시하지 못한 매물이 없습니다."); return; }
+  const old = document.getElementById("geoFailBox");
+  if (old) old.remove();
+  const box = document.createElement("div");
+  box.id = "geoFailBox";
+  box.style.cssText = "position:fixed;left:12px;bottom:12px;z-index:9999;max-width:360px;" +
+    "max-height:70vh;overflow:auto;background:#FDECEC;border:1px solid #E9B4B4;color:#8A2A2A;" +
+    "border-radius:8px;padding:12px 14px;font-size:.86rem;line-height:1.55;" +
+    "box-shadow:0 4px 14px rgba(0,0,0,.18);font-family:'Malgun Gothic','맑은 고딕',sans-serif;";
+  const rows = GEO_FAILED.map(f =>
+    `<div style="margin-bottom:5px">${f.no ? "<b>"+f.no+"</b> " : ""}${f.name}` +
+    `<div style="font-size:.8rem;color:#6B2020">${f.addr}</div></div>`).join("");
+  box.innerHTML = "<b>[관리자] 지도에 표시하지 못한 매물 " + GEO_FAILED.length + "건</b>" +
+    "<div style='margin:8px 0'>" + rows + "</div>" +
+    "<div style='font-size:.8rem;color:#6B2020'>주소를 좌표로 바꾸지 못했습니다. " +
+    "시트의 주소를 시·군·구부터 지번까지 정확히 적어주세요.</div>" +
+    "<button style='margin-top:9px;padding:4px 10px;font-size:.8rem;cursor:pointer'>닫기</button>";
+  box.querySelector("button").onclick = () => box.remove();
+  document.body.appendChild(box);
+}
+
+/* 콘솔에서 부르실 수 있는 이름 */
+window.지도오류 = showGeoFailed;
+
+/* ── 마커 HTML ──
+   단일 매물: 유형색이 적용된 가격표. 여러 매물이 겹치는 지점: "N건" 묶음 배지. */
+function tagHtml(item, picked){
+  const priceText = item.done ? maskPrice((item.price||"").split(" /")[0]) : (item.price||"").split(" /")[0];
+  return `<div class="price-tag${picked?' picked':''}" style="background:${typeColor(item.type)}"><small>${item.deal}</small>${priceText}</div>`;
+}
+function bundleTagHtml(group, picked, idx){
+  const shown = group[idx] || group[0]; // 정보창에서 지금 보고 있는 매물을 마커에도 반영
+  const tag = tagHtml(shown, picked);
+  return `<div class="tag-bundle-wrap">${tag}<span class="bundle-count">${group.length}</span></div>`;
+}
+/* ── 주소 → 짧은 지역명 ──
+   "서울특별시 강서구 화곡동 123-4" → "서울 강서"
+   "경기도 김포시 통진읍"          → "경기 김포"
+   시·도 이름은 줄임말로 바꾸고, 시·군·구는 뒷글자를 떼어 간결하게 만듭니다. */
+const SIDO_SHORT = {
+  "서울특별시":"서울","서울시":"서울","부산광역시":"부산","대구광역시":"대구",
+  "인천광역시":"인천","광주광역시":"광주","대전광역시":"대전","울산광역시":"울산",
+  "세종특별자치시":"세종","경기도":"경기","강원도":"강원","강원특별자치도":"강원",
+  "충청북도":"충북","충청남도":"충남","전라북도":"전북","전북특별자치도":"전북",
+  "전라남도":"전남","경상북도":"경북","경상남도":"경남",
+  "제주도":"제주","제주특별자치도":"제주",
+};
+function shortRegion(addr){
+  if (!addr) return "";
+  const parts = addr.trim().split(/\s+/);
+  if (!parts.length) return "";
+  const sido = SIDO_SHORT[parts[0]] || parts[0];
+  // 두 번째 칸(시·군·구)에서 끝의 시/군/구 한 글자를 떼어냅니다
+  let gu = parts[1] ? parts[1].replace(/(시|군|구)$/, "") : "";
+  // "부천시 원미구"처럼 시와 구가 모두 있으면 앞의 시 이름만 씁니다
+  return gu ? `${sido} ${gu}` : sido;
+}
+
+/* ── 거래완료 매물 가격 마스킹 ──
+   3억 4200만원 → *억****만원 형태로 표시하여 궁금증 유발 */
+function maskPrice(price){
+  if (!price) return "";
+  return price.replace(/\d/g, "*");
+}
+
+/* ── 묶음(클러스터) 배지 ──
+   지도를 축소했을 때, 가까이 모여 있는 매물들을 하나로 합쳐
+   동그라미 안에 매물 건수만 보여줍니다.
+   건수가 많을수록 원이 커지되, 너무 커지지 않도록 제곱근으로 완만하게 늘립니다.
+   (2건 약 44px → 10건 약 56px → 30건 이상 76px에서 멈춤) */
+function clusterSize(count){
+  return Math.round(Math.min(76, 34 + Math.sqrt(count) * 7));
+}
+function clusterHtml(count){
+  const size = clusterSize(count);
+  const fontSize = Math.max(13, Math.round(size * 0.34)); // 원 크기에 맞춰 글자도 함께
+  return `<div class="cluster-dot" style="width:${size}px;height:${size}px;font-size:${fontSize}px;">${count}</div>`;
+}
+
+/* ── 클러스터 계산 ──
+   지도 라이브러리에 의존하지 않도록, 위경도를 웹 메르카토르 화면 좌표(픽셀)로
+   직접 환산한 뒤 일정 거리 안에 있는 매물끼리 묶습니다.
+   네이버 지도와 무료 지도 모두 동일한 좌표계를 쓰므로 결과가 같습니다. */
+const CLUSTER_MAX_ZOOM = 15; // 이 값보다 크게 확대하면 묶음이 모두 풀립니다
+const CLUSTER_RADIUS_PX = 80; // 화면상 이 거리 안에 있으면 한 덩어리로 봅니다
+const CADASTRAL_MIN_ZOOM = 19; // 이 이상 확대하면 지적도(토지 경계선)가 나타납니다
+const CADASTRAL_OPACITY = 0.65; // 지적도 선 진하기 (0~1)
+
+function worldPixel(lat, lng, zoom){
+  const scale = 256 * Math.pow(2, zoom);
+  const x = (lng + 180) / 360 * scale;
+  const s = Math.max(-0.9999, Math.min(0.9999, Math.sin(lat * Math.PI / 180)));
+  const y = (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * scale;
+  return { x, y };
+}
+
+/* 좌표가 같은 매물끼리 먼저 묶어 둔 목록(MARKER_GROUPS)을
+   현재 확대 수준에 맞춰 다시 한 번 덩어리로 합칩니다. */
+let MARKER_GROUPS = []; // [{ key, group }]
+
+function buildClusters(zoom){
+  const entries = MARKER_GROUPS.map(e => ({
+    ...e,
+    px: worldPixel(e.group[0].lat, e.group[0].lng, zoom),
+    used: false,
+  }));
+  const clusters = [];
+  const r2 = CLUSTER_RADIUS_PX * CLUSTER_RADIUS_PX;
+  entries.forEach(seed => {
+    if (seed.used) return;
+    seed.used = true;
+    const members = [seed];
+    entries.forEach(other => {
+      if (other.used) return;
+      const dx = other.px.x - seed.px.x, dy = other.px.y - seed.px.y;
+      if (dx * dx + dy * dy <= r2){ other.used = true; members.push(other); }
+    });
+    clusters.push(members);
+  });
+  return clusters;
+}
+
+/* 현재 확대 수준을 보고 지도 위 마커를 다시 그립니다.
+   - 많이 확대한 상태: 매물별 가격표 (기존 방식 그대로)
+   - 축소한 상태: 가까운 매물끼리 합쳐 동그라미 안에 건수만 표시
+   reopenNow가 false면 정보창은 지금 열지 않고, 지도 움직임이 끝난 뒤로 미룹니다.
+   (확대·축소 애니메이션 도중에 열면 정보창이 엉뚱한 자리에 붙습니다) */
+let pendingPopupReopen = false;
+/* 매물을 선택해서 코드가 지도를 움직이는 중인지 표시합니다.
+   이때는 "사용자가 직접 지도를 옮긴 것"으로 보지 않아 정보창을 닫지 않습니다. */
+let programmaticMove = false;
+
+function applyClustering(reopenNow = true){
+  if (!mapApi || !mapApi.getZoom) return;
+  const zoom = mapApi.getZoom();
+  mapApi.clear();
+
+  if (zoom > CLUSTER_MAX_ZOOM){
+    MARKER_GROUPS.forEach(({ key, group }) => mapApi.add(group, key));
+  } else {
+    buildClusters(zoom).forEach(members => {
+      const items = members.flatMap(m => m.group);
+      if (items.length === 1){
+        mapApi.add(members[0].group, members[0].key);
+      } else {
+        // 묶음의 중심 좌표에 배지를 놓습니다
+        const lat = items.reduce((s, i) => s + i.lat, 0) / items.length;
+        const lng = items.reduce((s, i) => s + i.lng, 0) / items.length;
+        mapApi.addCluster(items.length, lat, lng);
+      }
+    });
+  }
+
+  // 마커를 새로 만들었으므로 선택 표시와 열려 있던 정보창을 되살립니다
+  if (activeId != null){
+    mapApi.highlight(activeId);
+    if (popupGroup.length && mapApi.reopenPopup){
+      if (reopenNow) mapApi.reopenPopup();
+      else pendingPopupReopen = true;
+    }
+  }
+}
+
+/* ── 정보창(팝업) 상태 ──
+   같은 자리의 매물 그룹(popupGroup) 중 몇 번째(popupGroupIdx)를 보고 있는지,
+   그 매물의 사진 중 몇 번째(popupPhotoIdx)를 보고 있는지를 기억합니다. */
+let popupGroup = [];
+let popupGroupIdx = 0;
+let popupPhotoIdx = 0;
+
+function renderPopup(){
+  if (!mapApi || !popupGroup.length) return;
+  mapApi.setPopupContent(buildPopupHtml(popupGroup, popupGroupIdx, popupPhotoIdx));
+  if (mapApi.updateGroupMarkerIcon) mapApi.updateGroupMarkerIcon(popupGroup, popupGroupIdx);
+}
+function popupPrevItem(e){ if(e) e.stopPropagation(); popupGroupIdx = (popupGroupIdx - 1 + popupGroup.length) % popupGroup.length; popupPhotoIdx = 0; renderPopup(); }
+function popupNextItem(e){ if(e) e.stopPropagation(); popupGroupIdx = (popupGroupIdx + 1) % popupGroup.length; popupPhotoIdx = 0; renderPopup(); }
+function popupPrevPhoto(e){
+  if(e) e.stopPropagation();
+  const photos = popupGroup[popupGroupIdx]?.photos || [];
+  if (photos.length < 2) return;
+  popupPhotoIdx = (popupPhotoIdx - 1 + photos.length) % photos.length;
+  renderPopup();
+}
+function popupNextPhoto(e){
+  if(e) e.stopPropagation();
+  const photos = popupGroup[popupGroupIdx]?.photos || [];
+  if (photos.length < 2) return;
+  popupPhotoIdx = (popupPhotoIdx + 1) % photos.length;
+  renderPopup();
+}
+function popupClose(e){
+  if(e) e.stopPropagation();
+  if (mapApi && mapApi.close) mapApi.close();
+}
+/* 지도 정보창의 문자·이메일 문의 버튼도 홈페이지 아래 문의하기와 같은 방식으로
+   시트에 기록되고 알림이 가게 합니다. sms:/mailto: 이동은 그대로 진행되므로
+   여기서는 막지 않고, 뒤에서 조용히 기록만 함께 보냅니다. */
+function popupContactClick(e){
+  if(e) e.stopPropagation();
+  const item = popupGroup[popupGroupIdx];
+  if(!item) return;
+  const device = isMobileDevice() ? "모바일" : "PC";
+  if(typeof gtag === "function") gtag("event", "inquiry_send", { inquiry_type: "매물문의", device: isMobileDevice() ? "mobile" : "pc" });
+  const content = `${item.no ? item.no + " " : ""}${item.name} ${item.deal} ${item.price} 매물 보고 연락드립니다.`;
+  sendInquiryToSheet_({ label: "매물 문의" }, "", "", content, device);
+}
+function popupToggleFav(e){
+  if(e) e.stopPropagation();
+  const item = popupGroup[popupGroupIdx];
+  if (item) toggleFav(item);
+}
+
+/* ── 상세검색: 가격대 ── */
+const PRICE_BANDS = [
+  { k:"p1",  label:"1억 미만",     min:0,           max:100000000 },
+  { k:"p2",  label:"1억 ~ 3억",    min:100000000,   max:300000000 },
+  { k:"p3",  label:"3억 ~ 5억",    min:300000000,   max:500000000 },
+  { k:"p4",  label:"5억 ~ 10억",   min:500000000,   max:1000000000 },
+  { k:"p5",  label:"10억 ~ 15억",  min:1000000000,  max:1500000000 },
+  { k:"p6",  label:"15억 ~ 20억",  min:1500000000,  max:2000000000 },
+  { k:"p7",  label:"20억 ~ 30억",  min:2000000000,  max:3000000000 },
+  { k:"p8",  label:"30억 ~ 50억",  min:3000000000,  max:5000000000 },
+  { k:"p9",  label:"50억 ~ 100억", min:5000000000,  max:10000000000 },
+  { k:"p10", label:"100억 이상",   min:10000000000, max:Infinity },
+];
+
+/* "21억5,000만원" → 2150000000 */
+function priceToWon(v){
+  const t = String(v||"").replace(/[\s,원]/g,"");
+  if(!t) return 0;
+  let won = 0;
+  const eok = t.match(/([0-9.]+)억/);
+  if(eok) won += parseFloat(eok[1]) * 100000000;
+  const man = t.replace(/[0-9.]+억/,"").match(/([0-9.]+)만/);
+  if(man) won += parseFloat(man[1]) * 10000;
+  if(!eok && !man){
+    const n = parseFloat(t.replace(/[^0-9.]/g,""));
+    if(!isNaN(n)) won = n;
+  }
+  return Math.round(won);
+}
+
+function priceBandOf(item){
+  const won = priceToWon(item.price);
+  if(!won) return "";
+  const b = PRICE_BANDS.find(x => won >= x.min && won < x.max);
+  return b ? b.k : "";
+}
+
+/* ── 상세검색: 지역 ──
+   서울과 광역시는 구까지, 그 밖은 시·군까지 묶습니다.
+   예) 서울특별시 강서구 화곡동 → 서울 강서구
+       경기도 고양시 일산동구   → 경기 고양시 */
+const SIDO_SHORT_MAP = {
+  "서울특별시":"서울","서울시":"서울","서울":"서울",
+  "부산광역시":"부산","대구광역시":"대구","인천광역시":"인천","광주광역시":"광주",
+  "대전광역시":"대전","울산광역시":"울산","세종특별자치시":"세종",
+  "경기도":"경기","강원도":"강원","강원특별자치도":"강원",
+  "충청북도":"충북","충청남도":"충남","전라북도":"전북","전북특별자치도":"전북",
+  "전라남도":"전남","경상북도":"경북","경상남도":"경남",
+  "제주도":"제주","제주특별자치도":"제주",
+};
+
+/* 시·도별 시·군 이름.
+   "경기 오산 세교동"처럼 시 자를 빼고 적으셔도 알아볼 수 있게 목록으로 둡니다. */
+const SIGUN_BY_SIDO = {
+  "경기":["수원","성남","의정부","안양","부천","광명","평택","동두천","안산","고양","과천",
+        "구리","남양주","오산","시흥","군포","의왕","하남","용인","파주","이천","안성","김포",
+        "화성","광주","양주","포천","여주","연천","가평","양평"],
+  "강원":["춘천","원주","강릉","동해","태백","속초","삼척","홍천","횡성","영월","평창","정선",
+        "철원","화천","양구","인제","고성","양양"],
+  "충북":["청주","충주","제천","보은","옥천","영동","증평","진천","괴산","음성","단양"],
+  "충남":["천안","공주","보령","아산","서산","논산","계룡","당진","금산","부여","서천",
+        "청양","홍성","예산","태안"],
+  "전북":["전주","군산","익산","정읍","남원","김제","완주","진안","무주","장수","임실",
+        "순창","고창","부안"],
+  "전남":["목포","여수","순천","나주","광양","담양","곡성","구례","고흥","보성","화순","장흥",
+        "강진","해남","영암","무안","함평","영광","장성","완도","진도","신안"],
+  "경북":["포항","경주","김천","안동","구미","영주","영천","상주","문경","경산","군위","의성",
+        "청송","영양","영덕","청도","고령","성주","칠곡","예천","봉화","울진","울릉"],
+  "경남":["창원","진주","통영","사천","김해","밀양","거제","양산","의령","함안","창녕","고성",
+        "남해","하동","산청","함양","거창","합천"],
+  "제주":["제주","서귀포"],
+};
+
+function regionKeyOf(item){
+  const parts = String(item.addr||"").replace(/,/g," ").trim().split(/\s+/);
+  if(!parts.length || !parts[0]) return "";
+  const sido = SIDO_SHORT_MAP[parts[0]] ||
+    parts[0].replace(/(특별시|광역시|특별자치시|특별자치도|도)$/,"");
+  if(!parts[1]) return sido;
+
+  // 서울과 광역시는 구까지
+  if(/^(서울|부산|대구|인천|광주|대전|울산)$/.test(sido)){
+    const gu = parts.find(p => /구$/.test(p) && !/[0-9]/.test(p));
+    return gu ? sido + " " + gu : sido;
+  }
+  if(sido === "세종") return "세종";
+
+  // 1) 시·군으로 끝나는 낱말을 먼저 찾습니다
+  const si = parts.find(p => /(시|군)$/.test(p) && !/[0-9]/.test(p));
+  if(si) return sido + " " + si;
+
+  // 2) "경기 오산" 처럼 시 자를 빼고 적으신 경우, 시·군 목록에서 찾아 붙여줍니다
+  const names = SIGUN_BY_SIDO[sido];
+  if(names){
+    for(let i = 1; i < Math.min(parts.length, 4); i++){
+      const w = parts[i].replace(/[0-9\-]/g, "");
+      if(!w) continue;
+      // 긴 이름부터 맞춰봅니다 (남양주가 남양보다 먼저)
+      const hit = names.slice().sort((a,b)=>b.length-a.length)
+        .find(nm => w === nm || w.indexOf(nm) === 0);
+      if(hit){
+        // 군인지 시인지 구분합니다
+        const gunList = ["연천","가평","양평","홍천","횡성","영월","평창","정선","철원","화천",
+          "양구","인제","고성","양양","보은","옥천","영동","증평","진천","괴산","음성","단양",
+          "금산","부여","서천","청양","홍성","예산","태안","완주","진안","무주","장수","임실",
+          "순창","고창","부안","담양","곡성","구례","고흥","보성","화순","장흥","강진","해남",
+          "영암","무안","함평","영광","장성","완도","진도","신안","군위","의성","청송","영양",
+          "영덕","청도","고령","성주","칠곡","예천","봉화","울진","울릉","의령","함안","창녕",
+          "남해","하동","산청","함양","거창","합천"];
+        return sido + " " + hit + (gunList.indexOf(hit) !== -1 ? "군" : "시");
+      }
+    }
+  }
+  return sido;
+}
+
+/* 휴대폰 화면인지 판단합니다 (드래그로 정보창을 닫지 않기 위해 씁니다) */
+function isMobileView(){
+  return window.innerWidth <= 820 ||
+    (window.matchMedia && window.matchMedia("(pointer:coarse)").matches);
+}
+
+/* ── 매물별 링크 ──
+   매물번호가 있는 매물은 "주소?m=매물번호" 형태의 전용 링크를 만들 수 있습니다.
+   블로그·유튜브·문자에 이 링크를 넣으면 접속 즉시 그 매물 정보창이 열립니다.
+
+   주의: 현재 주소의 경로(pathname)를 쓰면 안 됩니다.
+   잘못된 링크(예: 도메인/RW-10383)로 들어온 상태에서 복사하면
+   그 경로가 그대로 따라붙어 링크가 중복됩니다.
+   그래서 파일명이 들어간 경우만 남기고 나머지 경로는 떼어냅니다. */
+function itemLink(item){
+  if (!item.no) return "";
+  if (location.protocol === "file:"){
+    // 파일로 직접 열어본 경우에는 예전 방식(물음표 파라미터)을 그대로 씁니다
+    return `${location.origin}${location.pathname}?m=${encodeURIComponent(item.no)}`;
+  }
+  // 검색엔진(구글·네이버)이 매물마다 다른 페이지로 인식할 수 있도록
+  // 경로형 주소(/m/매물번호)를 씁니다. 서버(Cloudflare Function)가 이 주소로
+  // 들어오면 그 매물의 제목·설명·사진으로 미리보기 정보를 채워서 응답합니다.
+  return `${location.origin}/m/${encodeURIComponent(item.no)}`;
+}
+function popupCopyLink(e){
+  if(e) e.stopPropagation();
+  const item = popupGroup[popupGroupIdx];
+  if(!item) return;
+  const url = itemLink(item);
+  if(!url) return;
+  const btn = e && e.target;
+  const done = () => {
+    if(btn){ const old = btn.textContent; btn.textContent = "링크가 복사되었습니다"; setTimeout(()=>{ btn.textContent = old; }, 1600); }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(()=>fallbackCopy(url, done));
+  } else fallbackCopy(url, done);
+}
+// 구형 브라우저(클립보드 기능 미지원) 대비
+function fallbackCopy(text, cb){
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); if(cb) cb(); } catch(err){ prompt("아래 링크를 복사하세요", text); }
+  document.body.removeChild(ta);
+}
+/* 접속 주소에 ?m=매물번호 가 있으면 그 매물을 자동으로 열어줍니다.
+
+   주의: 화면을 먼저 그리고 좌표 찾기는 뒤에서 이어가는 구조라,
+   아직 좌표를 못 구한(시트에 위도·경도가 비어 있는) 매물은
+   이 함수가 처음 불릴 때는 좌표가 없는 상태입니다.
+   그런 경우 열기를 미뤄두고, 좌표 찾기가 끝난 뒤(geocodeMissing 완료 후)
+   한 번 더 시도합니다. finalTry가 true면 그게 마지막 시도라는 뜻입니다. */
+let urlOpenDone = false;
+function openItemFromUrl(finalTry){
+  if(urlOpenDone) return;
+  const params = new URLSearchParams(location.search);
+  let raw = params.get("m");
+  if(!raw){
+    // 경로형 주소(/m/매물번호)도 함께 인식합니다
+    const pathMatch = location.pathname.match(/^\/m\/([^\/]+)\/?$/);
+    if(pathMatch) raw = decodeURIComponent(pathMatch[1]);
+  }
+  if(!raw){ urlOpenDone = true; return; }
+  // 앞뒤 공백·대소문자·하이픈 차이로 못 찾는 일이 없도록 정리해서 비교합니다
+  const norm = s => String(s||"").trim().toUpperCase().replace(/[\s\-_]/g,"");
+  const target = norm(raw);
+  const idx = LISTINGS.findIndex(it => it.no && norm(it.no) === target);
+  if(idx === -1){ urlOpenDone = true; return; }
+  const item = LISTINGS[idx];
+
+  if(item.lat == null || item.lng == null){
+    if(!finalTry) return;   // 좌표 찾기가 아직 끝나지 않았으면 다음 기회에 다시 시도합니다
+    urlOpenDone = true;
+    toast(`${item.name} 은 주소를 찾지 못해 지도에 표시할 수 없습니다. 시트의 주소를 확인해 주세요.`);
+    return;
+  }
+  urlOpenDone = true;
+
+  // 필터 때문에 목록에서 빠져 있으면 열 수 없으므로, 걸림돌이 되는 조건을 풀어줍니다
+  let need = false;
+  if(item.done && !doneOnly){ doneOnly = true; need = true; }          // 거래완료 매물
+  if(favOnly && !isFav(item)){ favOnly = false; need = true; }          // 찜만 보기 상태
+  if(currentType !== "all" && currentType !== item.type){ currentType = "all"; need = true; }
+  if(currentDeal !== "all" && currentDeal !== item.deal){ currentDeal = "all"; need = true; }
+  if(currentRegion !== "all" && currentRegion !== regionKeyOf(item)){ currentRegion = "all"; need = true; }
+  if(currentPrice !== "all" && currentPrice !== priceBandOf(item)){ currentPrice = "all"; need = true; }
+  if(need){
+    const ts = document.getElementById("typeFilter"); if(ts) ts.value = "all";
+    const ds = document.getElementById("dealFilter"); if(ds) ds.value = "all";
+    const rs = document.getElementById("regionFilter"); if(rs) rs.value = "all";
+    const ps = document.getElementById("priceFilter"); if(ps) ps.value = "all";
+    if(typeof syncMoreCount === "function") syncMoreCount();
+    render();   // 마커를 새로 그립니다
+  }
+
+  /* 마커가 있는지 확인할 필요가 없습니다.
+     지도가 축소된 상태에서는 매물이 묶음 배지로 합쳐져 개별 마커가 없고,
+     selectItem 안의 focus 가 알아서 확대하며 찾아갑니다.
+     render 로 마커를 다시 그렸을 수 있으므로, 그 작업이 끝난 뒤에 실행되도록만 미룹니다. */
+  setTimeout(() => selectItem(idx, true), need ? 500 : 300);
+}
+
+/* ── 문자 자동완성 링크 생성 ──
+   안드로이드는 sms:번호?body=, 아이폰은 sms:번호&body= 형식을 쓰기 때문에
+   기기를 구분해서 정확한 형식으로 만들어줍니다.
+   PC에는 문자 앱이 없으므로, PC에서는 이메일 링크를 대신 만들어 돌려줍니다. */
+function isMobileDevice(){
+  return /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
+}
+function smsLink(item){
+  const noPart = item.no ? `매물번호 ${item.no} ` : "";
+  const msg = `${noPart}${item.name} ${item.deal} ${item.price} 매물 보고 연락드립니다.`;
+  if (!isMobileDevice()){
+    const subject = `[매물 문의] ${item.name}`;
+    return `mailto:realwalkers@naver.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(msg)}`;
+  }
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const sep = isIOS ? "&" : "?";
+  return `sms:01042800869${sep}body=${encodeURIComponent(msg)}`;
+}
+
+/* ── 정보창 내용 빌더 ── */
+function buildPopupHtml(group, idx, photoIdx){
+  const item = group[idx];
+  const photos = (item.photos && item.photos.length) ? item.photos : (item.photo ? [item.photo] : []);
+  const multiPhoto = photos.length > 1;
+  const isGroup = group.length > 1;
+  const photoBlock = photos.length ? `
+    <div class="pop-photo-wrap">
+      <img class="pop-photo" src="${photos[photoIdx] || photos[0]}" alt="${item.name}" loading="lazy" decoding="async" onerror="this.remove()">
+      ${multiPhoto ? `
+        <button class="pop-photo-btn prev" onclick="popupPrevPhoto(event)">‹</button>
+        <button class="pop-photo-btn next" onclick="popupNextPhoto(event)">›</button>
+        <div class="pop-photo-dots">${photos.map((_,i)=>`<span class="${i===photoIdx?'on':''}"></span>`).join("")}</div>
+      ` : ""}
+    </div>` : "";
+  // 같은 자리 매물이 여러 건이면, 맨 아래 중앙에 진한 글씨로 "1/2"를 표시하고
+  // 화살표는 양옆으로 넓게 벌립니다. 사진과 겹쳐 복잡해 보이지 않도록 맨 아래 배치.
+  const groupBar = isGroup ? `
+    <div class="pop-groupbar">
+      <button class="pop-groupnav-btn prev" onclick="popupPrevItem(event)">‹</button>
+      <span class="pop-groupcount">${idx+1}/${group.length}</span>
+      <button class="pop-groupnav-btn next" onclick="popupNextItem(event)">›</button>
+    </div>` : "";
+  const noTag = item.no ? `<span class="deal" style="margin-left:auto;color:#C9A227;">No.${item.no}</span>` : "";
+  const doneTag = item.done ? `<span class="done-badge">거래완료</span>` : "";
+  // 시트에 블로그링크가 있는 매물만 상세 분석 버튼이 나옵니다
+  const blogBtn = item.blog
+    ? `<a class="blog" href="${item.blog}" target="_blank" rel="noopener">📄 블로그</a>` : "";
+  // 매물번호가 있는 매물만 전용 링크를 만들 수 있습니다
+  const copyBtn = item.no
+    ? `<button class="copy-link" onclick="popupCopyLink(event)">이 매물 링크 복사</button>` : "";
+  return `<div class="pop">
+    <button class="pop-close-btn" onclick="popupClose(event)">×</button>
+    <div class="pop-scroll">
+      ${photoBlock}
+      <div class="pop-top">
+        <span class="badge" style="background:${typeColor(item.type)}">${item.type}</span>
+        <span class="deal">${item.deal}</span>
+        ${doneTag}
+        <button class="fav-inline" onclick="popupToggleFav(event)">${isFav(item)?'♥':'♡'}</button>
+        ${noTag}
+      </div>
+      <h4>${item.addr ? `<span class="p-region" title="${item.addr}">(${shortRegion(item.addr)})</span> ` : ""}${item.name}</h4>
+      <div class="p-price">${item.done ? `${item.deal} ${maskPrice(item.price)}` : `${item.deal} ${item.price}`}</div>
+      <div class="p-meta">${item.meta}</div>
+      <div class="link-row">
+        ${blogBtn}
+        <button class="roadview-btn" onclick="openRoadview(${item.lat},${item.lng},'${item.name}')">🗺️ 거리뷰</button>
+      </div>
+      <div class="contact-row">
+        <a class="call" href="tel:023937676">전화 문의 02-393-7676</a>
+        <button class="ask-property" onclick="openAskWithProperty({id:'${item.id||item.no||''}', name:'${(item.name||'').replace(/'/g,"\\'")}', price:'${(item.price||'').replace(/'/g,"\\'")}', deal:'${(item.deal||'').replace(/'/g,"\\'")}'}); closePopup();" style="flex:1; background:#F5CC0D; color:#1B2A4A; border:none; padding:9px 12px; border-radius:8px; font-weight:700; cursor:pointer; font-size:.9rem;">📧 이 매물 문의하기</button>
+      </div>
+      ${copyBtn}
+      ${groupBar}
+    </div>
+  </div>`;
+}
+function wrapNaverPopup(html){
+  return '<div style="background:#fff;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.2);">'+html+'</div>';
+}
+
+/* ═══════════ 지도 어댑터: 네이버 지도 ═══════════ */
+function initNaverMap(onReady){
+  const s = document.createElement("script");
+  s.src = "https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=" + CONFIG.NAVER_CLIENT_ID + "&submodules=geocoder,panorama";
+  s.onload = () => {
+    const map = new naver.maps.Map("map", {
+      center: new naver.maps.LatLng(37.5490, 126.9500),
+      zoom: 14, zoomControl: true,
+    });
+    let markers = {}; // key(좌표) -> { marker, group }
+    let clusterMarkers = []; // 축소 시 표시되는 건수 배지들
+    let info = new naver.maps.InfoWindow({content:"", borderWidth:0, backgroundColor:"transparent", disableAnchor:false});
+    let openMarker = null; // 현재 정보창이 열려있는 마커
+
+    /* ── 지적도(토지 경계) 레이어 ──
+       네이버가 제공하는 지적도 레이어를 확대 수준에 따라 켜고 끕니다.
+       멀리서 보면 선이 뭉쳐 지저분해지므로 충분히 확대했을 때만 나타납니다. */
+    let cadastral = null;
+    function updateCadastral(){
+      if (!naver.maps.CadastralLayer) return; // 지적도를 쓸 수 없는 환경이면 그냥 넘어갑니다
+      const on = map.getZoom() >= CADASTRAL_MIN_ZOOM;
+      if (on && !cadastral){
+        cadastral = new naver.maps.CadastralLayer();
+        cadastral.setOpacity(CADASTRAL_OPACITY);
+        cadastral.setMap(map);
+      } else if (!on && cadastral){
+        cadastral.setMap(null);
+        cadastral = null;
+      }
+    }
+
+    function iconFor(group, picked, idx){
+      const html = group.length > 1 ? bundleTagHtml(group, picked, idx||0) : tagHtml(group[0], picked);
+      return { content: html, anchor: new naver.maps.Point(40,20) };
+    }
+    function closePopup(){
+      info.close();
+      openMarker = null;
+      popupGroup = [];
+    }
+    // 지도 빈 곳을 클릭하면 열려있던 정보창을 닫습니다.
+    naver.maps.Event.addListener(map, "click", closePopup);
+
+    /* ── 사용자가 지도를 끌어 옮기면 정보창을 닫습니다 ──
+       매물 클릭으로 지도가 저절로 움직이는 경우(morph)에는 dragstart가 발생하지 않으므로
+       영향을 받지 않습니다. 여기에 더해, 손가락이 살짝 떨려 발생하는 미세한 움직임까지
+       드래그로 보지 않도록 실제로 20픽셀 넘게 움직였을 때만 닫습니다. */
+    const DRAG_CLOSE_PX = 20;
+    let dragFrom = null;
+    naver.maps.Event.addListener(map, "dragstart", () => {
+      // 휴대폰에서는 정보창이 길어 지도를 밀어 보는 경우가 있어, 드래그로 닫지 않습니다
+      if (isMobileView()) { dragFrom = null; return; }
+      dragFrom = programmaticMove ? null : map.getCenter();
+    });
+    naver.maps.Event.addListener(map, "dragend", () => {
+      if (!dragFrom) return;
+      const z = map.getZoom(), now = map.getCenter();
+      const a = worldPixel(dragFrom.lat(), dragFrom.lng(), z);
+      const b = worldPixel(now.lat(), now.lng(), z);
+      dragFrom = null;
+      if (Math.hypot(b.x - a.x, b.y - a.y) > DRAG_CLOSE_PX) closePopup();
+    });
+
+    // 확대·축소할 때마다 묶음을 다시 계산해서 마커를 새로 그립니다.
+    // 이때 정보창은 먼저 닫아둡니다. 붙어 있던 마커가 사라지기 때문에
+    // 그대로 두면 엉뚱한 자리에 남아버립니다.
+    naver.maps.Event.addListener(map, "zoom_changed", () => {
+      info.close();
+      openMarker = null;
+      applyClustering(false); // 정보창은 아래 idle에서 다시 엽니다
+      updateCadastral();
+    });
+    // 확대·축소 애니메이션까지 완전히 끝난 뒤에 정보창을 새 마커에 다시 엽니다
+    naver.maps.Event.addListener(map, "idle", () => {
+      programmaticMove = false;
+      if (!pendingPopupReopen) return;
+      pendingPopupReopen = false;
+      mapApi.reopenPopup();
+    });
+    updateCadastral(); // 처음 켰을 때의 확대 수준도 반영
+
+    mapApi = {
+      getZoom(){ return map.getZoom(); },
+      clear(){
+        Object.values(markers).forEach(({marker})=>marker.setMap(null));
+        clusterMarkers.forEach(m=>m.setMap(null));
+        markers = {}; clusterMarkers = []; openMarker = null;
+      },
+      add(group, key){
+        const primary = group[0];
+        const mk = new naver.maps.Marker({
+          position: new naver.maps.LatLng(primary.lat, primary.lng),
+          map, icon: iconFor(group, false, 0),
+        });
+        naver.maps.Event.addListener(mk, "click", ()=>{
+          // 이미 열려있는 마커를 다시 클릭하면 닫습니다 (토글)
+          if (openMarker === mk){ closePopup(); return; }
+          selectItem(group[0].id, true);
+        });
+        markers[key] = { marker: mk, group };
+      },
+      addCluster(count, lat, lng){
+        const half = clusterSize(count) / 2; // 원의 정중앙이 좌표에 오도록
+        const mk = new naver.maps.Marker({
+          position: new naver.maps.LatLng(lat, lng),
+          map, zIndex: 50,
+          icon: { content: clusterHtml(count), anchor: new naver.maps.Point(half, half) },
+        });
+        // 배지를 누르면 그 지역으로 한 단계 더 들어갑니다
+        naver.maps.Event.addListener(mk, "click", ()=>{
+          closePopup();
+          map.morph(new naver.maps.LatLng(lat, lng), Math.min(map.getZoom() + 2, 19));
+        });
+        clusterMarkers.push(mk);
+      },
+      reopenPopup(){
+        if (!popupGroup.length) return;
+        const wanted = popupGroup[popupGroupIdx] || popupGroup[0];
+        const entry = Object.values(markers).find(e => e.group.some(g => g.id === wanted.id));
+        if (!entry){ closePopup(); return; } // 묶음 안으로 들어가 버린 경우
+        popupGroup = entry.group;
+        popupGroupIdx = Math.max(0, entry.group.findIndex(g => g.id === wanted.id));
+        info.setContent(wrapNaverPopup(buildPopupHtml(popupGroup, popupGroupIdx, popupPhotoIdx)));
+        info.open(map, entry.marker);
+        openMarker = entry.marker;
+        fitPopupIntoView_(entry.marker);
+      },
+      highlight(id){
+        Object.values(markers).forEach(({marker, group})=>{
+          const idx = group.findIndex(g=>g.id===id);
+          const picked = idx !== -1;
+          marker.setIcon(iconFor(group, picked, picked ? idx : 0));
+          marker.setZIndex(picked ? 1000 : 100); // 선택된 마커가 겹쳐도 맨 위로 오게
+        });
+      },
+      updateGroupMarkerIcon(group, idx){
+        // 정보창 안에서 화살표로 매물을 넘기면, 지도 마커도 그 매물 정보로 갱신
+        const entry = Object.values(markers).find(e => e.group === group);
+        if (entry) entry.marker.setIcon(iconFor(entry.group, true, idx));
+      },
+      focus(item, id){
+        let entry = Object.values(markers).find(e=>e.group.some(g=>g.id===id));
+        if(!entry){
+          /* 지도가 축소되어 있으면 이 매물이 묶음 배지에 합쳐져 개별 마커가 없습니다.
+             그 자리로 이동하며 묶음이 풀리는 수준까지 확대한 뒤 다시 시도합니다. */
+          if(item.lat == null || item.lng == null) return;
+          programmaticMove = true;
+          map.morph(new naver.maps.LatLng(item.lat, item.lng), CLUSTER_MAX_ZOOM + 1);
+          setTimeout(()=>{ programmaticMove = false; }, 1200);
+          const retry = naver.maps.Event.addListener(map, "idle", ()=>{
+            naver.maps.Event.removeListener(retry);
+            applyClustering();              // 확대 수준에 맞춰 마커를 다시 그립니다
+            if (Object.values(markers).some(e=>e.group.some(g=>g.id===id))) mapApi.focus(item, id);
+          });
+          setTimeout(()=>{                  // idle 이 오지 않는 경우를 대비한 안전장치
+            if (Object.values(markers).some(e=>e.group.some(g=>g.id===id))) mapApi.focus(item, id);
+          }, 1100);
+          return;
+        }
+        popupGroup = entry.group;
+        popupGroupIdx = entry.group.findIndex(g=>g.id===id);
+        popupPhotoIdx = 0;
+        const dest = new naver.maps.LatLng(item.lat, item.lng);
+        // 묶음이 모두 풀리는 수준까지는 확대해야 개별 매물 정보창을 열 수 있습니다
+        const targetZoom = Math.max(map.getZoom(), CLUSTER_MAX_ZOOM + 1);
+        let opened = false;
+        const openPopup = () => {
+          if (opened) return;
+          opened = true;
+          pendingPopupReopen = false; // 아래 idle 처리와 중복으로 열리지 않도록
+          // 확대 과정에서 마커가 다시 만들어졌을 수 있으므로 그때그때 찾아서 엽니다
+          mapApi.reopenPopup();
+        };
+        // 지도가 축소된 상태에서 클릭하면 확대 애니메이션이 끝나기 전에 정보창이 열려
+        // 위치가 깨지는 문제가 있어, 이동(idle)이 끝난 뒤에 정보창을 엽니다.
+        // 이동이 필요 없어 idle이 발생하지 않는 경우를 대비해 안전장치로 타이머도 함께 둡니다.
+        const listener = naver.maps.Event.addListener(map, "idle", () => {
+          naver.maps.Event.removeListener(listener);
+          openPopup();
+        });
+        programmaticMove = true; // 코드가 옮기는 것이므로 자동 닫힘 대상에서 제외
+        map.morph(dest, targetZoom);
+        setTimeout(()=>{ programmaticMove = false; }, 1200); // 안전장치
+        setTimeout(openPopup, 900);
+      },
+      setPopupContent(html){ info.setContent(wrapNaverPopup(html)); },
+      close(){ closePopup(); },
+      resize(){ naver.maps.Event.trigger(map, "resize"); },
+    };
+    onReady();
+  };
+  s.onerror = () => { console.warn("네이버 지도 로딩 실패 → 무료 지도로 대체합니다."); initLeafletMap(onReady); };
+  document.head.appendChild(s);
+}
+
+/* ═══════════ 지도 어댑터: 무료 지도(임시용) ═══════════ */
+function initLeafletMap(onReady){
+  const css = document.createElement("link");
+  css.rel = "stylesheet";
+  css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+  document.head.appendChild(css);
+  const s = document.createElement("script");
+  s.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+  s.onload = () => {
+    const map = L.map("map",{zoomControl:true}).setView([37.5490,126.9500],14);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+      {maxZoom:19, attribution:"&copy; OpenStreetMap &copy; CARTO"}).addTo(map);
+    let markers = {}; // key(좌표) -> { marker, group }
+    let clusterMarkers = []; // 축소 시 표시되는 건수 배지들
+    let openMarker = null; // 현재 정보창이 열려있는 마커
+
+    function iconFor(group, picked, idx){
+      const html = group.length > 1 ? bundleTagHtml(group, picked, idx||0) : tagHtml(group[0], picked);
+      return L.divIcon({className:"", html, iconSize:null, iconAnchor:[40,20]});
+    }
+    function closePopup(){
+      map.closePopup();
+      openMarker = null;
+      popupGroup = [];
+    }
+
+    /* 정보창이 화면 밖으로 나가지 않게 지도를 옮깁니다 (코드가 옮기므로 닫히지 않습니다) */
+    function fitPopupLeaflet_(marker){
+      setTimeout(() => {
+        try {
+          const el = document.querySelector(".leaflet-popup");
+          const size = map.getSize();
+          const popH = el ? el.getBoundingClientRect().height : size.y * 0.6;
+          let targetY = Math.min(size.y - 24, popH + 56);
+          if (targetY < size.y * 0.45) targetY = size.y * 0.45;
+          const pt = map.latLngToContainerPoint(marker.getLatLng());
+          const dy = pt.y - targetY;
+          if (Math.abs(dy) < 12) return;
+          const c = map.latLngToContainerPoint(map.getCenter());
+          map.panTo(map.containerPointToLatLng(L.point(c.x, c.y + dy)), {animate:true, duration:.25});
+        } catch (e) {}
+      }, 80);
+    }
+    // 빈 곳 클릭 시 닫히는 것은 Leaflet 기본 동작이라 별도 처리가 필요 없습니다.
+
+    /* ── 사용자가 지도를 끌어 옮기면 정보창을 닫습니다 ──
+       매물 클릭으로 지도가 저절로 움직이는 경우(flyTo)에는 dragstart가 발생하지 않으므로
+       영향을 받지 않습니다. 미세한 떨림은 무시하고 20픽셀 넘게 움직였을 때만 닫습니다. */
+    const DRAG_CLOSE_PX = 20;
+    let dragFrom = null;
+    map.on("dragstart", () => {
+      if (isMobileView()) { dragFrom = null; return; }   // 휴대폰에서는 드래그로 닫지 않습니다
+      dragFrom = programmaticMove ? null : map.getCenter();
+    });
+    map.on("dragend", () => {
+      if (!dragFrom) return;
+      const z = map.getZoom(), now = map.getCenter();
+      const a = worldPixel(dragFrom.lat, dragFrom.lng, z);
+      const b = worldPixel(now.lat, now.lng, z);
+      dragFrom = null;
+      if (Math.hypot(b.x - a.x, b.y - a.y) > DRAG_CLOSE_PX) closePopup();
+    });
+
+    // 확대·축소가 시작되면 정보창을 먼저 닫습니다.
+    // (붙어 있던 마커가 곧 사라지므로 그대로 두면 위치가 어긋납니다)
+    map.on("zoomstart", () => { map.closePopup(); openMarker = null; });
+    // 애니메이션이 끝난 뒤에 묶음을 다시 계산하고 정보창도 새 마커에 다시 엽니다
+    map.on("zoomend", () => applyClustering());
+    map.on("moveend", () => { programmaticMove = false; });
+
+    mapApi = {
+      getZoom(){ return map.getZoom(); },
+      clear(){
+        Object.values(markers).forEach(({marker})=>map.removeLayer(marker));
+        clusterMarkers.forEach(m=>map.removeLayer(m));
+        markers = {}; clusterMarkers = []; openMarker = null;
+      },
+      add(group, key){
+        const primary = group[0];
+        const mk = L.marker([primary.lat,primary.lng], {icon: iconFor(group,false,0)}).addTo(map);
+        mk.bindPopup("", {closeButton:false, minWidth:230, maxWidth:280});
+        mk.on("click", ()=>{
+          // 이미 열려있는 마커를 다시 클릭하면 닫습니다 (토글)
+          if (openMarker === mk){ closePopup(); return; }
+          selectItem(group[0].id, true);
+        });
+        markers[key] = { marker: mk, group };
+      },
+      addCluster(count, lat, lng){
+        const half = clusterSize(count) / 2; // 원의 정중앙이 좌표에 오도록
+        const mk = L.marker([lat,lng], {
+          icon: L.divIcon({className:"", html: clusterHtml(count), iconSize:null, iconAnchor:[half,half]}),
+          zIndexOffset: -100,
+        }).addTo(map);
+        // 배지를 누르면 그 지역으로 한 단계 더 들어갑니다
+        mk.on("click", ()=>{
+          closePopup();
+          map.flyTo([lat,lng], Math.min(map.getZoom() + 2, 19), {duration:.6});
+        });
+        clusterMarkers.push(mk);
+      },
+      reopenPopup(){
+        if (!popupGroup.length) return;
+        const wanted = popupGroup[popupGroupIdx] || popupGroup[0];
+        const entry = Object.values(markers).find(e => e.group.some(g => g.id === wanted.id));
+        if (!entry){ closePopup(); return; } // 묶음 안으로 들어가 버린 경우
+        popupGroup = entry.group;
+        popupGroupIdx = Math.max(0, entry.group.findIndex(g => g.id === wanted.id));
+        entry.marker.setPopupContent(buildPopupHtml(popupGroup, popupGroupIdx, popupPhotoIdx));
+        entry.marker.openPopup();
+        openMarker = entry.marker;
+        fitPopupLeaflet_(entry.marker);
+      },
+      highlight(id){
+        Object.values(markers).forEach(({marker, group})=>{
+          const idx = group.findIndex(g=>g.id===id);
+          const picked = idx !== -1;
+          marker.setIcon(iconFor(group, picked, picked ? idx : 0));
+          marker.setZIndexOffset(picked ? 1000 : 0); // 선택된 마커가 겹쳐도 맨 위로 오게
+        });
+      },
+      updateGroupMarkerIcon(group, idx){
+        // 정보창 안에서 화살표로 매물을 넘기면, 지도 마커도 그 매물 정보로 갱신
+        const entry = Object.values(markers).find(e => e.group === group);
+        if (entry) entry.marker.setIcon(iconFor(entry.group, true, idx));
+      },
+      focus(item, id){
+        let entry = Object.values(markers).find(e=>e.group.some(g=>g.id===id));
+        if(!entry){
+          // 묶음 배지에 합쳐져 있으면 확대해서 풀고 다시 시도합니다
+          if(item.lat == null || item.lng == null) return;
+          programmaticMove = true;
+          map.flyTo([item.lat, item.lng], CLUSTER_MAX_ZOOM + 1, {duration:.5});
+          setTimeout(()=>{ programmaticMove = false; }, 1200);
+          map.once("moveend", ()=>{
+            applyClustering();
+            if (Object.values(markers).some(e=>e.group.some(g=>g.id===id))) mapApi.focus(item, id);
+          });
+          setTimeout(()=>{
+            if (Object.values(markers).some(e=>e.group.some(g=>g.id===id))) mapApi.focus(item, id);
+          }, 1100);
+          return;
+        }
+        popupGroup = entry.group;
+        popupGroupIdx = entry.group.findIndex(g=>g.id===id);
+        popupPhotoIdx = 0;
+        let opened = false;
+        const openPopup = () => {
+          if (opened) return;
+          opened = true;
+          // 확대 과정에서 마커가 다시 만들어졌을 수 있으므로 그때그때 찾아서 엽니다
+          mapApi.reopenPopup();
+        };
+        map.once("moveend", openPopup);
+        // 묶음이 모두 풀리는 수준까지는 확대해야 개별 매물 정보창을 열 수 있습니다
+        programmaticMove = true; // 코드가 옮기는 것이므로 자동 닫힘 대상에서 제외
+        map.flyTo([item.lat,item.lng], Math.max(map.getZoom(), CLUSTER_MAX_ZOOM + 1), {duration:.6});
+        setTimeout(()=>{ programmaticMove = false; }, 1200); // 안전장치
+        setTimeout(openPopup, 900);
+      },
+      setPopupContent(html){
+        const entry = Object.values(markers).find(e => e.group === popupGroup);
+        if (entry) entry.marker.setPopupContent(html);
+      },
+      close(){ closePopup(); },
+      resize(){ map.invalidateSize(); },
+    };
+    onReady();
+  };
+  document.head.appendChild(s);
+}
+
+/* ── 목록/마커 렌더링 ── */
+function render(){
+  mapApi.clear();
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  const shown = LISTINGS.map((it,i)=>({...it,id:i}))
+                        .filter(it=>it.lat!=null&&it.lng!=null)
+                        // 거래완료 매물은 기본으로 숨기고, ✓ 버튼을 켜면 완료 매물만 보여줍니다
+                        .filter(it=>doneOnly ? it.done : !it.done)
+                        .filter(it=>(currentType==="all"||it.type===currentType)
+                                  &&(currentDeal==="all"||it.deal===currentDeal))
+                        // 상세검색 조건
+                        .filter(it=>currentRegion==="all" || regionKeyOf(it)===currentRegion)
+                        .filter(it=>currentPrice==="all" || priceBandOf(it)===currentPrice)
+                        .filter(it=>!favOnly || isFav(it));
+  if(!shown.length){
+    list.innerHTML = favOnly
+      ? '<div class="notice">아직 찜한 매물이 없습니다.<br>하트를 눌러 매물을 찜해보세요.</div>'
+      : doneOnly
+        ? '<div class="notice">거래완료된 매물이 없습니다.</div>'
+        : (currentRegion!=="all" || currentPrice!=="all")
+          ? '<div class="notice">해당 조건의 매물이 없습니다.<br>상세검색에서 조건을 넓혀 보세요.</div>'
+          : '<div class="notice">해당 조건의 매물이 없습니다.<br>다른 유형을 선택해 보세요.</div>';
+  }
+
+  // 같은 좌표(같은 주소)의 매물은 지도 위에 마커 하나로 묶습니다 (필터링된 결과 기준)
+  const groups = {};
+  shown.forEach(it=>{
+    const key = it.lat.toFixed(5)+","+it.lng.toFixed(5);
+    (groups[key] = groups[key] || []).push(it);
+  });
+  // 실제로 지도에 그리는 일은 applyClustering이 맡습니다.
+  // (확대 수준에 따라 개별 가격표 / 건수 배지 중 하나로 그려집니다)
+  MARKER_GROUPS = Object.entries(groups).map(([key, group]) => ({ key, group }));
+  applyClustering();
+
+  shown.forEach(it=>{
+    const card = document.createElement("div");
+    card.className = "card"+(it.id===activeId?" active":"")+(it.done?" is-done":"");
+    card.id = "card-"+it.id;
+    card.innerHTML = `
+      ${it.photo?`<img class="card-photo" src="${it.photo}" alt="${it.name}" loading="lazy" decoding="async" onerror="this.remove()">`:""}
+      <div class="top"><span class="badge" style="background:${typeColor(it.type)}">${it.type}</span><span class="deal">${it.deal}</span>${it.done?'<span class="done-badge">거래완료</span>':''}<button class="fav-inline" onclick="cardToggleFav(${it.id},event)">${isFav(it)?'♥':'♡'}</button>${it.no?`<span class="deal" style="margin-left:auto;color:#C9A227;">No.${it.no}</span>`:""}</div>
+      <h3>${it.name}</h3>
+      <div class="price">${it.done ? `${it.deal} ${maskPrice(it.price)}` : `${it.deal} ${it.price}`}</div>
+      <div class="meta">${it.meta}</div>`;
+    card.onclick = ()=>selectItem(it.id,true);
+    list.appendChild(card);
+  });
+  // 지금 어떤 목록을 보고 있는지 문장으로 명확히 알려줍니다
+  const countMsg = document.getElementById("countMsg");
+  if(countMsg){
+    if(doneOnly)      countMsg.innerHTML = `<b>거래완료</b>된 매물 <b>${shown.length}</b>건입니다`;
+    else if(favOnly)  countMsg.innerHTML = `<b>찜한</b> 매물 <b>${shown.length}</b>건입니다`;
+    else              countMsg.innerHTML = `현재 <b>${shown.length}</b>건의 매물이 표시되고 있습니다`;
+  }
+  const favBtn = document.getElementById("favToggle");
+  if(favBtn){
+    favBtn.classList.toggle("on", favOnly);
+    favBtn.textContent = favorites.size ? `${favOnly?'♥':'♡'} 찜 ${favorites.size}` : `${favOnly?'♥':'♡'} 찜`;
+  }
+  const doneBtn = document.getElementById("doneToggle");
+  if(doneBtn){
+    doneBtn.classList.toggle("on", doneOnly);
+    const doneCount = LISTINGS.filter(it=>it.done).length;
+    doneBtn.textContent = doneCount ? `✓ 완료 ${doneCount}` : "✓ 완료";
+  }
+}
+function cardToggleFav(id, e){
+  if(e) e.stopPropagation();
+  const item = LISTINGS[id];
+  if(item) toggleFav(item);
+}
+
+function selectItem(id, panTo){
+  activeId = id;
+  const item = LISTINGS[id];
+  document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+  const card = document.getElementById("card-"+id);
+  if(card){ card.classList.add("active"); card.scrollIntoView({behavior:"smooth",block:"nearest"}); }
+  mapApi.highlight(id);
+
+  // 방문객이 어떤 매물을 눌러보는지 집계합니다 (개인정보는 담지 않습니다)
+  if(panTo && typeof gtag === "function"){
+    gtag("event", "select_listing", {
+      listing_no: item.no || "", listing_type: item.type || "",
+      listing_deal: item.deal || "", listing_region: shortRegion(item.addr || ""),
+    });
+  }
+
+  // 좌표가 없으면 지도에서 찾아갈 수 없습니다.
+  // 조용히 아무 일도 일어나지 않으면 원인을 알 수 없으므로 알려드립니다.
+  if(panTo && (item.lat == null || item.lng == null)){
+    toast(`${item.name} 은 주소를 찾지 못해 지도에 표시할 수 없습니다. 시트의 주소를 확인해 주세요.`);
+    return;
+  }
+  if(panTo) mapApi.focus(item, id);
+  else if(mapApi.hasItem && !mapApi.hasItem(id)) mapApi.focus(item, id); // 묶음 안에 있으면 풀어서 보여줍니다
+  // 모바일에서 목록의 매물을 누르면 지도 화면으로 자동 전환
+  if(panTo && window.innerWidth <= 820) showMapView();
+}
+
+/* 화면 아래에 잠깐 뜨는 안내 문구 */
+function toast(msg){
+  const old = document.getElementById("rwToast");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "rwToast";
+  el.textContent = msg;
+  el.style.cssText = "position:fixed;left:50%;bottom:78px;transform:translateX(-50%);z-index:9999;" +
+    "background:rgba(27,42,74,.94);color:#fff;padding:11px 16px;border-radius:8px;" +
+    "font-size:.88rem;line-height:1.45;max-width:88vw;text-align:center;" +
+    "box-shadow:0 4px 16px rgba(0,0,0,.28);font-family:'Malgun Gothic','맑은 고딕',sans-serif;";
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 4200);
+}
+
+/* ── 모바일 지도/목록 탭 전환 ── */
+const tabList = document.getElementById("tabList");
+const tabMap = document.getElementById("tabMap");
+function showListView(){
+  document.body.classList.remove("show-map");
+  tabList.classList.add("active");
+  tabMap.classList.remove("active");
+  hideAboutIfOpen();
+}
+function showMapView(){
+  document.body.classList.add("show-map");
+  tabMap.classList.add("active");
+  tabList.classList.remove("active");
+  hideAboutIfOpen();
+  // 지도가 숨겨진 상태에서 로드되면 크기 계산이 틀어질 수 있어, 탭을 눌러 보이는 순간 다시 계산합니다.
+  setTimeout(()=>{ if(mapApi && mapApi.resize) mapApi.resize(); }, 80);
+}
+// 소개 패널이 열린 상태에서 목록/지도 탭을 누르면 소개를 닫아줍니다
+function hideAboutIfOpen(){
+  const ov = document.getElementById("aboutOverlay");
+  const tb = document.getElementById("tabAbout");
+  if(ov) ov.classList.remove("open");
+  if(tb) tb.classList.remove("active");
+}
+tabList.onclick = showListView;
+tabMap.onclick = showMapView;
+
+/* ── 사무소 소개 패널 ──
+   PC는 헤더의 '사무소 소개' 버튼으로, 모바일은 상단 'ℹ️ 소개' 탭으로 엽니다. */
+const aboutOverlay = document.getElementById("aboutOverlay");
+const tabAbout = document.getElementById("tabAbout");
+function openAbout(){
+  buildAboutFields();
+  aboutOverlay.classList.add("open");
+  // 모바일에서 소개 탭으로 들어온 경우 탭 표시도 소개로 옮깁니다
+  tabAbout.classList.add("active");
+  tabList.classList.remove("active");
+  tabMap.classList.remove("active");
+}
+function closeAbout(){
+  aboutOverlay.classList.remove("open");
+  // 소개를 닫으면 원래 보고 있던 화면(지도/목록)의 탭 표시로 되돌립니다
+  tabAbout.classList.remove("active");
+  if(document.body.classList.contains("show-map")) tabMap.classList.add("active");
+  else tabList.classList.add("active");
+}
+document.getElementById("aboutOpen").onclick = openAbout;
+tabAbout.onclick = openAbout;
+document.getElementById("aboutClose").onclick = closeAbout;
+// 바깥 어두운 영역을 클릭해도 닫히게
+aboutOverlay.onclick = (e)=>{ if(e.target === aboutOverlay) closeAbout(); };
+// ESC 키로도 닫기
+document.addEventListener("keydown", (e)=>{
+  if(e.key === "Escape" && aboutOverlay.classList.contains("open")) closeAbout();
+});
+
+/* ── 거리뷰 모달 열기/닫기 ── */
+let currentRoadview = null;
+function openRoadview(lat, lng, name){
+  const modal = document.getElementById("roadviewModal");
+  const container = document.getElementById("roadviewContainer");
+  const title = document.getElementById("roadviewTitle");
+  
+  title.textContent = `${name} - 거리뷰`;
+  container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-size:1rem;">로드뷰를 불러오는 중입니다...</div>';
+  modal.style.display = "flex";
+  
+  // 약간의 지연 후 로드뷰 초기화
+  setTimeout(() => {
+    initRoadview(lat, lng, container);
+  }, 150);
+}
+
+function initRoadview(lat, lng, container){
+  try {
+    // 기존 로드뷰 정리
+    if (currentRoadview) {
+      currentRoadview = null;
+    }
+    
+    container.innerHTML = "";
+    
+    // naver.maps.Panorama 존재 확인 (네이버 API의 정식 거리뷰 클래스명)
+    if (typeof naver === 'undefined' || !naver.maps || !naver.maps.Panorama) {
+      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-size:0.9rem;">거리뷰 모듈을 로드 중입니다...</div>';
+      
+      const script = document.createElement('script');
+      script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${CONFIG.NAVER_CLIENT_ID}&submodules=panorama`;
+      script.onload = () => {
+        setTimeout(() => {
+          try {
+            container.innerHTML = "";
+            currentRoadview = new naver.maps.Panorama(container, {
+              position: new naver.maps.LatLng(lat, lng),
+              pov: { pan: 0, tilt: 0, fov: 100 }
+            });
+            checkPanoramaLoaded(container);
+          } catch(e) {
+            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-size:0.9rem;">이 지역의 거리뷰를 불러올 수 없습니다.</div>';
+            console.error('거리뷰 생성 오류:', e);
+          }
+        }, 300);
+      };
+      document.head.appendChild(script);
+      return;
+    }
+    
+    // naver.maps.Panorama가 이미 있으면 바로 생성
+    currentRoadview = new naver.maps.Panorama(container, {
+      position: new naver.maps.LatLng(lat, lng),
+      pov: { pan: 0, tilt: 0, fov: 100 }
+    });
+    checkPanoramaLoaded(container);
+    
+  } catch(e) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-size:0.9rem;">이 지역의 거리뷰를 불러올 수 없습니다.</div>';
+    console.error('거리뷰 초기화 오류:', e);
+  }
+}
+
+// 해당 위치에 실제 거리뷰 데이터가 있는지 확인 (없으면 안내 문구로 교체)
+function checkPanoramaLoaded(container){
+  if (!currentRoadview) return;
+  naver.maps.Event.addListener(currentRoadview, 'pano_changed', function(){
+    const loc = currentRoadview.getLocation && currentRoadview.getLocation();
+    if (!loc || !loc.panoId) {
+      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-size:0.9rem;">이 지역은 거리뷰를 제공하지 않습니다.</div>';
+    }
+  });
+}
+
+function closeRoadview(){
+  const modal = document.getElementById("roadviewModal");
+  modal.style.display = "none";
+  if (currentRoadview) {
+    currentRoadview = null;
+  }
+}
+
+// 모달 배경 클릭으로 닫기
+document.getElementById("roadviewModal")?.addEventListener("click", (e)=>{
+  if(e.target.id === "roadviewModal") closeRoadview();
+});
+
+// ESC 키로 닫기
+document.addEventListener("keydown", (e)=>{
+  if(e.key === "Escape" && document.getElementById("roadviewModal").style.display === "flex") closeRoadview();
+});
+
+/* ── 문의하기 패널 열기/닫기 ── */
+const askOverlay = document.getElementById("askOverlay");
+let askMode = "general"; // "general" 또는 "property"
+
+function openAsk(){
+  askMode = "general";
+  resetAskForm_();
+  buildAskTypes();
+  buildAskFields();
+  document.getElementById("askError").style.display = "none";
+  document.getElementById("askListingInfo").style.display = "none";
+  updateAskDeviceText_();
+  askOverlay.classList.add("open");
+  // 이름 필드로 자동 포커스
+  setTimeout(() => document.getElementById("askName").focus(), 100);
+  if(typeof gtag === "function") gtag("event", "inquiry_open");
+}
+
+/* 매물별로 문의 창을 열면서 매물 정보를 미리 표시하고 저장합니다 */
+function openAskWithProperty(item){
+  askMode = "property";
+  resetAskForm_();
+  document.getElementById("askError").style.display = "none";
+  // 매물별 모드에서는 문의유형 선택과 추가필드 숨김
+  document.getElementById("askTypeGrid").style.display = "none";
+  document.getElementById("askFields").style.display = "none";
+  updateAskDeviceText_();
+  askOverlay.classList.add("open");
+
+  // 매물정보 저장 (문의 내용에 자동 포함됩니다)
+  if(item){
+    if(item.id) document.getElementById("askListingNum").value = item.id;
+    if(item.name) document.getElementById("askListingName").value = item.name;
+    if(item.price) document.getElementById("askListingPrice").value = item.price;
+    if(item.deal) document.getElementById("askListingDeal").value = item.deal;
+
+    // 고객에게 선택한 매물을 보여줍니다
+    const listingInfo = document.getElementById("askListingInfo");
+    if(listingInfo && item.name){
+      listingInfo.style.display = "block";
+      document.getElementById("askListingInfoName").textContent = item.name;
+      document.getElementById("askListingInfoDeal").textContent = item.deal || "";
+      document.getElementById("askListingInfoPrice").textContent = item.price || "";
+    }
+  }
+
+  // 이름 필드로 자동 포커스
+  setTimeout(() => document.getElementById("askName").focus(), 100);
+  if(typeof gtag === "function") gtag("event", "inquiry_open_property");
+}
+
+/* 문의 양식을 초기 상태로 리셋합니다 */
+function resetAskForm_(){
+  const askForm = document.getElementById("askForm");
+  const successMsg = document.getElementById("askSuccess");
+  const listingInfo = document.getElementById("askListingInfo");
+  const typeGrid = document.getElementById("askTypeGrid");
+  const fields = document.getElementById("askFields");
+  const nameField = document.getElementById("askName");
+  const phoneField = document.getElementById("askPhone");
+
+  askForm.style.display = "block";
+  if(successMsg) successMsg.style.display = "none";
+
+  // 모드에 따라 표시/숨김 설정
+  if(askMode === "property"){
+    if(listingInfo) listingInfo.style.display = "block";
+    if(typeGrid) typeGrid.style.display = "none";
+    if(fields) fields.style.display = "none";
+  } else {
+    if(listingInfo) listingInfo.style.display = "none";
+    if(typeGrid) typeGrid.style.display = "block";
+    if(fields) fields.style.display = "block";
+  }
+
+  nameField.value = "";
+  phoneField.value = "";
+  document.getElementById("askListingNum").value = "";
+  document.getElementById("askListingName").value = "";
+  document.getElementById("askListingPrice").value = "";
+  document.getElementById("askListingDeal").value = "";
+}
+
+/* 기기에 따라 버튼 글자와 안내 문구를 바꿔줍니다.
+   모바일 : 문자 앱으로 열림
+   PC     : 배경에서 조용히 접수 후 완료 메시지 표시 */
+function updateAskDeviceText_(){
+  const btn = document.getElementById("askSend");
+  const note = document.getElementById("askNote");
+  if(isMobileDevice()){
+    btn.textContent = "문자로 문의 보내기";
+    note.innerHTML = `보내기를 누르면 <b>문자 앱이 열리면서 작성 내용이 자동으로 입력</b>됩니다.
+        내용을 확인하신 뒤 전송 버튼을 눌러주세요.<br>
+        접수된 문의는 영업시간 내 순차적으로 연락드립니다.`;
+  } else {
+    btn.textContent = "문의 보내기";
+    note.innerHTML = `보내기를 누르면 <b>배경에서 조용히 문의가 접수</b>됩니다.
+        별도의 창이 열리지 않으며, 접수 완료 후 알림이 표시됩니다.<br>
+        접수된 문의는 영업시간 내 순차적으로 연락드립니다.`;
+  }
+}
+
+/* 문의 완료 메시지를 띄웁니다 */
+function showAskSuccessMessage_(){
+  const askForm = document.getElementById("askForm");
+  const successMsg = document.getElementById("askSuccess");
+
+  if(successMsg){
+    askForm.style.display = "none";
+    successMsg.style.display = "block";
+
+    // 2.5초 후 문의 창을 닫습니다
+    setTimeout(() => {
+      closeAsk();
+    }, 2500);
+  } else {
+    // fallback: 즉시 창을 닫습니다
+    closeAsk();
+  }
+}
+function closeAsk(){ askOverlay.classList.remove("open"); }
+document.getElementById("askOpen").onclick = openAsk;
+document.getElementById("askClose").onclick = closeAsk;
+document.getElementById("askSend").onclick = askSend;
+// 소개 패널 안의 '문의 남기기' 링크 → 소개를 닫고 문의 양식을 엽니다
+document.getElementById("aboutToAsk").onclick = (e)=>{
+  e.preventDefault();
+  closeAbout();
+  openAsk();
+};
+askOverlay.onclick = (e)=>{ if(e.target === askOverlay) closeAsk(); };
+document.addEventListener("keydown", (e)=>{
+  if(e.key === "Escape" && askOverlay.classList.contains("open")) closeAsk();
+});
+
+/* 취급 분야를 실제 보유 매물 기준으로 많은 순서대로 자동 정렬해 표시합니다.
+   (시트 내용이 바뀌면 순서와 건수도 자동으로 갱신됩니다) */
+function buildAboutFields(){
+  const box = document.getElementById("aboutFields");
+  if(!box) return;
+  const counts = {};
+  LISTINGS.forEach(it=>{
+    if(!it.type) return;
+    counts[it.type] = (counts[it.type] || 0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if(!sorted.length){
+    box.innerHTML = '<p style="color:#7A8299;font-size:.88rem;">등록된 매물이 없습니다.</p>';
+    return;
+  }
+  const max = sorted[0][1];
+  box.innerHTML = sorted.map(([type,cnt])=>`
+    <div class="field-row">
+      <span class="fname">${type}</span>
+      <span class="field-bar"><span style="width:${Math.round(cnt/max*100)}%;background:${typeColor(type)}"></span></span>
+      <span class="fcnt">${cnt}건</span>
+    </div>`).join("");
+}
+
+/* ══════════════════════════════════════════════
+   문의하기 양식
+   문의 유형에 따라 필요한 입력 항목이 자동으로 바뀝니다.
+   작성 내용은 문자 앱에 자동 입력되어 전송됩니다.
+   ══════════════════════════════════════════════ */
+const ASK_TYPES = [
+  {
+    key: "매수", label: "매수 문의", desc: "물건을 찾습니다",
+    fields: [
+      {id:"area",  label:"희망 지역",       ph:"예) 마포구 아현동, 공덕역 주변"},
+      {id:"kind",  label:"희망 물건 유형",  ph:"예) 아파트 30평대 / 1층 상가"},
+      {id:"budget",label:"예산",            ph:"예) 10억 이내 / 대출 포함 12억"},
+      {id:"when",  label:"희망 시기",       ph:"예) 3개월 내 / 급하지 않음"},
+      {id:"etc",   label:"추가 요청사항",   ph:"학군, 향, 층수, 주차 등 원하시는 조건을 적어주세요", area:true},
+    ]
+  },
+  {
+    key: "매도", label: "매도 문의", desc: "물건을 팔고 싶습니다",
+    fields: [
+      {id:"addr",  label:"물건 소재지",     ph:"예) 서울 마포구 아현동 ○○아파트 101동"},
+      {id:"kind",  label:"물건 유형",       ph:"예) 아파트 / 상가 / 건물 / 토지"},
+      {id:"size",  label:"면적",            ph:"예) 전용 84㎡ / 대지 200평"},
+      {id:"price", label:"희망 가격",       ph:"예) 12억 / 시세대로 상담 희망"},
+      {id:"telco", label:"통신사",          select:["SKT","KT","LG U+","알뜰폰"]},
+      {id:"etc",   label:"특이사항",        ph:"임차 현황, 대출 여부, 명도 가능 시기 등", area:true},
+      {id:"noad",  label:"공개 광고를 원하지 않습니다",
+                   check:true, checkHint:"체크하시면 포털·홈페이지 등에 공개 노출하지 않고 비공개로 진행합니다."},
+    ]
+  },
+  {
+    key: "임대차", label: "임대차 문의", desc: "전월세를 찾습니다",
+    fields: [
+      {id:"area",  label:"희망 지역",       ph:"예) 신촌·대흥동 일대"},
+      {id:"kind",  label:"희망 물건 유형",  ph:"예) 투룸 / 사무실 / 1층 상가"},
+      {id:"budget",label:"보증금 · 월세 예산", ph:"예) 보증금 3,000 / 월 120 이내"},
+      {id:"when",  label:"입주 희망 시기",  ph:"예) 다음 달 초"},
+      {id:"etc",   label:"추가 요청사항",   ph:"업종, 주차, 엘리베이터 등 필요한 조건", area:true},
+    ]
+  },
+  {
+    key: "사업제휴", label: "사업제휴 문의", desc: "제안이 있습니다",
+    fields: [
+      {id:"org",   label:"회사명 · 소속",   ph:"예) ○○건설 / 개인"},
+      {id:"field", label:"제휴 분야",       ph:"예) 시행·분양 / 인테리어 / 금융"},
+      {id:"detail",label:"제안 내용",       ph:"제안하시는 내용을 구체적으로 적어주세요", area:true},
+    ]
+  },
+];
+let askTypeIdx = 0;
+
+function buildAskTypes(){
+  const grid = document.getElementById("askTypeGrid");
+  grid.innerHTML = ASK_TYPES.map((t,i)=>`
+    <button class="ask-type${i===askTypeIdx?' on':''}" data-i="${i}">
+      ${t.label}<small>${t.desc}</small>
+    </button>`).join("");
+  grid.querySelectorAll(".ask-type").forEach(b=>{
+    b.onclick = ()=>{
+      askTypeIdx = Number(b.dataset.i);
+      buildAskTypes();
+      buildAskFields();
+    };
+  });
+}
+function buildAskFields(){
+  const box = document.getElementById("askFields");
+  const t = ASK_TYPES[askTypeIdx];
+  box.innerHTML = t.fields.map(f=>{
+    // 체크박스형 항목 (예: 공개 광고를 원하지 않습니다)
+    if(f.check){
+      return `
+      <div class="ask-field ask-check-wrap">
+        <label class="ask-check" for="ask_${f.id}">
+          <input type="checkbox" id="ask_${f.id}">
+          <span>${f.label}</span>
+        </label>
+        ${f.checkHint ? `<div class="ask-hint">${f.checkHint}</div>` : ""}
+      </div>`;
+    }
+    // 드롭다운형 항목 (예: 통신사)
+    if(f.select){
+      return `
+      <div class="ask-field">
+        <label for="ask_${f.id}">${f.label}</label>
+        <select id="ask_${f.id}">
+          <option value="">선택해 주세요</option>
+          ${f.select.map(o=>`<option value="${o}">${o}</option>`).join("")}
+        </select>
+      </div>`;
+    }
+    // 일반 입력형 / 여러 줄 입력형
+    return `
+      <div class="ask-field">
+        <label for="ask_${f.id}">${f.label}</label>
+        ${f.area
+          ? `<textarea id="ask_${f.id}" placeholder="${f.ph}"></textarea>`
+          : `<input type="text" id="ask_${f.id}" placeholder="${f.ph}">`}
+      </div>`;
+  }).join("");
+}
+function askSend(){
+  const err = document.getElementById("askError");
+  const name = document.getElementById("askName").value.trim();
+  const phone = document.getElementById("askPhone").value.trim();
+
+  // 성명·연락처는 반드시 있어야 회신이 가능합니다
+  if(!name || !phone){
+    err.textContent = "성명과 연락처를 입력해 주세요.";
+    err.style.display = "block";
+    (!name ? document.getElementById("askName") : document.getElementById("askPhone")).focus();
+    return;
+  }
+  err.style.display = "none";
+
+  // 매물별 문의인 경우 기본 문의유형 설정
+  const t = askMode === "property"
+    ? ASK_TYPES.find(x => x.key === "listing") || ASK_TYPES[0]
+    : ASK_TYPES[askTypeIdx];
+
+  let lines = [`[${t.label}]`, `성명: ${name}`, `연락처: ${phone}`];
+
+  // 매물별 문의인 경우 매물정보 추가
+  const listingName = document.getElementById("askListingName").value.trim();
+  const listingPrice = document.getElementById("askListingPrice").value.trim();
+  const listingDeal = document.getElementById("askListingDeal").value.trim();
+  if(listingName){
+    lines.push(`---`);
+    lines.push(`매물: ${listingName}`);
+    if(listingDeal) lines.push(`거래: ${listingDeal}`);
+    if(listingPrice) lines.push(`가격: ${listingPrice}`);
+    lines.push(`---`);
+  }
+
+  t.fields.forEach(f=>{
+    const el = document.getElementById("ask_"+f.id);
+    if(!el) return;
+    if(f.check){
+      // 체크한 경우에만 문의 내용에 포함합니다
+      if(el.checked) lines.push(`※ ${f.label}`);
+      return;
+    }
+    const v = el.value.trim();
+    if(v) lines.push(`${f.label}: ${v}`);
+  });
+  const msg = lines.join("\n");
+
+  const isMobile = /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  // 문의가 실제로 전송 시도된 시점을 집계합니다 (문의 유형만 남기고, 성명·연락처·내용은 담지 않습니다)
+  if(typeof gtag === "function") gtag("event", "inquiry_send", { inquiry_type: t.key, device: isMobile ? "mobile" : "pc" });
+
+  // 뒤에서 조용히 시트에 기록하고 회원님께 알림을 보냅니다.
+  // 방문자 화면의 문자·이메일 앱이 여닫히는 것과는 별개로 진행되며,
+  // 이 요청이 늦거나 실패해도 방문자의 문의 전송 자체는 항상 진행됩니다.
+  sendInquiryToSheet_(t, name, phone, msg, isMobile ? "모바일" : "PC");
+
+  if(isMobile){
+    // 휴대폰에서는 지금처럼 문자 앱을 엽니다
+    const sep = isIOS ? "&" : "?";
+    location.href = `sms:01042800869${sep}body=${encodeURIComponent(msg)}`;
+  } else {
+    // PC에서는 우리 문의 양식 안에서 조용히 완료처리합니다
+    // 이미 sendInquiryToSheet_에서 INQUIRY_ENDPOINT로 전송되었습니다
+    showAskSuccessMessage_();
+  }
+}
+
+
+/* PC용 — 구글 폼 주소에 방문자가 적은 내용을 미리 채워 넣습니다.
+   INQUIRY_FORM.ACTION이 비어 있으면(아직 폼 연결 전이면) null을 돌려줘서
+   호출한 쪽에서 이메일 앱으로 대신 열리게 합니다. */
+function buildInquiryFormUrl_(t, name, phone, content){
+  if(!INQUIRY_FORM.ACTION) return null;
+  const params = new URLSearchParams();
+  params.set("usp", "pp_url");
+  if(INQUIRY_FORM.ENTRY_TYPE)    params.set(INQUIRY_FORM.ENTRY_TYPE, t.label);
+  if(INQUIRY_FORM.ENTRY_NAME)    params.set(INQUIRY_FORM.ENTRY_NAME, name);
+  if(INQUIRY_FORM.ENTRY_PHONE)   params.set(INQUIRY_FORM.ENTRY_PHONE, phone);
+  if(INQUIRY_FORM.ENTRY_CONTENT) params.set(INQUIRY_FORM.ENTRY_CONTENT, content);
+  if(INQUIRY_FORM.ENTRY_DEVICE)  params.set(INQUIRY_FORM.ENTRY_DEVICE, "PC");
+  return `${INQUIRY_FORM.ACTION}?${params.toString()}`;
+}
+
+/* 문의 내용을 구글 시트로 조용히 전달합니다.
+   INQUIRY_ENDPOINT 가 비어 있으면(아직 연결 전이면) 아무 일도 하지 않고 넘어갑니다.
+   방문자의 문자·이메일 전송을 절대 막지 않도록, 실패해도 오류를 화면에 띄우지 않습니다. */
+function sendInquiryToSheet_(t, name, phone, content, device){
+  if(!INQUIRY_ENDPOINT) return;
+  try{
+    fetch(INQUIRY_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",   // 응답 내용은 필요 없고, 전송 자체만 조용히 시도합니다
+      body: JSON.stringify({ type: t.label, name, phone, device, content }),
+    }).catch(()=>{});
+  } catch(e){}
+}
+
+/* ── 필터 드롭다운 (시트에 있는 거래유형·매물유형으로 자동 생성) ── */
+function buildFilters(){
+  const dealSel = document.getElementById("dealFilter");
+  const typeSel = document.getElementById("typeFilter");
+
+  const deals = [...new Set(LISTINGS.map(it=>it.deal).filter(Boolean))];
+  const types = [...new Set(LISTINGS.map(it=>it.type).filter(Boolean))];
+
+  dealSel.innerHTML = '<option value="all">거래 전체</option>' +
+    deals.map(d=>`<option value="${d}">${d}</option>`).join("");
+  typeSel.innerHTML = '<option value="all">유형 전체</option>' +
+    types.map(t=>`<option value="${t}">${t}</option>`).join("");
+
+  dealSel.value = currentDeal;
+  typeSel.value = currentType;
+
+  dealSel.onchange = ()=>{ currentDeal = dealSel.value; activeId = null; syncMoreCount(); render(); };
+  typeSel.onchange = ()=>{ currentType = typeSel.value; activeId = null; syncMoreCount(); render(); };
+
+  const favBtn = document.getElementById("favToggle");
+  favBtn.onclick = ()=>{ favOnly = !favOnly; activeId = null; render(); };
+
+  const doneBtn = document.getElementById("doneToggle");
+  doneBtn.onclick = ()=>{ doneOnly = !doneOnly; activeId = null; render(); };
+
+  buildMoreFilters();
+}
+
+/* ── 상세검색 (지역·가격대) ──
+   항목이 많아 평소에는 접어두고, 버튼을 눌러 펼치는 방식입니다. */
+function buildMoreFilters(){
+  const regionSel = document.getElementById("regionFilter");
+  const priceSel  = document.getElementById("priceFilter");
+  const toggle    = document.getElementById("moreToggle");
+  const box       = document.getElementById("moreBox");
+  const resetBtn  = document.getElementById("filterReset");
+  if(!regionSel || !toggle) return;
+
+  /* 지역 목록은 실제 매물에서 뽑고, 건수를 함께 보여줍니다.
+     건수가 많은 곳이 위로 오게 정렬합니다. */
+  const rc = {};
+  LISTINGS.forEach(it=>{
+    const k = regionKeyOf(it);
+    if(k) rc[k] = (rc[k]||0) + 1;
+  });
+  const regions = Object.keys(rc).sort((a,b)=> rc[b]-rc[a] || a.localeCompare(b,"ko"));
+  regionSel.innerHTML = '<option value="all">전체 지역</option>' +
+    regions.map(r=>`<option value="${r}">${r} (${rc[r]})</option>`).join("");
+
+  /* 가격대도 매물이 있는 구간만 보여줍니다 */
+  const pc = {};
+  LISTINGS.forEach(it=>{
+    const k = priceBandOf(it);
+    if(k) pc[k] = (pc[k]||0) + 1;
+  });
+  priceSel.innerHTML = '<option value="all">전체 가격</option>' +
+    PRICE_BANDS.filter(b=>pc[b.k]).map(b=>`<option value="${b.k}">${b.label} (${pc[b.k]})</option>`).join("");
+
+  regionSel.value = currentRegion;
+  priceSel.value  = currentPrice;
+
+  regionSel.onchange = ()=>{ currentRegion = regionSel.value; activeId = null; syncMoreCount(); render(); };
+  priceSel.onchange  = ()=>{ currentPrice  = priceSel.value;  activeId = null; syncMoreCount(); render(); };
+
+  toggle.onclick = ()=>{
+    const open = box.hasAttribute("hidden");
+    if(open){ box.removeAttribute("hidden"); } else { box.setAttribute("hidden",""); }
+    toggle.classList.toggle("open", open);
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.querySelector(".more-label").textContent = open ? "－ 검색조건 닫기" : "＋ 상세검색";
+    if(mapApi && mapApi.resize) setTimeout(()=>mapApi.resize(), 60);
+  };
+
+  resetBtn.onclick = ()=>{
+    currentRegion = "all"; currentPrice = "all";
+    currentDeal = "all"; currentType = "all";
+    regionSel.value = "all"; priceSel.value = "all";
+    const ds = document.getElementById("dealFilter"); if(ds) ds.value = "all";
+    const ts = document.getElementById("typeFilter"); if(ts) ts.value = "all";
+    activeId = null; syncMoreCount(); render();
+  };
+
+  syncMoreCount();
+  /* 매물번호로 바로 들어오신 경우에는 조건으로 찾은 것이 아니므로
+     상세검색을 펼치지 않습니다. 화면은 접힌 상태로 시작합니다. */
+}
+
+/* 접혀 있어도 조건이 걸린 것을 알 수 있게 개수를 표시합니다 */
+function syncMoreCount(){
+  const badge = document.getElementById("moreCount");
+  if(!badge) return;
+  let n = 0;
+  if(currentRegion !== "all") n++;
+  if(currentPrice  !== "all") n++;
+  if(currentDeal   !== "all") n++;
+  if(currentType   !== "all") n++;
+  if(n){ badge.textContent = n; badge.removeAttribute("hidden"); }
+  else  { badge.setAttribute("hidden",""); }
+}
+
+/* ── 시작: 데이터 로딩 → 지도 초기화 ── */
+async function loadData(){
+  if (CONFIG.SHEET_CSV_URL){
+    try {
+      const res = await fetch(CONFIG.SHEET_CSV_URL);
+      const text = await res.text();
+      const parsed = rowsToListings(parseCSV(text));
+      if (parsed.length) return parsed;
+      console.warn("시트에서 매물을 찾지 못해 예시 매물을 표시합니다.");
+    } catch(e){
+      console.warn("구글시트 로딩 실패, 예시 매물을 표시합니다.", e);
+    }
+  }
+  return SAMPLE_LISTINGS;
+}
+
+(async function start(){
+  LISTINGS = await loadData();
+  const boot = () => {
+    document.getElementById("loading")?.remove();
+    buildFilters();
+    // 먼저 지금 좌표가 있는 매물로 화면을 바로 띄웁니다.
+    // 주소 변환이 끝날 때까지 기다리게 하면, 매물이 늘어날수록 화면이 늦게 뜹니다.
+    render();
+    openItemFromUrl(false);   // 이미 좌표가 있는 매물이면 바로 엽니다
+    // 좌표가 없는 매물은 뒤에서 이어서 찾고, 찾아지는 대로 화면에 추가합니다.
+    // 링크로 들어온 매물이 그 안에 있었다면, 여기서 마지막으로 한 번 더 열어봅니다.
+    geocodeMissing(()=>{ render(); openItemFromUrl(true); });
+  };
+  if (CONFIG.NAVER_CLIENT_ID) initNaverMap(boot);
+  else initLeafletMap(boot);
+})();
+</script>
+</body>
+</html>
