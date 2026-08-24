@@ -1730,15 +1730,28 @@ function initNaverMap(onReady){
     // 확대·축소할 때마다 묶음을 다시 계산해서 마커를 새로 그립니다.
     // 이때 정보창은 먼저 닫아둡니다. 붙어 있던 마커가 사라지기 때문에
     // 그대로 두면 엉뚱한 자리에 남아버립니다.
+    //
+    // PC에서 마우스 휠로 확대·축소하면 이 신호(zoom_changed)가 아주 짧은
+    // 시간 안에 여러 번 연달아 발생합니다. 그때마다 매물 마커 전체를
+    // 지웠다 다시 그리면(무거운 작업) 화면이 버벅이고, 그 사이 마커가
+    // 잠깐씩 비어 보이는 문제가 있었습니다. 그래서 신호가 올 때마다 바로
+    // 다시 그리지 않고 "다시 그려야 한다"는 표시만 해두었다가, 확대·축소가
+    // 완전히 멈췄을 때 한 번만 발생하는 idle 신호에서 딱 한 번 그립니다.
+    let needsClusterRedraw = false;
     naver.maps.Event.addListener(map, "zoom_changed", () => {
       info.close();
       openMarker = null;
-      applyClustering(false); // 정보창은 아래 idle에서 다시 엽니다
       updateCadastral();
+      needsClusterRedraw = true;
     });
-    // 확대·축소 애니메이션까지 완전히 끝난 뒤에 정보창을 새 마커에 다시 엽니다
+    // 확대·축소 애니메이션까지 완전히 끝난 뒤에 마커를 다시 그리고,
+    // 열려 있던 정보창이 있었으면 새 마커에 다시 엽니다.
     naver.maps.Event.addListener(map, "idle", () => {
       programmaticMove = false;
+      if (needsClusterRedraw){
+        needsClusterRedraw = false;
+        applyClustering(false); // 정보창은 바로 아래에서 다시 엽니다
+      }
       if (!pendingPopupReopen) return;
       pendingPopupReopen = false;
       mapApi.reopenPopup();
