@@ -1178,7 +1178,9 @@ window.지도오류 = showGeoFailed;
    단일 매물: 유형색이 적용된 가격표. 여러 매물이 겹치는 지점: "N건" 묶음 배지. */
 function tagHtml(item, picked){
   const priceText = item.done ? maskPrice((item.price||"").split(" /")[0]) : (item.price||"").split(" /")[0];
-  return `<div class="price-tag${picked?' picked':''}" style="background:${typeColor(item.type)}"><small>${item.deal}</small>${priceText}</div>`;
+  // 색깔만으로는 매물 유형을 구분하기 어려워, 위 줄에 "상가매매"처럼 유형+거래를 함께 표시합니다
+  const label = `${item.type||""}${item.deal||""}`;
+  return `<div class="price-tag${picked?' picked':''}" style="background:${typeColor(item.type)}"><small>${label}</small>${priceText}</div>`;
 }
 function bundleTagHtml(group, picked, idx){
   const shown = group[idx] || group[0]; // 정보창에서 지금 보고 있는 매물을 마커에도 반영
