@@ -25,6 +25,8 @@ export async function onRequest(context) {
     if (csvRes.ok) {
       const text = await csvRes.text();
       urls = listingUrls_(text, origin);
+      // 지역별 페이지 URL도 추가합니다
+      urls = urls.concat(regionUrls_(text, origin));
     }
   } catch (e) {
     // 시트를 못 가져와도 최소한 홈 주소 하나는 포함된 사이트맵을 돌려줍니다
@@ -48,6 +50,55 @@ export async function onRequest(context) {
       "Cache-Control": "public, max-age=3600",
     },
   });
+}
+
+/* CSV에서 사이트맵에 넣을 지역별 페이지 주소를 뽑아냅니다.
+   중복을 제거하고 고유한 지역별 URL만 만듭니다. */
+function regionUrls_(csvText, origin) {
+  const rows = parseCSV(csvText);
+  if (!rows.length) return [];
+  const head = rows[0].map(h => h.trim());
+  const idx = name => head.indexOf(name);
+  const iAddr = idx("주소"), iN = idx("매물명"), iShow = idx("노출"),
+        iLat = idx("위도"), iLng = idx("경도");
+
+  if (iAddr < 0) return [];
+
+  const seen = {};
+  const out = [];
+
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+
+    // 필터링 기준은 listingUrls_와 동일
+    if (!row[iN] || !row[iN].trim()) continue;
+
+    const showVal = iShow >= 0 ? (row[iShow] || "").trim().toUpperCase() : "";
+    if (showVal === "N") continue;
+
+    const lat = parseFloat(row[iLat]), lng = parseFloat(row[iLng]);
+    const addr = iAddr >= 0 ? (row[iAddr] || "").trim() : "";
+    if ((isNaN(lat) || isNaN(lng)) && !addr) continue;
+
+    // 주소에서 지역명 추출
+    const region = extractRegion_(addr);
+    if (!region || seen[region]) continue;
+
+    seen[region] = true;
+    out.push(origin + "/region/" + encodeURIComponent(region));
+  }
+
+  return out;
+}
+
+/* 주소에서 지역명(시/군/구)을 추출합니다 */
+function extractRegion_(addr) {
+  if (!addr) return "";
+  const parts = addr.split(/\s+/);
+  if (parts.length >= 2) {
+    return parts[1]; // 두 번째 항목이 지역명(시/군/구)
+  }
+  return "";
 }
 
 /* CSV에서 사이트맵에 넣을 매물 주소 목록을 뽑아냅니다.
