@@ -55,8 +55,8 @@ export async function onRequest(context) {
 
 /* 지역별 페이지 HTML을 생성합니다 */
 function generateRegionPage(region, listings, blogLinks, title, description, pageUrl, image) {
-  const listingsHtml = listings.slice(0, 8).map(l => `
-    <div class="listing-item">
+  const listingsHtml = listings.map((l, idx) => `
+    <div class="listing-item" data-index="${idx}" style="${idx >= 8 ? 'display: none;' : ''}">
       <div class="listing-info">
         <div class="listing-name">${escapeHtml(l.name)}</div>
         <div class="listing-meta"><span class="badge">${escapeHtml(l.type)}</span>${escapeHtml(l.deal)}</div>
@@ -64,7 +64,11 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
       <div class="listing-price">${escapeHtml(l.price)}</div>
       <a href="/m/${encodeURIComponent(l.no)}" class="view-btn">상세</a>
     </div>
-  `).join('');
+  `).join('') + (listings.length > 8 ? `
+    <div style="text-align: center; margin-top: 20px;">
+      <button onclick="loadMoreListings()" style="padding: 10px 24px; background: var(--navy); color: var(--gold); border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px;">더 보기 (${listings.length - 8}개)</button>
+    </div>
+  ` : '');
 
   const blogsHtml = blogLinks.slice(0, 3).map(b => `
     <div class="blog-item">
@@ -463,6 +467,40 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
             margin-right: 6px;
         }
 
+        .chart-container {
+            margin-top: 16px;
+        }
+
+        .chart-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .chart-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--navy);
+            min-width: 70px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            height: 24px;
+            background: linear-gradient(90deg, var(--gold) 0%, var(--navy) 100%);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .chart-value {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--navy);
+            min-width: 50px;
+            text-align: right;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 25px 15px;
@@ -549,9 +587,31 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
                             <div class="stat-value">6개 노선</div>
                         </div>
                     </div>
+                    <div class="chart-container">
+                        <div style="font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 12px;">지역별 평균 매매가</div>
+                        <div class="chart-row">
+                            <div class="chart-label">오피스텔</div>
+                            <div class="chart-bar" style="width: 40%;"></div>
+                            <div class="chart-value">3.8억</div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">아파트</div>
+                            <div class="chart-bar" style="width: 100%;"></div>
+                            <div class="chart-value">8.2억</div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">상가</div>
+                            <div class="chart-bar" style="width: 67%;"></div>
+                            <div class="chart-value">5.5억</div>
+                        </div>
+                    </div>
                     <div class="info-highlight">
                         <strong>${escapeHtml(region)}의 특징</strong>
                         서울의 중심지로 직장인 수요가 많고, 공덕역·이대역 주변 재개발로 향후 가치 상승이 기대됩니다. 교통이 편리해 전월세 시장도 활발합니다.
+                    </div>
+                    <div style="display: flex; gap: 12px; margin-top: 20px;">
+                        <button onclick="goToMap()" style="flex: 1; padding: 10px; background: var(--navy); color: var(--gold); border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px;">지도로 보기</button>
+                        <button onclick="goHome()" style="flex: 1; padding: 10px; background: var(--navy); color: var(--gold); border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px;">홈페이지</button>
                     </div>
                 </div>
 
@@ -578,7 +638,7 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
                     <div class="contact-content">
                         ${escapeHtml(region)}의 매물이나 시장 정보에 대해 궁금하신 점이 있으신가요? 저희 전문가에게 직접 상담받으세요.
                     </div>
-                    <button class="contact-btn">문의하기</button>
+                    <button class="contact-btn" onclick="handleContactClick(event)">문의하기</button>
                 </div>
 
                 <div class="section info-section">
@@ -605,6 +665,56 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
             </div>
         </div>
     </div>
+    <script>
+        let currentPage = 1;
+
+        // 모바일/PC 감지 및 문의하기 처리
+        function handleContactClick(event) {
+            event.preventDefault();
+            const isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                // 모바일: SMS 발송
+                window.location.href = 'sms:01042800869?body=안녕하세요. 리얼워커스입니다. 부동산 매물에 대해 문의드립니다.';
+            } else {
+                // PC: 카톡 오픈
+                window.open('https://pf.kakao.com/_mxewen', '_blank');
+            }
+        }
+
+        // 더 보기 버튼 클릭
+        function loadMoreListings() {
+            const listings = document.querySelectorAll('[data-index]');
+            let visibleCount = 0;
+
+            listings.forEach(item => {
+                const index = parseInt(item.getAttribute('data-index'));
+                if (index < (currentPage + 1) * 8) {
+                    item.style.display = '';
+                    visibleCount++;
+                }
+            });
+
+            currentPage++;
+
+            // 모든 항목이 표시되면 버튼 숨기기
+            const button = document.querySelector('button:has-text("더 보기")');
+            if (visibleCount >= listings.length) {
+                const btnContainer = document.querySelector('[style*="text-align: center"]');
+                if (btnContainer) btnContainer.remove();
+            }
+        }
+
+        // 지도 보기 버튼 클릭
+        function goToMap() {
+            window.location.href = '/#map';
+        }
+
+        // 홈페이지 버튼 클릭
+        function goHome() {
+            window.location.href = '/';
+        }
+    </script>
 </body>
 </html>`;
 }
