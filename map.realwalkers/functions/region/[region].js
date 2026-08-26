@@ -25,13 +25,15 @@ export async function onRequest(context) {
   const pageRes = await env.ASSETS.fetch(`${origin}/index.html`);
   if (!pageRes.ok || !region) return pageRes;
 
-  // 구글시트(CSV)에서 이 지역의 모든 매물을 찾습니다
+  // 구글시트(CSV)에서 이 지역의 모든 매물과 블로그링크를 찾습니다
   let listings = [];
+  let blogLinks = [];
   try {
     const csvRes = await fetch(SHEET_CSV_URL, { cf: { cacheTtl: 3600, cacheEverything: true } });
     if (csvRes.ok) {
       const text = await csvRes.text();
       listings = findListingsByRegion(text, region);
+      blogLinks = findBlogLinksByRegion(text, region);
     }
   } catch (e) {
     // 시트를 못 가져와도 기본 페이지는 보여줍니다
@@ -69,8 +71,8 @@ export async function onRequest(context) {
   class ScriptInjector {
     element(el) {
       if (el.tagName === "script" && el.getAttribute("id") === "listings-data") {
-        // 기존 데이터 스크립트를 지역 필터링 데이터로 대체
-        el.setInnerContent(`window.REGION_FILTER = "${region}"; window.FILTERED_LISTINGS = ${JSON.stringify(listings)};`);
+        // 기존 데이터 스크립트를 지역 필터링 데이터로 대체 (매물 + 블로그링크)
+        el.setInnerContent(`window.REGION_FILTER = "${region}"; window.FILTERED_LISTINGS = ${JSON.stringify(listings)}; window.BLOG_LINKS = ${JSON.stringify(blogLinks)};`);
       }
     }
   }
@@ -79,7 +81,7 @@ export async function onRequest(context) {
 
   // 만약 기존 HTML에 listings-data 스크립트가 없으면, head 끝에 추가합니다
   if (!html.includes('id="listings-data"')) {
-    const dataScript = `<script id="listings-data">window.REGION_FILTER = "${region}"; window.FILTERED_LISTINGS = ${JSON.stringify(listings)};</script>`;
+    const dataScript = `<script id="listings-data">window.REGION_FILTER = "${region}"; window.FILTERED_LISTINGS = ${JSON.stringify(listings)}; window.BLOG_LINKS = ${JSON.stringify(blogLinks)};</script>`;
     html = html.replace('</head>', dataScript + '</head>');
   }
 
@@ -161,6 +163,73 @@ function findListingsByRegion(csvText, region) {
   }
 
   return listings;
+}
+
+/* CSV 안에서 특정 지역의 블로그 링크들을 찾습니다. */
+function findBlogLinksByRegion(csvText, region) {
+  const rows = parseCSV(csvText);
+  if (!rows.length) return [];
+
+  const head = rows[0].map(h => h.trim());
+  const idx = name => head.indexOf(name);
+  const iAddr = idx("주소"), iN = idx("매물명"), iShow = idx("노출"),
+        iLat = idx("위도"), iLng = idx("경도"), iBlog = idx("블로그링크");
+
+  if (iAddr < 0 || iBlog < 0) return [];
+
+  const seen = {};
+  const blogLinks = [];
+
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    const addr = (row[iAddr] || "").trim();
+    const blogUrl = (row[iBlog] || "").trim();
+
+    // 필터링: 노출 N 제외, 매물명 필수, 위치 필수, 블로그링크 필수
+    const showVal = iShow >= 0 ? (row[iShow] || "").trim().toUpperCase() : "";
+    if (showVal === "N") continue;
+
+    const name = iN >= 0 ? (row[iN] || "").trim() : "";
+    if (!name) continue;
+
+    const lat = parseFloat(row[iLat]), lng = parseFloat(row[iLng]);
+    if ((isNaN(lat) || isNaN(lng)) && !addr) continue;
+
+    if (!blogUrl) continue;
+
+    // 주소에서 지역명 추출해서 비교
+    const extractedRegion = extractRegion(addr);
+    if (extractedRegion !== region) continue;
+
+    // 블로그 URL 중복 제거
+    if (!seen[blogUrl]) {
+      seen[blogUrl] = true;
+
+      // 블로그 URL에서 제목 추출 (네이버 블로그 포스트 번호로 식별)
+      const title = extractBlogTitle(blogUrl) || name;
+
+      blogLinks.push({
+        title: title,
+        url: blogUrl,
+      });
+    }
+  }
+
+  return blogLinks;
+}
+
+/* 블로그 URL에서 제목을 추출합니다 (간단한 버전) */
+function extractBlogTitle(blogUrl) {
+  // 네이버 블로그 URL 형식: https://blog.naver.com/realwalkers/XXXXXXXXX
+  // 포스트 번호로 식별하면 되고, 제목은 페이지 타이틀에서 가져와야 하지만
+  // 여기서는 간단하게 URL에서 추출하거나 기본값 사용
+  try {
+    const url = new URL(blogUrl);
+    // 여기서는 단순 구조이므로 기본값 반환
+    return null;
+  } catch (e) {
+    return null;
+  }
 }
 
 /* 주소에서 지역명(시/군/구)을 추출합니다 */
