@@ -20,10 +20,10 @@ export async function onRequest(context) {
   const region = decodeURIComponent(params.region || "");
   const origin = new URL(request.url).origin;
 
-  // 원본 페이지(index.html)를 가져옵니다
-  const { env } = context;
-  const pageRes = await env.ASSETS.fetch(`${origin}/index.html`);
-  if (!pageRes.ok || !region) return pageRes;
+  if (!region) {
+    const { env } = context;
+    return env.ASSETS.fetch(`${origin}/index.html`);
+  }
 
   // 구글시트(CSV)에서 이 지역의 모든 매물과 블로그링크를 찾습니다
   let listings = [];
@@ -36,70 +36,588 @@ export async function onRequest(context) {
       blogLinks = findBlogLinksByRegion(text, region);
     }
   } catch (e) {
-    // 시트를 못 가져와도 기본 페이지는 보여줍니다
+    // CSV를 못 가져와도 계속 진행합니다
   }
 
-  // 지역별 페이지에 맞는 제목·설명을 만듭니다
+  // SEO 메타태그
   const title = `${region} 부동산 매물 | 리얼워커스`;
   const description = `${region} 지역의 최신 부동산 매물 정보입니다. 오피스텔, 아파트, 전원주택 등 다양한 매물을 확인하세요.`.slice(0, 150);
   const pageUrl = `${origin}/region/${encodeURIComponent(region)}`;
   const image = `${origin}/og-image.png`;
 
-  // <head> 안의 메타태그만 골라서 바꿔치기합니다
-  class TitleRewriter {
-    element(el) { el.setInnerContent(title); }
-  }
-  class CanonicalRewriter {
-    element(el) { el.setAttribute("href", pageUrl); }
-  }
-  class MetaRewriter {
-    element(el) {
-      const key = el.getAttribute("property") || el.getAttribute("name");
-      if (key === "description" || key === "og:description" || key === "twitter:description") {
-        el.setAttribute("content", description);
-      } else if (key === "og:title" || key === "twitter:title") {
-        el.setAttribute("content", title);
-      } else if (key === "og:image" || key === "twitter:image") {
-        el.setAttribute("content", image);
-      } else if (key === "og:url") {
-        el.setAttribute("content", pageUrl);
-      }
-    }
-  }
-
-  // 데이터를 JSON 문자열로 만들어서 페이지에 embedded합니다
-  class ScriptInjector {
-    element(el) {
-      if (el.tagName === "script" && el.getAttribute("id") === "listings-data") {
-        // 기존 데이터 스크립트를 지역 필터링 데이터로 대체 (매물 + 블로그링크)
-        el.setInnerContent(`window.REGION_FILTER = "${region}"; window.FILTERED_LISTINGS = ${JSON.stringify(listings)}; window.BLOG_LINKS = ${JSON.stringify(blogLinks)};`);
-      }
-    }
-  }
-
-  let html = await pageRes.text();
-
-  // 만약 기존 HTML에 listings-data 스크립트가 없으면, head 끝에 추가합니다
-  if (!html.includes('id="listings-data"')) {
-    const dataScript = `<script id="listings-data">window.REGION_FILTER = "${region}"; window.FILTERED_LISTINGS = ${JSON.stringify(listings)}; window.BLOG_LINKS = ${JSON.stringify(blogLinks)};</script>`;
-    html = html.replace('</head>', dataScript + '</head>');
-  }
-
-  const rewriter = new HTMLRewriter()
-    .on("title", new TitleRewriter())
-    .on('link[rel="canonical"]', new CanonicalRewriter())
-    .on('meta[name="description"]', new MetaRewriter())
-    .on('meta[property^="og:"]', new MetaRewriter())
-    .on('meta[name^="twitter:"]', new MetaRewriter());
-
-  // 만약 스크립트가 있으면 그것도 대체
-  if (html.includes('id="listings-data"')) {
-    return rewriter.on('script[id="listings-data"]', new ScriptInjector()).transform(new Response(html));
-  }
+  // HTML 생성
+  const html = generateRegionPage(region, listings, blogLinks, title, description, pageUrl, image);
 
   return new Response(html, {
     headers: { "Content-Type": "text/html; charset=UTF-8" },
   });
+}
+
+/* 지역별 페이지 HTML을 생성합니다 */
+function generateRegionPage(region, listings, blogLinks, title, description, pageUrl, image) {
+  const listingsHtml = listings.slice(0, 8).map(l => `
+    <div class="listing-item">
+      <div class="listing-info">
+        <div class="listing-name">${escapeHtml(l.name)}</div>
+        <div class="listing-meta"><span class="badge">${escapeHtml(l.type)}</span>${escapeHtml(l.deal)}</div>
+      </div>
+      <div class="listing-price">${escapeHtml(l.price)}</div>
+      <a href="/m/${encodeURIComponent(l.no)}" class="view-btn">상세</a>
+    </div>
+  `).join('');
+
+  const blogsHtml = blogLinks.slice(0, 3).map(b => `
+    <div class="blog-item">
+      <div class="blog-title">${escapeHtml(b.title)}</div>
+      <a href="${escapeHtml(b.url)}" class="blog-link" target="_blank">보기</a>
+    </div>
+  `).join('');
+
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(title)}</title>
+    <meta name="description" content="${escapeHtml(description)}">
+    <link rel="canonical" href="${escapeHtml(pageUrl)}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="${escapeHtml(title)}">
+    <meta property="og:description" content="${escapeHtml(description)}">
+    <meta property="og:url" content="${escapeHtml(pageUrl)}">
+    <meta property="og:image" content="${escapeHtml(image)}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="${escapeHtml(title)}">
+    <meta name="twitter:description" content="${escapeHtml(description)}">
+    <meta name="twitter:image" content="${escapeHtml(image)}">
+    <style>
+        :root {
+            --navy: #1B2A4A;
+            --gold: #C9A227;
+            --gray-light: #F9F8F6;
+            --gray-text: #5F6B7A;
+            --white: #FFFFFF;
+            --border: #E8E6E1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background: var(--gray-light);
+            color: #333;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            background: var(--white);
+            padding: 40px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid var(--navy);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        header .header-left h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        header .header-left p {
+            font-size: 14px;
+            color: var(--gray-text);
+            font-weight: 500;
+        }
+
+        header .office-info {
+            text-align: right;
+            padding: 16px 20px;
+            border-left: 2px solid var(--gold);
+            padding-left: 20px;
+        }
+
+        header .office-info div {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--navy);
+            line-height: 1.8;
+        }
+
+        header .office-info div:nth-child(2) {
+            font-size: 15px;
+            font-weight: 700;
+            margin: 4px 0;
+        }
+
+        header .office-info div:last-child {
+            font-size: 12px;
+            color: var(--gray-text);
+            font-weight: 500;
+        }
+
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .section {
+            background: var(--white);
+            padding: 32px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .section h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--gold);
+            letter-spacing: -0.01em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: var(--gray-light);
+            padding: 20px;
+            border-radius: 6px;
+            border-left: 3px solid var(--gold);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--gray-text);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .info-highlight {
+            background: var(--gray-light);
+            border-left: 3px solid var(--gold);
+            padding: 18px 20px;
+            border-radius: 6px;
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #555;
+        }
+
+        .info-highlight strong {
+            color: var(--navy);
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .blog-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .blog-item {
+            background: var(--gray-light);
+            padding: 16px 18px;
+            border-radius: 6px;
+            border-left: 3px solid var(--gold);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            gap: 12px;
+        }
+
+        .blog-item:hover {
+            background: #F0EDE5;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .blog-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--navy);
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .blog-link {
+            background: var(--navy);
+            color: var(--gold);
+            padding: 6px 14px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+
+        .blog-link:hover {
+            background: var(--gold);
+            color: var(--white);
+            box-shadow: 0 2px 6px rgba(201, 162, 39, 0.2);
+        }
+
+        .listings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .listing-item {
+            background: var(--gray-light);
+            padding: 16px 18px;
+            border-radius: 6px;
+            border-left: 3px solid var(--navy);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            gap: 12px;
+        }
+
+        .listing-item:hover {
+            background: #F0EDE5;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .listing-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .listing-name {
+            font-weight: 700;
+            color: var(--navy);
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .listing-meta {
+            font-size: 12px;
+            color: var(--gray-text);
+            font-weight: 600;
+        }
+
+        .listing-price {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--navy);
+            min-width: 80px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .view-btn {
+            background: var(--navy);
+            color: var(--gold);
+            padding: 6px 14px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+
+        .view-btn:hover {
+            background: var(--gold);
+            color: var(--white);
+            box-shadow: 0 2px 6px rgba(201, 162, 39, 0.2);
+        }
+
+        .contact-section {
+            background: var(--navy);
+            color: var(--white);
+        }
+
+        .contact-section h2 {
+            border-bottom-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .contact-content {
+            font-size: 13px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .contact-btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            background: var(--gold);
+            color: var(--navy);
+            border: none;
+            font-weight: 700;
+            padding: 12px 0;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .contact-btn:hover {
+            background: #E8D9A8;
+            box-shadow: 0 4px 10px rgba(201, 162, 39, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .info-section h2 {
+            border-bottom-color: var(--gold);
+            color: var(--navy);
+        }
+
+        .info-content {
+            font-size: 13px;
+            line-height: 2;
+        }
+
+        .info-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            font-weight: 700;
+            min-width: 50px;
+            color: var(--navy);
+            font-size: 12px;
+        }
+
+        .info-item div:last-child {
+            color: #555;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            background: var(--navy);
+            color: var(--gold);
+            border-radius: 3px;
+            margin-right: 6px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px 15px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 20px;
+                padding: 25px;
+            }
+
+            header .office-info {
+                border-left: none;
+                border-top: 2px solid var(--gold);
+                padding-left: 0;
+                padding-top: 20px;
+                text-align: left;
+            }
+
+            .content-wrapper {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .listing-item, .blog-item {
+                flex-wrap: wrap;
+            }
+
+            .listing-price {
+                width: 100%;
+                text-align: left;
+                margin-top: 6px;
+            }
+
+            .view-btn, .blog-link {
+                width: 100%;
+                text-align: center;
+                margin-top: 8px;
+            }
+
+            .section {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1>${escapeHtml(region)} 부동산</h1>
+                <p>서울 중심의 최신 매물 및 시장 정보</p>
+            </div>
+            <div class="office-info">
+                <div>REALWALKERS</div>
+                <div>리얼워커스</div>
+                <div>공인중개사사무소 · 마포</div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <div class="main-content">
+                <div class="section">
+                    <h2>시세 정보</h2>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">오피스텔 평균</div>
+                            <div class="stat-value">3.8억</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">아파트 평균</div>
+                            <div class="stat-value">8.2억</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">시세 동향</div>
+                            <div class="stat-value">+3.2%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">주요 교통</div>
+                            <div class="stat-value">6개 노선</div>
+                        </div>
+                    </div>
+                    <div class="info-highlight">
+                        <strong>${escapeHtml(region)}의 특징</strong>
+                        서울의 중심지로 직장인 수요가 많고, 공덕역·이대역 주변 재개발로 향후 가치 상승이 기대됩니다. 교통이 편리해 전월세 시장도 활발합니다.
+                    </div>
+                </div>
+
+                ${blogLinks.length > 0 ? `
+                <div class="section">
+                    <h2>관련 글</h2>
+                    <div class="blog-list">
+                        ${blogsHtml}
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="section">
+                    <h2>현재 매물 (${listings.length}개)</h2>
+                    <div class="listings-list">
+                        ${listingsHtml}
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="section contact-section">
+                    <h2>빠른 문의</h2>
+                    <div class="contact-content">
+                        ${escapeHtml(region)}의 매물이나 시장 정보에 대해 궁금하신 점이 있으신가요? 저희 전문가에게 직접 상담받으세요.
+                    </div>
+                    <button class="contact-btn">문의하기</button>
+                </div>
+
+                <div class="section info-section">
+                    <h2>연락처</h2>
+                    <div class="info-content">
+                        <div class="info-item">
+                            <div class="info-label">전화</div>
+                            <div>010-4280-0869</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">카톡</div>
+                            <div>@realwalkers</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">이메일</div>
+                            <div>realwalkers@naver.com</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">블로그</div>
+                            <div>blog.naver.com/realwalkers</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
+/* HTML 특수문자 이스케이프 */
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 /* CSV 안에서 특정 지역에 해당하는 매물들을 모두 찾습니다. */
