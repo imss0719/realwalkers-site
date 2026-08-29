@@ -56,7 +56,7 @@ export async function onRequest(context) {
 /* 지역별 통계 계산 */
 function calculateStats(listings) {
   const typeCount = {};
-  const priceRanges = { '1억~3억': 0, '3억~5억': 0, '5억~10억': 0, '10억+': 0 };
+  const priceRanges = { '1억~3억': 0, '3억~5억': 0, '5억~10억': 0, '10억~20억': 0, '20억~50억': 0, '50억+': 0 };
 
   listings.forEach(l => {
     // 유형별 개수
@@ -69,7 +69,9 @@ function calculateStats(listings) {
       if (price < 3) priceRanges['1억~3억']++;
       else if (price < 5) priceRanges['3억~5억']++;
       else if (price < 10) priceRanges['5억~10억']++;
-      else priceRanges['10억+']++;
+      else if (price < 20) priceRanges['10억~20억']++;
+      else if (price < 50) priceRanges['20억~50억']++;
+      else priceRanges['50억+']++;
     }
   });
 
@@ -81,17 +83,15 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
   const stats = calculateStats(listings);
 
   const typeCountHtml = Object.entries(stats.typeCount).map(([type, count]) => `
-    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
-      <span style="font-weight: 600; color: var(--navy);">${escapeHtml(type)}</span>
-      <span style="font-weight: 700; color: var(--gold);">${count}개</span>
-    </div>
+    <button onclick="filterListings('type', '${type}')" class="filter-btn" data-filter-type="${type}" style="padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; background: var(--gray-light); color: var(--navy); border: 2px solid transparent; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 12px; transition: all 0.2s;">
+      ${escapeHtml(type)} <span style="color: var(--gold); font-weight: 700;">${count}개</span>
+    </button>
   `).join('');
 
   const priceRangeHtml = Object.entries(stats.priceRanges).map(([range, count]) => `
-    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
-      <span style="font-weight: 600; color: var(--navy);">${range}</span>
-      <span style="font-weight: 700; color: var(--gold);">${count}개</span>
-    </div>
+    <button onclick="filterListings('price', '${range}')" class="filter-btn" data-filter-price="${range}" style="padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; background: var(--gray-light); color: var(--navy); border: 2px solid transparent; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 12px; transition: all 0.2s;">
+      ${range} <span style="color: var(--gold); font-weight: 700;">${count}개</span>
+    </button>
   `).join('');
 
   const featuredListings = listings.slice(0, 3).map(l => `
@@ -104,8 +104,21 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
     </div>
   `).join('');
 
-  const listingsHtml = listings.map((l, idx) => `
-    <div class="listing-item" data-index="${idx}" style="${idx >= 8 ? 'display: none;' : ''}">
+  const getPriceRange = (priceStr) => {
+    const num = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
+    if (isNaN(num)) return '';
+    if (num < 3) return '1억~3억';
+    if (num < 5) return '3억~5억';
+    if (num < 10) return '5억~10억';
+    if (num < 20) return '10억~20억';
+    if (num < 50) return '20억~50억';
+    return '50억+';
+  };
+
+  const listingsHtml = listings.map((l, idx) => {
+    const priceRange = getPriceRange(l.price);
+    return `
+    <div class="listing-item" data-index="${idx}" data-type="${escapeHtml(l.type)}" data-price="${priceRange}" style="${idx >= 8 ? 'display: none;' : ''}">
       <div class="listing-info">
         <div class="listing-name">${escapeHtml(l.name)}</div>
         <div class="listing-meta"><span class="badge">${escapeHtml(l.type)}</span>${escapeHtml(l.deal)}</div>
@@ -113,7 +126,8 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
       <div class="listing-price">${escapeHtml(l.price)}</div>
       <a href="/m/${encodeURIComponent(l.no)}" class="view-btn">상세</a>
     </div>
-  `).join('') + (listings.length > 8 ? `
+  `;
+  }).join('') + (listings.length > 8 ? `
     <div style="text-align: center; margin-top: 20px;">
       <button onclick="loadMoreListings()" style="padding: 10px 24px; background: var(--navy); color: var(--gold); border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px;">더 보기 (${listings.length - 8}개)</button>
     </div>
@@ -655,7 +669,7 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
                 ` : ''}
 
                 <div class="section">
-                    <h2>현재 매물 (${listings.length}개)</h2>
+                    <h2 id="listings-title">현재 매물 (${listings.length}개)</h2>
                     <div class="listings-list">
                         ${listingsHtml}
                     </div>
@@ -697,6 +711,70 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
     </div>
     <script>
         let currentPage = 1;
+        let currentFilter = { type: null, price: null };
+
+        // 필터링 함수
+        function filterListings(filterType, filterValue) {
+            const listings = document.querySelectorAll('[data-index]');
+            let visibleCount = 0;
+
+            // 같은 필터를 다시 클릭하면 제거
+            if (currentFilter[filterType] === filterValue) {
+                currentFilter[filterType] = null;
+            } else {
+                currentFilter[filterType] = filterValue;
+            }
+
+            // 버튼 활성화 상태 업데이트
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.style.background = 'var(--gray-light)';
+                btn.style.borderColor = 'transparent';
+                btn.style.color = 'var(--navy)';
+            });
+
+            if (currentFilter.type) {
+                document.querySelectorAll(`[data-filter-type="${currentFilter.type}"]`).forEach(btn => {
+                    btn.style.background = 'var(--navy)';
+                    btn.style.borderColor = 'var(--gold)';
+                    btn.style.color = 'var(--gold)';
+                });
+            }
+
+            if (currentFilter.price) {
+                document.querySelectorAll(`[data-filter-price="${currentFilter.price}"]`).forEach(btn => {
+                    btn.style.background = 'var(--navy)';
+                    btn.style.borderColor = 'var(--gold)';
+                    btn.style.color = 'var(--gold)';
+                });
+            }
+
+            // 매물 표시/숨김
+            listings.forEach((item, idx) => {
+                const itemType = item.getAttribute('data-type');
+                const itemPrice = item.getAttribute('data-price');
+                const matchesType = !currentFilter.type || itemType === currentFilter.type;
+                const matchesPrice = !currentFilter.price || itemPrice === currentFilter.price;
+
+                if (matchesType && matchesPrice) {
+                    if (visibleCount < 8) {
+                        item.style.display = '';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // 현재 매물 제목 업데이트
+            const titleEl = document.getElementById('listings-title');
+            if (titleEl) {
+                titleEl.textContent = '현재 매물 (' + visibleCount + '개)';
+            }
+
+            currentPage = 1;
+        }
 
         // 모바일/PC 감지 및 문의하기 처리
         function handleContactClick(event) {
@@ -719,20 +797,18 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
 
             listings.forEach(item => {
                 const index = parseInt(item.getAttribute('data-index'));
-                if (index < (currentPage + 1) * 8) {
+                const itemType = item.getAttribute('data-type');
+                const itemPrice = item.getAttribute('data-price');
+                const matchesType = !currentFilter.type || itemType === currentFilter.type;
+                const matchesPrice = !currentFilter.price || itemPrice === currentFilter.price;
+
+                if (matchesType && matchesPrice && index < (currentPage + 1) * 8) {
                     item.style.display = '';
                     visibleCount++;
                 }
             });
 
             currentPage++;
-
-            // 모든 항목이 표시되면 버튼 숨기기
-            const button = document.querySelector('button:has-text("더 보기")');
-            if (visibleCount >= listings.length) {
-                const btnContainer = document.querySelector('[style*="text-align: center"]');
-                if (btnContainer) btnContainer.remove();
-            }
         }
 
         // 지도 보기 버튼 클릭
