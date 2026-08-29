@@ -976,24 +976,22 @@ function extractBlogTitle(blogUrl) {
 /* 주소에서 지역명(시/군/구)을 추출합니다 */
 function extractRegion(addr) {
   if (!addr) return "";
-
-  // "경기도 김포시 통진읍" → "김포시"
-  // "서울 마포구 아현동" → "마포구"
-  // "인천 부평구" → "부평구"
-
   const parts = addr.split(/\s+/);
   if (parts.length < 2) return "";
 
-  // 첫 번째는 도/시, 두 번째가 시/군/구
-  // "경기도" "김포시" "..." → "김포시" 반환
-  // "서울" "마포구" "..." → "마포구" 반환
-  // "서울특별시" "마포구" "..." → "마포구" 반환
+  const sido = parts[0];      // 광역시/도
+  const gungu = parts[1];     // 구/시/군
 
-  if (parts.length >= 2) {
-    return parts[1]; // 두 번째 항목이 지역명(시/군/구)
+  // 서울은 구까지, 경기는 시까지, 인천은 구까지 추출
+  if (sido.includes('서울')) {
+    return '서울_' + gungu;  // 서울_강남구 형식
+  } else if (sido.includes('경기')) {
+    return '경기_' + gungu;   // 경기_수원시 형식
+  } else if (sido.includes('인천')) {
+    return '인천_' + gungu;   // 인천_남동구 형식
+  } else {
+    return sido;  // 나머지는 도
   }
-
-  return "";
 }
 
 /* index.html의 parseCSV()와 동일한 로직입니다 */
