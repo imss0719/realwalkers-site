@@ -83,13 +83,13 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
   const stats = calculateStats(listings);
 
   const typeCountHtml = Object.entries(stats.typeCount).map(([type, count]) => `
-    <button onclick="filterListings('type', '${type}')" class="filter-btn" data-filter-type="${type}" style="padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; background: var(--gray-light); color: var(--navy); border: 2px solid transparent; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 12px; transition: all 0.2s;">
+    <button onclick="filterListings('type', '${escapeHtml(type).replace(/'/g, "&#039;")}')" class="filter-btn" data-filter-type="${escapeHtml(type)}" style="padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; background: var(--gray-light); color: var(--navy); border: 2px solid transparent; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 12px; transition: all 0.2s;">
       ${escapeHtml(type)} <span style="color: var(--gold); font-weight: 700;">${count}개</span>
     </button>
   `).join('');
 
   const priceRangeHtml = Object.entries(stats.priceRanges).map(([range, count]) => `
-    <button onclick="filterListings('price', '${range}')" class="filter-btn" data-filter-price="${range}" style="padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; background: var(--gray-light); color: var(--navy); border: 2px solid transparent; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 12px; transition: all 0.2s;">
+    <button onclick="filterListings('price', '${escapeHtml(range)}')" class="filter-btn" data-filter-price="${escapeHtml(range)}" style="padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; background: var(--gray-light); color: var(--navy); border: 2px solid transparent; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 12px; transition: all 0.2s;">
       ${range} <span style="color: var(--gold); font-weight: 700;">${count}개</span>
     </button>
   `).join('');
@@ -118,7 +118,7 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
   const listingsHtml = listings.map((l, idx) => {
     const priceRange = getPriceRange(l.price);
     return `
-    <div class="listing-item" data-index="${idx}" data-type="${escapeHtml(l.type)}" data-price="${priceRange}" style="${idx >= 8 ? 'display: none;' : ''}">
+    <div class="listing-item" data-index="${idx}" data-type="${escapeHtml(l.type)}" data-price="${escapeHtml(priceRange)}" style="${idx >= 8 ? 'display: none;' : ''}">
       <div class="listing-info">
         <div class="listing-name">${escapeHtml(l.name)}</div>
         <div class="listing-meta"><span class="badge">${escapeHtml(l.type)}</span>${escapeHtml(l.deal)}</div>
