@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>리얼워커스 마포부동산 | 아파트·상가·건물·토지 매물 지도</title>
-<meta name="description" content="서울 마포·서대문·은평·김포·고양 아파트·상가·건물·토지 매매·임대 매물을 지도에서 한눈에. 리얼워커스 공인중개사사무소">
+<meta name="description" content="서울 마포·서대문·은평·김포·고양 아파트·상가·건물·토지 매매·임대 매물을 지도에서 한눈에. 리얼워커스 공인중개사사무소.">
 <meta name="keywords" content="마포부동산,마포 공인중개사,아현 아파트,공덕 상가,신촌 건물,마포 재개발,김포 토지,고양 부동산,리얼워커스">
 <meta name="author" content="리얼워커스 공인중개사사무소">
 <link rel="canonical" href="https://www.realwalkers.com/">
@@ -83,6 +83,16 @@
     background:var(--navy);padding:7px 16px;border-radius:999px;
   }
   .head-contact .addr{font-size:.82rem;color:rgba(27,42,74,.72);}
+  .head-nav{display:flex;align-items:center;gap:0;}
+  .head-nav .nav-link{
+    font-size:.95rem;font-weight:700;color:var(--navy);text-decoration:none;
+    padding:10px 18px;border-left:2px solid rgba(27,42,74,.2);border-right:2px solid rgba(27,42,74,.2);
+    transition:all .15s ease;
+    display:flex;align-items:center;gap:6px;
+  }
+  .head-nav .nav-link:hover{
+    background:rgba(27,42,74,.08);color:var(--gold);
+  }
   .wrap{flex:1;display:flex;min-height:0;}
   aside{
     width:390px;min-width:320px;background:#fff;
@@ -626,6 +636,9 @@
     <h1><span class="brand-en">REAL<span class="gold">WALKERS</span></span> 리얼워커스</h1>
     <span class="sub">공인중개사사무소 · 마포</span>
   </div>
+  <nav class="head-nav">
+    <a href="/regions" class="nav-link">🗺️ 지역별 매물</a>
+  </nav>
   <div class="head-contact">
     <span class="addr">서울 마포구 신촌로34길 39</span>
     <button class="about-link" id="aboutOpen">사무소 소개</button>
@@ -1131,7 +1144,7 @@ function geocodeMissing(done){
 
      [확인 방법]
      주소 끝에 ?admin=1 을 붙여 접속하시면 목록이 화면에 나옵니다.
-       예) www.realwalkers.com/?admin=1
+       예) realwalkers.com/?admin=1
      또는 브라우저 개발자도구 콘솔에서 지도오류() 를 입력하셔도 됩니다. */
   function reportFailed(list){
     if (!list.length) return;
