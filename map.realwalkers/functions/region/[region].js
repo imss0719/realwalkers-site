@@ -53,8 +53,57 @@ export async function onRequest(context) {
   });
 }
 
+/* 지역별 통계 계산 */
+function calculateStats(listings) {
+  const typeCount = {};
+  const priceRanges = { '1억~3억': 0, '3억~5억': 0, '5억~10억': 0, '10억+': 0 };
+
+  listings.forEach(l => {
+    // 유형별 개수
+    typeCount[l.type] = (typeCount[l.type] || 0) + 1;
+
+    // 가격대별 분류 (억 단위로 파싱)
+    const priceStr = l.price.replace(/[^0-9.]/g, '');
+    const price = parseFloat(priceStr);
+    if (!isNaN(price)) {
+      if (price < 3) priceRanges['1억~3억']++;
+      else if (price < 5) priceRanges['3억~5억']++;
+      else if (price < 10) priceRanges['5억~10억']++;
+      else priceRanges['10억+']++;
+    }
+  });
+
+  return { typeCount, priceRanges };
+}
+
 /* 지역별 페이지 HTML을 생성합니다 */
 function generateRegionPage(region, listings, blogLinks, title, description, pageUrl, image) {
+  const stats = calculateStats(listings);
+
+  const typeCountHtml = Object.entries(stats.typeCount).map(([type, count]) => `
+    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+      <span style="font-weight: 600; color: var(--navy);">${escapeHtml(type)}</span>
+      <span style="font-weight: 700; color: var(--gold);">${count}개</span>
+    </div>
+  `).join('');
+
+  const priceRangeHtml = Object.entries(stats.priceRanges).map(([range, count]) => `
+    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+      <span style="font-weight: 600; color: var(--navy);">${range}</span>
+      <span style="font-weight: 700; color: var(--gold);">${count}개</span>
+    </div>
+  `).join('');
+
+  const featuredListings = listings.slice(0, 3).map(l => `
+    <div style="padding: 12px; background: var(--gray-light); border-radius: 6px; margin-bottom: 8px;">
+      <div style="font-weight: 700; color: var(--navy); font-size: 13px; margin-bottom: 4px;">${escapeHtml(l.name)}</div>
+      <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--gray-text);">
+        <span>${escapeHtml(l.type)} · ${escapeHtml(l.deal)}</span>
+        <span style="font-weight: 700; color: var(--gold);">${escapeHtml(l.price)}</span>
+      </div>
+    </div>
+  `).join('');
+
   const listingsHtml = listings.map((l, idx) => `
     <div class="listing-item" data-index="${idx}" style="${idx >= 8 ? 'display: none;' : ''}">
       <div class="listing-info">
@@ -568,48 +617,29 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
         <div class="content-wrapper">
             <div class="main-content">
                 <div class="section">
-                    <h2>시세 정보</h2>
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-label">오피스텔 평균</div>
-                            <div class="stat-value">3.8억</div>
+                    <h2>매물현황</h2>
+                    <div style="background: var(--gray-light); padding: 16px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 800; color: var(--navy); margin-bottom: 4px;">${listings.length}개</div>
+                        <div style="font-size: 12px; color: var(--gray-text); font-weight: 600;">전체 매물</div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--gold);">유형별</div>
+                            ${typeCountHtml}
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-label">아파트 평균</div>
-                            <div class="stat-value">8.2억</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">시세 동향</div>
-                            <div class="stat-value">+3.2%</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">주요 교통</div>
-                            <div class="stat-value">6개 노선</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--gold);">가격대별</div>
+                            ${priceRangeHtml}
                         </div>
                     </div>
-                    <div class="chart-container">
-                        <div style="font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 12px;">지역별 평균 매매가</div>
-                        <div class="chart-row">
-                            <div class="chart-label">오피스텔</div>
-                            <div class="chart-bar" style="width: 40%;"></div>
-                            <div class="chart-value">3.8억</div>
-                        </div>
-                        <div class="chart-row">
-                            <div class="chart-label">아파트</div>
-                            <div class="chart-bar" style="width: 100%;"></div>
-                            <div class="chart-value">8.2억</div>
-                        </div>
-                        <div class="chart-row">
-                            <div class="chart-label">상가</div>
-                            <div class="chart-bar" style="width: 67%;"></div>
-                            <div class="chart-value">5.5억</div>
-                        </div>
+
+                    <div style="background: var(--gray-light); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 12px;">주요 매물</div>
+                        ${featuredListings}
                     </div>
-                    <div class="info-highlight">
-                        <strong>${escapeHtml(region)}의 특징</strong>
-                        서울의 중심지로 직장인 수요가 많고, 공덕역·이대역 주변 재개발로 향후 가치 상승이 기대됩니다. 교통이 편리해 전월세 시장도 활발합니다.
-                    </div>
-                    <div style="display: flex; gap: 12px; margin-top: 20px;">
+
+                    <div style="display: flex; gap: 12px;">
                         <button onclick="goToMap()" style="flex: 1; padding: 10px; background: var(--navy); color: var(--gold); border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px;">지도로 보기</button>
                         <button onclick="goHome()" style="flex: 1; padding: 10px; background: var(--navy); color: var(--gold); border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px;">홈페이지</button>
                     </div>
