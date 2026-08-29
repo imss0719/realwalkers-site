@@ -1,6 +1,8 @@
 /* ══════════════════════════════════════════════════════════════
    지역별 매물 선택 페이지 — Cloudflare Pages Function
+
    /regions 으로 접속하면 모든 지역을 카드 그리드로 보여줍니다.
+   각 카드는 해당 지역의 /region/[지역명] 페이지로 링크됩니다.
    ══════════════════════════════════════════════════════════════ */
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-V_ZJtPtye1Or9bEkQpDOxyofS-x837-NyuaRDR948PvkRRc9-MivFlDWC7sjlGCyucPvRg_fs8tt/pub?gid=0&single=true&output=csv";
@@ -9,6 +11,7 @@ export async function onRequest(context) {
   const { request } = context;
   const origin = new URL(request.url).origin;
 
+  // 구글시트에서 모든 지역과 매물 수를 가져옵니다
   let regionStats = {};
   try {
     const csvRes = await fetch(SHEET_CSV_URL, { cf: { cacheTtl: 3600, cacheEverything: true } });
@@ -27,6 +30,7 @@ export async function onRequest(context) {
   });
 }
 
+/* 모든 지역별 매물 통계를 계산합니다 */
 function getRegionStats(csvText) {
   const rows = parseCSV(csvText);
   if (!rows.length) return {};
@@ -46,12 +50,15 @@ function getRegionStats(csvText) {
     const row = rows[r];
     const addr = (row[iAddr] || "").trim();
 
+    // "노출" 칸이 "N"이면 제외
     const showVal = iShow >= 0 ? (row[iShow] || "").trim().toUpperCase() : "";
     if (showVal === "N") continue;
 
+    // "거래" 칸이 "완료"면 제외
     const dealVal = iD >= 0 ? (row[iD] || "").trim() : "";
     if (dealVal === "완료") continue;
 
+    // 매물명이 없으면 제외
     const name = iN >= 0 ? (row[iN] || "").trim() : "";
     if (!name) continue;
 
@@ -64,6 +71,7 @@ function getRegionStats(csvText) {
 
     stats[region].count++;
 
+    // 평균가 계산용 가격 수집
     const price = iP >= 0 ? (row[iP] || "").trim() : "";
     if (price) {
       const priceNum = parseFloat(price.replace(/[^0-9.]/g, ''));
@@ -73,37 +81,45 @@ function getRegionStats(csvText) {
     }
   }
 
+  // 평균가 계산
   Object.keys(stats).forEach(region => {
     const prices = stats[region].prices;
     if (prices.length > 0) {
       const avg = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
       stats[region].avgPrice = formatPrice(avg);
     }
-    delete stats[region].prices;
+    delete stats[region].prices; // 불필요한 데이터 제거
   });
 
   return stats;
 }
 
+/* 가격을 "X.XB" 형식으로 포맷팅합니다 */
 function formatPrice(num) {
   if (num >= 10) return Math.round(num / 10) / 10 + 'B';
   if (num >= 1) return Math.round(num * 10) / 10 + 'B';
   return num + '만';
 }
 
+/* 주소에서 지역명(광역시/도)을 추출합니다 */
 function extractRegion(addr) {
   if (!addr) return "";
   const parts = addr.split(/\s+/);
-  if (parts.length >= 2) {
-    return parts[1];
+  if (parts.length >= 1) {
+    return parts[0];  // 첫 번째 단어: 광역시/도
   }
   return "";
 }
 
+/* 지역별 매물 페이지 HTML을 생성합니다 */
 function generateRegionsPage(regionStats, origin) {
+  // 지역을 매물 수 기준으로 내림차순 정렬
   const allRegions = Object.keys(regionStats).sort((a, b) => regionStats[b].count - regionStats[a].count);
+
+  // 가장 많은 매물 수를 기준으로 바의 최대값 설정
   const maxCount = allRegions.length > 0 ? regionStats[allRegions[0]].count : 1;
 
+  // 지역을 그룹별로 분류
   const groupedRegions = {};
   allRegions.forEach(region => {
     const group = getRegionGroup(region);
@@ -113,6 +129,7 @@ function generateRegionsPage(regionStats, origin) {
     groupedRegions[group].push(region);
   });
 
+  // 그룹 순서 정의
   const groupOrder = ['서울', '경기도', '인천'];
   const sortedGroups = groupOrder.filter(g => groupedRegions[g]);
   if (Object.keys(groupedRegions).some(g => !groupOrder.includes(g))) {
@@ -120,6 +137,7 @@ function generateRegionsPage(regionStats, origin) {
     sortedGroups.push(...otherGroups);
   }
 
+  // 섹션별 HTML 생성
   const sectionsHtml = sortedGroups.map(group => {
     const regions = groupedRegions[group];
     const regionCardsHtml = regions.map(region => {
@@ -339,7 +357,7 @@ function generateRegionsPage(regionStats, origin) {
                 gap: 12px;
             }
 
-            .section-header h1 {
+            .section-header {
                 font-size: 28px;
             }
 
@@ -369,7 +387,9 @@ function generateRegionsPage(regionStats, origin) {
             <p>원하시는 지역을 선택해 최신 매물 정보를 확인하세요</p>
         </div>
 
-        ${regionCardsHtml}
+        <div class="regions-grid">
+            ${regionCardsHtml}
+        </div>
 
         <div class="footer-link">
             <a href="/">← 지도로 돌아가기</a>
@@ -379,35 +399,87 @@ function generateRegionsPage(regionStats, origin) {
 </html>`;
 }
 
+/* 지역별 이모지를 반환합니다 */
 function getRegionEmoji(region) {
   const emojiMap = {
-    '마포구': '🏢', '강남구': '🏙️', '송파구': '🌳', '서초구': '🏛️',
-    '종로구': '🏯', '강북구': '⛰️', '중구': '🌐', '김포시': '🌾',
-    '고양시': '🏘️', '서대문구': '🎓', '은평구': '🌲', '광진구': '🚇',
-    '강동구': '🌊', '양천구': '🏞️', '노원구': '🏞️',
-    '인천': '⚓', '부천': '🏭', '성남': '🏗️'
+    '서울': '🏢', '서울특별시': '🏢',
+    '경기': '🏘️', '경기도': '🏘️',
+    '인천': '⚓', '인천광역시': '⚓', '인천시': '⚓',
+    '강원': '🏔️', '강원도': '🏔️',
+    '충북': '🌾', '충청북도': '🌾',
+    '충남': '🌾', '충청남도': '🌾',
+    '전북': '🌾', '전라북도': '🌾',
+    '전남': '🌊', '전라남도': '🌊',
+    '경북': '🏞️', '경상북도': '🏞️',
+    '경남': '🏖️', '경상남도': '🏖️',
+    '제주': '🌴', '제주도': '🌴',
+    '부산': '🌊', '부산광역시': '🌊',
+    '대구': '🏙️', '대구광역시': '🏙️',
+    '광주': '🎨', '광주광역시': '🎨',
+    '대전': '🏛️', '대전광역시': '🏛️',
+    '울산': '⚙️', '울산광역시': '⚙️',
+    '세종': '🏗️', '세종특별자치시': '🏗️'
   };
   return emojiMap[region] || '🏠';
 }
 
+/* 지역을 대분류 그룹으로 분류합니다 */
 function getRegionGroup(region) {
   const groupMap = {
-    '마포구': '서울', '강남구': '서울', '송파구': '서울', '서초구': '서울',
-    '종로구': '서울', '강북구': '서울', '중구': '서울', '서대문구': '서울',
-    '은평구': '서울', '광진구': '서울', '강동구': '서울', '양천구': '서울',
-    '노원구': '서울', '동대문구': '서울', '성동구': '서울', '구로구': '서울',
-    '영등포구': '서울', '금천구': '서울', '동작구': '서울', '관악구': '서울',
-    '강서구': '서울',
-    '김포시': '경기도', '고양시': '경기도', '파주시': '경기도', '부천시': '경기도',
-    '성남시': '경기도', '수원시': '경기도', '용인시': '경기도', '안산시': '경기도',
-    '안양시': '경기도', '군포시': '경기도', '동두천시': '경기도', '의정부시': '경기도',
-    '남양주시': '경기도', '오산시': '경기도', '평택시': '경기도', '화성시': '경기도',
-    '광주시': '경기도', '이천시': '경기도', '여주시': '경기도', '가평군': '경기도',
-    '인천': '인천', '인천시': '인천',
+    // 서울
+    '서울': '서울', '서울특별시': '서울',
+    // 경기
+    '경기': '경기도', '경기도': '경기도',
+    // 인천
+    '인천': '인천', '인천광역시': '인천',
+    // 강원
+    '강원': '강원도', '강원도': '강원도',
+    // 충청북도
+    '충북': '충청북도', '충청북도': '충청북도',
+    // 충청남도
+    '충남': '충청남도', '충청남도': '충청남도',
+    // 전라북도
+    '전북': '전라북도', '전라북도': '전라북도',
+    // 전라남도
+    '전남': '전라남도', '전라남도': '전라남도',
+    // 경상북도
+    '경북': '경상북도', '경상북도': '경상북도',
+    // 경상남도
+    '경남': '경상남도', '경상남도': '경상남도',
+    // 제주
+    '제주': '제주도', '제주도': '제주도',
+    // 광역시
+    '서울시': '서울', '부산': '부산', '부산광역시': '부산',
+    '대구': '대구', '대구광역시': '대구',
+    '인천시': '인천',
+    '광주': '광주', '광주광역시': '광주',
+    '대전': '대전', '대전광역시': '대전',
+    '울산': '울산', '울산광역시': '울산',
+    '세종': '세종', '세종특별자치시': '세종',
   };
-  return groupMap[region] || '기타';
+  return groupMap[region] || region;  // 매핑 안 된 건 그대로 표시
 }
 
+/* 지역별 설명을 반환합니다 */
+function getRegionSubtitle(region) {
+  const subtitleMap = {
+    '마포구': '서울 중심의 현대적 지역',
+    '강남구': '프리미엄 주거 지역',
+    '송파구': '한강 조망 최고 명소',
+    '서초구': '교육·문화 중심지',
+    '종로구': '역사 문화의 중심',
+    '강북구': '자연과 도시의 조화',
+    '중구': '비즈니스 중심가',
+    '김포시': '경기도 신흥 도시',
+    '고양시': '신도시 개발 지역',
+    '서대문구': '대학 문화의 중심',
+    '은평구': '주거 안정 지역',
+    '광진구': '교통 요지 지역'
+  };
+  return subtitleMap[region] || '최신 매물 정보';
+}
+
+/* HTML 특수문자 이스케이프 */
 function escapeHtml(text) {
   if (!text) return '';
   return String(text)
@@ -418,6 +490,7 @@ function escapeHtml(text) {
     .replace(/'/g, '&#039;');
 }
 
+/* index.html의 parseCSV()와 동일한 로직입니다 */
 function parseCSV(text) {
   const rows = [];
   let row = [], cell = "", inQ = false;
