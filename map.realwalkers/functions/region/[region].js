@@ -733,7 +733,7 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
             });
 
             if (currentFilter.type) {
-                document.querySelectorAll(`[data-filter-type="${currentFilter.type}"]`).forEach(btn => {
+                document.querySelectorAll('[data-filter-type="' + currentFilter.type + '"]').forEach(btn => {
                     btn.style.background = 'var(--navy)';
                     btn.style.borderColor = 'var(--gold)';
                     btn.style.color = 'var(--gold)';
@@ -741,7 +741,7 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
             }
 
             if (currentFilter.price) {
-                document.querySelectorAll(`[data-filter-price="${currentFilter.price}"]`).forEach(btn => {
+                document.querySelectorAll('[data-filter-price="' + currentFilter.price + '"]').forEach(btn => {
                     btn.style.background = 'var(--navy)';
                     btn.style.borderColor = 'var(--gold)';
                     btn.style.color = 'var(--gold)';
