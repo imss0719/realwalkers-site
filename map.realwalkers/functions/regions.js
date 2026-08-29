@@ -113,30 +113,28 @@ function extractRegion(addr) {
 
 /* 지역별 매물 페이지 HTML을 생성합니다 */
 function generateRegionsPage(regionStats, origin) {
-  // 지역을 알파벳 순으로 정렬
-  const regions = Object.keys(regionStats).sort();
+  // 지역을 매물 수 기준으로 내림차순 정렬
+  const regions = Object.keys(regionStats).sort((a, b) => regionStats[b].count - regionStats[a].count);
+
+  // 가장 많은 매물 수를 기준으로 바의 최대값 설정
+  const maxCount = regions.length > 0 ? regionStats[regions[0]].count : 1;
 
   const regionCardsHtml = regions.map(region => {
     const stat = regionStats[region];
     const emoji = getRegionEmoji(region);
-    const subtitle = getRegionSubtitle(region);
+    const barWidth = (stat.count / maxCount) * 100;
 
     return `
     <a href="/region/${encodeURIComponent(region)}" class="region-card">
-      <div class="region-image">${emoji}</div>
-      <div class="region-content">
-        <div class="region-name">${escapeHtml(region)}</div>
-        <div class="region-subtitle">${subtitle}</div>
-        <div class="region-stats">
-          <div class="stat">
-            <span class="stat-number">${stat.count}</span>
-            <span class="stat-label">매물</span>
-          </div>
-          <div class="stat">
-            <span class="stat-number">${stat.avgPrice || '-'}</span>
-            <span class="stat-label">평균가</span>
-          </div>
+      <div class="region-header">
+        <span class="region-emoji">${emoji}</span>
+        <div class="region-info">
+          <div class="region-name">${escapeHtml(region)}</div>
+          <div class="region-count">${stat.count}개</div>
         </div>
+      </div>
+      <div class="region-bar-container">
+        <div class="region-bar" style="width: ${barWidth}%"></div>
       </div>
     </a>
   `;
@@ -201,99 +199,78 @@ function generateRegionsPage(regionStats, origin) {
 
         .regions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
         }
 
         .region-card {
             background: var(--white);
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
             cursor: pointer;
             border: 1px solid var(--border);
             text-decoration: none;
             color: inherit;
             display: flex;
             flex-direction: column;
+            padding: 16px;
         }
 
         .region-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border-color: var(--gold);
         }
 
-        .region-image {
-            width: 100%;
-            height: 180px;
-            background: linear-gradient(135deg, var(--navy) 0%, rgba(27, 42, 74, 0.7) 100%);
+        .region-header {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 60px;
-            color: var(--gold);
-            opacity: 0.8;
-            transition: opacity 0.3s ease;
-        }
-
-        .region-card:hover .region-image {
-            opacity: 1;
-        }
-
-        .region-content {
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
             gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .region-emoji {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .region-info {
             flex: 1;
+            min-width: 0;
         }
 
         .region-name {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 700;
             color: var(--navy);
-            transition: color 0.3s ease;
+            transition: color 0.2s ease;
         }
 
         .region-card:hover .region-name {
             color: var(--gold);
         }
 
-        .region-subtitle {
-            font-size: 13px;
-            color: var(--gray-text);
-            font-weight: 500;
-        }
-
-        .region-stats {
-            display: flex;
-            gap: 16px;
-            margin-top: 8px;
-            padding-top: 12px;
-            border-top: 1px solid var(--border);
-        }
-
-        .stat {
-            flex: 1;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 24px;
-            font-weight: 800;
+        .region-count {
+            font-size: 14px;
+            font-weight: 700;
             color: var(--gold);
-            display: block;
+            margin-top: 2px;
         }
 
-        .stat-label {
-            font-size: 11px;
-            color: var(--gray-text);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 4px;
+        .region-bar-container {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .region-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--navy) 0%, var(--gold) 100%);
+            transition: width 0.3s ease;
+            border-radius: 4px;
         }
 
         .footer-link {
@@ -321,21 +298,24 @@ function generateRegionsPage(regionStats, origin) {
 
         @media (max-width: 768px) {
             .regions-grid {
-                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-                gap: 16px;
+                grid-template-columns: 1fr;
+                gap: 12px;
             }
 
             .section-header h1 {
                 font-size: 28px;
             }
 
-            .region-image {
-                height: 140px;
-                font-size: 48px;
+            .region-card {
+                padding: 14px;
             }
 
-            .region-content {
-                padding: 16px;
+            .region-emoji {
+                font-size: 28px;
+            }
+
+            .region-name {
+                font-size: 15px;
             }
         }
     </style>
