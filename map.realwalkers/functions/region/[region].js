@@ -1,162 +1,150 @@
 /* ══════════════════════════════════════════════════════════════
-   지역별 랜딩 페이지 자동 생성 — Cloudflare Pages Function
+   지역별 매물 선택 페이지 — Cloudflare Pages Function
 
-   /region/지역명 으로 접속하면 이 파일이 실행되어, 구글시트에 있는
-   해당 지역의 매물들을 모아서 보여주는 페이지를 만듭니다.
-
-   지역별로 SEO 최적화된 페이지를 만들어서, 사용자가
-   "마포구 오피스텔", "김포시 부동산" 같은 검색을 할 때
-   검색 결과에 노출되도록 합니다.
-
-   ※ 주의: 아래 SHEET_CSV_URL은 index.html의 CONFIG.SHEET_CSV_URL,
-   그리고 functions/m/[no].js 의 값과 반드시 같아야 합니다.
-   구글시트 주소를 바꾸시면 이 세 곳 모두 함께 바꿔주세요.
+   /regions 으로 접속하면 모든 지역을 카드 그리드로 보여줍니다.
+   각 카드는 해당 지역의 /region/[지역명] 페이지로 링크됩니다.
    ══════════════════════════════════════════════════════════════ */
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-V_ZJtPtye1Or9bEkQpDOxyofS-x837-NyuaRDR948PvkRRc9-MivFlDWC7sjlGCyucPvRg_fs8tt/pub?gid=0&single=true&output=csv";
 
 export async function onRequest(context) {
-  const { request, params } = context;
-  const region = decodeURIComponent(params.region || "");
+  const { request } = context;
   const origin = new URL(request.url).origin;
 
-  if (!region) {
-    const { env } = context;
-    return env.ASSETS.fetch(`${origin}/index.html`);
-  }
-
-  // 구글시트(CSV)에서 이 지역의 모든 매물과 블로그링크를 찾습니다
-  let listings = [];
-  let blogLinks = [];
+  // 구글시트에서 모든 지역과 매물 수를 가져옵니다
+  let regionStats = {};
   try {
     const csvRes = await fetch(SHEET_CSV_URL, { cf: { cacheTtl: 3600, cacheEverything: true } });
     if (csvRes.ok) {
       const text = await csvRes.text();
-      listings = findListingsByRegion(text, region);
-      blogLinks = findBlogLinksByRegion(text, region);
+      regionStats = getRegionStats(text);
     }
   } catch (e) {
     // CSV를 못 가져와도 계속 진행합니다
   }
 
-  // SEO 메타태그
-  const title = `${region} 부동산 매물 | 리얼워커스`;
-  const description = `${region} 지역의 최신 부동산 매물 정보입니다. 오피스텔, 아파트, 전원주택 등 다양한 매물을 확인하세요.`.slice(0, 150);
-  const pageUrl = `${origin}/region/${encodeURIComponent(region)}`;
-  const image = `${origin}/og-image.png`;
-
-  // HTML 생성
-  const html = generateRegionPage(region, listings, blogLinks, title, description, pageUrl, image);
+  const html = generateRegionsPage(regionStats, origin);
 
   return new Response(html, {
     headers: { "Content-Type": "text/html; charset=UTF-8" },
   });
 }
 
-/* 지역별 통계 계산 */
-function calculateStats(listings) {
-  const typeCount = {};
-  const priceRanges = { '1억~3억': 0, '3억~5억': 0, '5억~10억': 0, '10억~20억': 0, '20억~50억': 0, '50억+': 0 };
+/* 모든 지역별 매물 통계를 계산합니다 */
+function getRegionStats(csvText) {
+  const rows = parseCSV(csvText);
+  if (!rows.length) return {};
 
-  listings.forEach(l => {
-    // 유형별 개수
-    typeCount[l.type] = (typeCount[l.type] || 0) + 1;
+  const head = rows[0].map(h => h.trim());
+  const iAddr = head.indexOf("주소");
+  const iShow = head.indexOf("노출");
+  const iN = head.indexOf("매물명");
+  const iP = head.indexOf("가격");
 
-    // 가격대별 분류 (억 단위로 파싱)
-    const priceStr = l.price.replace(/[^0-9.]/g, '');
-    const price = parseFloat(priceStr);
-    if (!isNaN(price)) {
-      if (price < 3) priceRanges['1억~3억']++;
-      else if (price < 5) priceRanges['3억~5억']++;
-      else if (price < 10) priceRanges['5억~10억']++;
-      else if (price < 20) priceRanges['10억~20억']++;
-      else if (price < 50) priceRanges['20억~50억']++;
-      else priceRanges['50억+']++;
+  if (iAddr < 0) return {};
+
+  const stats = {};
+
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    const addr = (row[iAddr] || "").trim();
+
+    // "노출" 칸이 "N"이면 제외
+    const showVal = iShow >= 0 ? (row[iShow] || "").trim().toUpperCase() : "";
+    if (showVal === "N") continue;
+
+    // 매물명이 없으면 제외
+    const name = iN >= 0 ? (row[iN] || "").trim() : "";
+    if (!name) continue;
+
+    const region = extractRegion(addr);
+    if (!region) continue;
+
+    if (!stats[region]) {
+      stats[region] = { count: 0, prices: [] };
     }
+
+    stats[region].count++;
+
+    // 평균가 계산용 가격 수집
+    const price = iP >= 0 ? (row[iP] || "").trim() : "";
+    if (price) {
+      const priceNum = parseFloat(price.replace(/[^0-9.]/g, ''));
+      if (!isNaN(priceNum)) {
+        stats[region].prices.push(priceNum);
+      }
+    }
+  }
+
+  // 평균가 계산
+  Object.keys(stats).forEach(region => {
+    const prices = stats[region].prices;
+    if (prices.length > 0) {
+      const avg = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+      stats[region].avgPrice = formatPrice(avg);
+    }
+    delete stats[region].prices; // 불필요한 데이터 제거
   });
 
-  return { typeCount, priceRanges };
+  return stats;
 }
 
-/* 지역별 페이지 HTML을 생성합니다 */
-function generateRegionPage(region, listings, blogLinks, title, description, pageUrl, image) {
-  const stats = calculateStats(listings);
+/* 가격을 "X.XB" 형식으로 포맷팅합니다 */
+function formatPrice(num) {
+  if (num >= 10) return Math.round(num / 10) / 10 + 'B';
+  if (num >= 1) return Math.round(num * 10) / 10 + 'B';
+  return num + '만';
+}
 
-  const typeCountHtml = Object.entries(stats.typeCount).map(([type, count]) => `
-    <button onclick="filterListings('type', '${escapeHtml(type).replace(/'/g, "&#039;")}')" class="filter-btn" data-filter-type="${escapeHtml(type)}" style="padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; background: var(--gray-light); color: var(--navy); border: 2px solid transparent; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 12px; transition: all 0.2s;">
-      ${escapeHtml(type)} <span style="color: var(--gold); font-weight: 700;">${count}개</span>
-    </button>
-  `).join('');
+/* 주소에서 지역명(시/군/구)을 추출합니다 */
+function extractRegion(addr) {
+  if (!addr) return "";
+  const parts = addr.split(/\s+/);
+  if (parts.length >= 2) {
+    return parts[1];
+  }
+  return "";
+}
 
-  const priceRangeHtml = Object.entries(stats.priceRanges).map(([range, count]) => `
-    <button onclick="filterListings('price', '${escapeHtml(range)}')" class="filter-btn" data-filter-price="${escapeHtml(range)}" style="padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; background: var(--gray-light); color: var(--navy); border: 2px solid transparent; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 12px; transition: all 0.2s;">
-      ${range} <span style="color: var(--gold); font-weight: 700;">${count}개</span>
-    </button>
-  `).join('');
+/* 지역별 매물 페이지 HTML을 생성합니다 */
+function generateRegionsPage(regionStats, origin) {
+  // 지역을 알파벳 순으로 정렬
+  const regions = Object.keys(regionStats).sort();
 
-  const featuredListings = listings.slice(0, 3).map(l => `
-    <div style="padding: 12px; background: var(--gray-light); border-radius: 6px; margin-bottom: 8px;">
-      <div style="font-weight: 700; color: var(--navy); font-size: 13px; margin-bottom: 4px;">${escapeHtml(l.name)}</div>
-      <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--gray-text);">
-        <span>${escapeHtml(l.type)} · ${escapeHtml(l.deal)}</span>
-        <span style="font-weight: 700; color: var(--gold);">${escapeHtml(l.price)}</span>
-      </div>
-    </div>
-  `).join('');
+  const regionCardsHtml = regions.map(region => {
+    const stat = regionStats[region];
+    const emoji = getRegionEmoji(region);
+    const subtitle = getRegionSubtitle(region);
 
-  const getPriceRange = (priceStr) => {
-    const num = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
-    if (isNaN(num)) return '';
-    if (num < 3) return '1억~3억';
-    if (num < 5) return '3억~5억';
-    if (num < 10) return '5억~10억';
-    if (num < 20) return '10억~20억';
-    if (num < 50) return '20억~50억';
-    return '50억+';
-  };
-
-  const listingsHtml = listings.map((l, idx) => {
-    const priceRange = getPriceRange(l.price);
     return `
-    <div class="listing-item" data-index="${idx}" data-type="${escapeHtml(l.type)}" data-price="${escapeHtml(priceRange)}" style="${idx >= 8 ? 'display: none;' : ''}">
-      <div class="listing-info">
-        <div class="listing-name">${escapeHtml(l.name)}</div>
-        <div class="listing-meta"><span class="badge">${escapeHtml(l.type)}</span>${escapeHtml(l.deal)}</div>
+    <a href="/region/${encodeURIComponent(region)}" class="region-card">
+      <div class="region-image">${emoji}</div>
+      <div class="region-content">
+        <div class="region-name">${escapeHtml(region)}</div>
+        <div class="region-subtitle">${subtitle}</div>
+        <div class="region-stats">
+          <div class="stat">
+            <span class="stat-number">${stat.count}</span>
+            <span class="stat-label">매물</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">${stat.avgPrice || '-'}</span>
+            <span class="stat-label">평균가</span>
+          </div>
+        </div>
       </div>
-      <div class="listing-price">${escapeHtml(l.price)}</div>
-      <a href="/m/${encodeURIComponent(l.no)}" class="view-btn">상세</a>
-    </div>
+    </a>
   `;
-  }).join('') + (listings.length > 8 ? `
-    <div style="text-align: center; margin-top: 20px;">
-      <button onclick="loadMoreListings()" style="padding: 10px 24px; background: var(--navy); color: var(--gold); border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px;">더 보기 (${listings.length - 8}개)</button>
-    </div>
-  ` : '');
-
-  const blogsHtml = blogLinks.slice(0, 3).map(b => `
-    <div class="blog-item">
-      <div class="blog-title">${escapeHtml(b.title)}</div>
-      <a href="${escapeHtml(b.url)}" class="blog-link" target="_blank">보기</a>
-    </div>
-  `).join('');
+  }).join('');
 
   return `<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${escapeHtml(title)}</title>
-    <meta name="description" content="${escapeHtml(description)}">
-    <link rel="canonical" href="${escapeHtml(pageUrl)}">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="${escapeHtml(title)}">
-    <meta property="og:description" content="${escapeHtml(description)}">
-    <meta property="og:url" content="${escapeHtml(pageUrl)}">
-    <meta property="og:image" content="${escapeHtml(image)}">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${escapeHtml(title)}">
-    <meta name="twitter:description" content="${escapeHtml(description)}">
-    <meta name="twitter:image" content="${escapeHtml(image)}">
+    <title>지역별 부동산 매물 | 리얼워커스</title>
+    <meta name="description" content="서울·경기 지역별 부동산 매물 정보. 아파트, 상가, 건물, 토지 등 다양한 매물을 지역별로 확인하세요.">
+    <link rel="canonical" href="${escapeHtml(origin)}/regions">
     <style>
         :root {
             --navy: #1B2A4A;
@@ -182,647 +170,219 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 40px 20px;
         }
 
-        header {
-            background: var(--white);
-            padding: 40px;
-            margin-bottom: 40px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 2px solid var(--navy);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
         }
 
-        header .header-left h1 {
-            font-size: 32px;
+        .section-header h1 {
+            font-size: 36px;
             font-weight: 700;
             color: var(--navy);
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             letter-spacing: -0.02em;
         }
 
-        header .header-left p {
-            font-size: 14px;
+        .section-header p {
+            font-size: 16px;
             color: var(--gray-text);
             font-weight: 500;
         }
 
-        header .office-info {
-            text-align: right;
-            padding: 16px 20px;
-            border-left: 2px solid var(--gold);
-            padding-left: 20px;
-        }
-
-        header .office-info div {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--navy);
-            line-height: 1.8;
-        }
-
-        header .office-info div:nth-child(2) {
-            font-size: 15px;
-            font-weight: 700;
-            margin: 4px 0;
-        }
-
-        header .office-info div:last-child {
-            font-size: 12px;
-            color: var(--gray-text);
-            font-weight: 500;
-        }
-
-        .content-wrapper {
+        .regions-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
         }
 
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-
-        .section {
+        .region-card {
             background: var(--white);
-            padding: 32px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+            cursor: pointer;
             border: 1px solid var(--border);
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
         }
 
-        .section h2 {
-            font-size: 18px;
+        .region-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+            border-color: var(--gold);
+        }
+
+        .region-image {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, var(--navy) 0%, rgba(27, 42, 74, 0.7) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            color: var(--gold);
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .region-card:hover .region-image {
+            opacity: 1;
+        }
+
+        .region-content {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .region-name {
+            font-size: 20px;
             font-weight: 700;
             color: var(--navy);
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 2px solid var(--gold);
-            letter-spacing: -0.01em;
+            transition: color 0.3s ease;
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .region-card:hover .region-name {
+            color: var(--gold);
+        }
+
+        .region-subtitle {
+            font-size: 13px;
+            color: var(--gray-text);
+            font-weight: 500;
+        }
+
+        .region-stats {
+            display: flex;
             gap: 16px;
-            margin-bottom: 20px;
+            margin-top: 8px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
         }
 
-        .stat-item {
-            background: var(--gray-light);
-            padding: 20px;
-            border-radius: 6px;
-            border-left: 3px solid var(--gold);
+        .stat {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--gold);
+            display: block;
         }
 
         .stat-label {
             font-size: 11px;
             color: var(--gray-text);
+            font-weight: 600;
             text-transform: uppercase;
-            font-weight: 700;
             letter-spacing: 0.05em;
-            margin-bottom: 8px;
+            margin-top: 4px;
         }
 
-        .stat-value {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--navy);
-        }
-
-        .info-highlight {
-            background: var(--gray-light);
-            border-left: 3px solid var(--gold);
-            padding: 18px 20px;
-            border-radius: 6px;
-            margin-top: 16px;
-            font-size: 14px;
-            line-height: 1.7;
-            color: #555;
-        }
-
-        .info-highlight strong {
-            color: var(--navy);
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 700;
-        }
-
-        .blog-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .blog-item {
-            background: var(--gray-light);
-            padding: 16px 18px;
-            border-radius: 6px;
-            border-left: 3px solid var(--gold);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
-            gap: 12px;
-        }
-
-        .blog-item:hover {
-            background: #F0EDE5;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-        }
-
-        .blog-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--navy);
-            flex: 1;
-            line-height: 1.5;
-        }
-
-        .blog-link {
-            background: var(--navy);
-            color: var(--gold);
-            padding: 6px 14px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 11px;
-            font-weight: 700;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            flex-shrink: 0;
-            display: inline-block;
-        }
-
-        .blog-link:hover {
-            background: var(--gold);
-            color: var(--white);
-            box-shadow: 0 2px 6px rgba(201, 162, 39, 0.2);
-        }
-
-        .listings-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .listing-item {
-            background: var(--gray-light);
-            padding: 16px 18px;
-            border-radius: 6px;
-            border-left: 3px solid var(--navy);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
-            gap: 12px;
-        }
-
-        .listing-item:hover {
-            background: #F0EDE5;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-        }
-
-        .listing-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .listing-name {
-            font-weight: 700;
-            color: var(--navy);
-            font-size: 13px;
-            margin-bottom: 4px;
-        }
-
-        .listing-meta {
-            font-size: 12px;
-            color: var(--gray-text);
-            font-weight: 600;
-        }
-
-        .listing-price {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--navy);
-            min-width: 80px;
-            text-align: right;
-            flex-shrink: 0;
-        }
-
-        .view-btn {
-            background: var(--navy);
-            color: var(--gold);
-            padding: 6px 14px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 11px;
-            font-weight: 700;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            flex-shrink: 0;
-            display: inline-block;
-        }
-
-        .view-btn:hover {
-            background: var(--gold);
-            color: var(--white);
-            box-shadow: 0 2px 6px rgba(201, 162, 39, 0.2);
-        }
-
-        .contact-section {
-            background: var(--navy);
-            color: var(--white);
-        }
-
-        .contact-section h2 {
-            border-bottom-color: var(--gold);
-            color: var(--gold);
-        }
-
-        .contact-content {
-            font-size: 13px;
-            line-height: 1.8;
-            margin-bottom: 20px;
-            color: rgba(255, 255, 255, 0.95);
-        }
-
-        .contact-btn {
-            display: block;
-            width: 100%;
+        .footer-link {
             text-align: center;
-            background: var(--gold);
-            color: var(--navy);
-            border: none;
-            font-weight: 700;
-            padding: 12px 0;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-link a {
+            display: inline-block;
+            background: var(--navy);
+            color: var(--gold);
+            padding: 12px 28px;
             border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            font-family: inherit;
+            text-decoration: none;
+            font-weight: 700;
             transition: all 0.2s ease;
         }
 
-        .contact-btn:hover {
-            background: #E8D9A8;
-            box-shadow: 0 4px 10px rgba(201, 162, 39, 0.3);
-            transform: translateY(-1px);
-        }
-
-        .info-section h2 {
-            border-bottom-color: var(--gold);
+        .footer-link a:hover {
+            background: var(--gold);
             color: var(--navy);
-        }
-
-        .info-content {
-            font-size: 13px;
-            line-height: 2;
-        }
-
-        .info-item {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 8px;
-        }
-
-        .info-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .info-label {
-            font-weight: 700;
-            min-width: 50px;
-            color: var(--navy);
-            font-size: 12px;
-        }
-
-        .info-item div:last-child {
-            color: #555;
-            font-weight: 500;
-        }
-
-        .badge {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 3px 8px;
-            background: var(--navy);
-            color: var(--gold);
-            border-radius: 3px;
-            margin-right: 6px;
-        }
-
-        .chart-container {
-            margin-top: 16px;
-        }
-
-        .chart-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .chart-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--navy);
-            min-width: 70px;
-        }
-
-        .chart-bar {
-            flex: 1;
-            height: 24px;
-            background: linear-gradient(90deg, var(--gold) 0%, var(--navy) 100%);
-            border-radius: 4px;
-            position: relative;
-        }
-
-        .chart-value {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--navy);
-            min-width: 50px;
-            text-align: right;
         }
 
         @media (max-width: 768px) {
-            .container {
-                padding: 25px 15px;
+            .regions-grid {
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 16px;
             }
 
-            header {
-                flex-direction: column;
-                gap: 20px;
-                padding: 25px;
+            .section-header h1 {
+                font-size: 28px;
             }
 
-            header .office-info {
-                border-left: none;
-                border-top: 2px solid var(--gold);
-                padding-left: 0;
-                padding-top: 20px;
-                text-align: left;
+            .region-image {
+                height: 140px;
+                font-size: 48px;
             }
 
-            .content-wrapper {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .listing-item, .blog-item {
-                flex-wrap: wrap;
-            }
-
-            .listing-price {
-                width: 100%;
-                text-align: left;
-                margin-top: 6px;
-            }
-
-            .view-btn, .blog-link {
-                width: 100%;
-                text-align: center;
-                margin-top: 8px;
-            }
-
-            .section {
-                padding: 24px;
+            .region-content {
+                padding: 16px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="header-left">
-                <h1>${escapeHtml(region)} 부동산</h1>
-                <p>서울 중심의 최신 매물 및 시장 정보</p>
-            </div>
-            <div class="office-info">
-                <div>REALWALKERS</div>
-                <div>리얼워커스</div>
-                <div>공인중개사사무소 · 마포</div>
-            </div>
-        </header>
+        <div class="section-header">
+            <h1>지역별 부동산 매물</h1>
+            <p>원하시는 지역을 선택해 최신 매물 정보를 확인하세요</p>
+        </div>
 
-        <div class="content-wrapper">
-            <div class="main-content">
-                <div class="section">
-                    <h2>매물현황</h2>
-                    <div style="background: var(--gray-light); padding: 16px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                        <div style="font-size: 24px; font-weight: 800; color: var(--navy); margin-bottom: 4px;">${listings.length}개</div>
-                        <div style="font-size: 12px; color: var(--gray-text); font-weight: 600;">전체 매물</div>
-                    </div>
+        <div class="regions-grid">
+            ${regionCardsHtml}
+        </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <div>
-                            <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--gold);">유형별</div>
-                            ${typeCountHtml}
-                        </div>
-                        <div>
-                            <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--gold);">가격대별</div>
-                            ${priceRangeHtml}
-                        </div>
-                    </div>
-
-                    <div style="background: var(--gray-light); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-                        <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 12px;">주요 매물</div>
-                        ${featuredListings}
-                    </div>
-
-                    <div style="display: flex; gap: 12px;">
-                        <button onclick="goToMap()" style="flex: 1; padding: 10px; background: var(--navy); color: var(--gold); border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px;">지도로 보기</button>
-                        <button onclick="goHome()" style="flex: 1; padding: 10px; background: var(--navy); color: var(--gold); border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px;">홈페이지</button>
-                    </div>
-                </div>
-
-                ${blogLinks.length > 0 ? `
-                <div class="section">
-                    <h2>관련 글</h2>
-                    <div class="blog-list">
-                        ${blogsHtml}
-                    </div>
-                </div>
-                ` : ''}
-
-                <div class="section">
-                    <h2 id="listings-title">현재 매물 (${listings.length}개)</h2>
-                    <div class="listings-list">
-                        ${listingsHtml}
-                    </div>
-                </div>
-            </div>
-
-            <div class="sidebar">
-                <div class="section contact-section">
-                    <h2>빠른 문의</h2>
-                    <div class="contact-content">
-                        ${escapeHtml(region)}의 매물이나 시장 정보에 대해 궁금하신 점이 있으신가요? 저희 전문가에게 직접 상담받으세요.
-                    </div>
-                    <button class="contact-btn" onclick="handleContactClick(event)">문의하기</button>
-                </div>
-
-                <div class="section info-section">
-                    <h2>연락처</h2>
-                    <div class="info-content">
-                        <div class="info-item">
-                            <div class="info-label">전화</div>
-                            <div>010-4280-0869</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">카톡</div>
-                            <div>@realwalkers</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">이메일</div>
-                            <div>realwalkers@naver.com</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">블로그</div>
-                            <div>blog.naver.com/realwalkers</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="footer-link">
+            <a href="/">← 지도로 돌아가기</a>
         </div>
     </div>
-    <script>
-        let currentPage = 1;
-        let currentFilter = { type: null, price: null };
-
-        // 필터링 함수
-        function filterListings(filterType, filterValue) {
-            const listings = document.querySelectorAll('[data-index]');
-            let visibleCount = 0;
-
-            // 같은 필터를 다시 클릭하면 제거
-            if (currentFilter[filterType] === filterValue) {
-                currentFilter[filterType] = null;
-            } else {
-                currentFilter[filterType] = filterValue;
-            }
-
-            // 버튼 활성화 상태 업데이트
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.style.background = 'var(--gray-light)';
-                btn.style.borderColor = 'transparent';
-                btn.style.color = 'var(--navy)';
-            });
-
-            if (currentFilter.type) {
-                document.querySelectorAll('[data-filter-type="' + currentFilter.type + '"]').forEach(btn => {
-                    btn.style.background = 'var(--navy)';
-                    btn.style.borderColor = 'var(--gold)';
-                    btn.style.color = 'var(--gold)';
-                });
-            }
-
-            if (currentFilter.price) {
-                document.querySelectorAll('[data-filter-price="' + currentFilter.price + '"]').forEach(btn => {
-                    btn.style.background = 'var(--navy)';
-                    btn.style.borderColor = 'var(--gold)';
-                    btn.style.color = 'var(--gold)';
-                });
-            }
-
-            // 매물 표시/숨김
-            listings.forEach((item, idx) => {
-                const itemType = item.getAttribute('data-type');
-                const itemPrice = item.getAttribute('data-price');
-                const matchesType = !currentFilter.type || itemType === currentFilter.type;
-                const matchesPrice = !currentFilter.price || itemPrice === currentFilter.price;
-
-                if (matchesType && matchesPrice) {
-                    if (visibleCount < 8) {
-                        item.style.display = '';
-                        visibleCount++;
-                    } else {
-                        item.style.display = 'none';
-                    }
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-
-            // 현재 매물 제목 업데이트
-            const titleEl = document.getElementById('listings-title');
-            if (titleEl) {
-                titleEl.textContent = '현재 매물 (' + visibleCount + '개)';
-            }
-
-            currentPage = 1;
-        }
-
-        // 모바일/PC 감지 및 문의하기 처리
-        function handleContactClick(event) {
-            event.preventDefault();
-            const isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(navigator.userAgent);
-
-            if (isMobile) {
-                // 모바일: SMS 발송
-                window.location.href = 'sms:01042800869?body=안녕하세요. 리얼워커스입니다. 부동산 매물에 대해 문의드립니다.';
-            } else {
-                // PC: 카톡 오픈
-                window.open('https://pf.kakao.com/_mxewen', '_blank');
-            }
-        }
-
-        // 더 보기 버튼 클릭
-        function loadMoreListings() {
-            const listings = document.querySelectorAll('[data-index]');
-            let visibleCount = 0;
-
-            listings.forEach(item => {
-                const index = parseInt(item.getAttribute('data-index'));
-                const itemType = item.getAttribute('data-type');
-                const itemPrice = item.getAttribute('data-price');
-                const matchesType = !currentFilter.type || itemType === currentFilter.type;
-                const matchesPrice = !currentFilter.price || itemPrice === currentFilter.price;
-
-                if (matchesType && matchesPrice && index < (currentPage + 1) * 8) {
-                    item.style.display = '';
-                    visibleCount++;
-                }
-            });
-
-            currentPage++;
-        }
-
-        // 지도 보기 버튼 클릭
-        function goToMap() {
-            window.location.href = '/#map';
-        }
-
-        // 홈페이지 버튼 클릭
-        function goHome() {
-            window.location.href = '/';
-        }
-    </script>
 </body>
 </html>`;
+}
+
+/* 지역별 이모지를 반환합니다 */
+function getRegionEmoji(region) {
+  const emojiMap = {
+    '마포구': '🏢', '강남구': '🏙️', '송파구': '🌳', '서초구': '🏛️',
+    '종로구': '🏯', '강북구': '⛰️', '중구': '🌐', '김포시': '🌾',
+    '고양시': '🏘️', '서대문구': '🎓', '은평구': '🌲', '광진구': '🚇',
+    '서초구': '🎓', '강동구': '🌊', '양천구': '🏞️', '노원구': '🏞️',
+    '인천': '⚓', '부천': '🏭', '성남': '🏗️'
+  };
+  return emojiMap[region] || '🏠';
+}
+
+/* 지역별 설명을 반환합니다 */
+function getRegionSubtitle(region) {
+  const subtitleMap = {
+    '마포구': '서울 중심의 현대적 지역',
+    '강남구': '프리미엄 주거 지역',
+    '송파구': '한강 조망 최고 명소',
+    '서초구': '교육·문화 중심지',
+    '종로구': '역사 문화의 중심',
+    '강북구': '자연과 도시의 조화',
+    '중구': '비즈니스 중심가',
+    '김포시': '경기도 신흥 도시',
+    '고양시': '신도시 개발 지역',
+    '서대문구': '대학 문화의 중심',
+    '은평구': '주거 안정 지역',
+    '광진구': '교통 요지 지역'
+  };
+  return subtitleMap[region] || '최신 매물 정보';
 }
 
 /* HTML 특수문자 이스케이프 */
@@ -834,159 +394,6 @@ function escapeHtml(text) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
-
-/* CSV 안에서 특정 지역에 해당하는 매물들을 모두 찾습니다. */
-function findListingsByRegion(csvText, region) {
-  const rows = parseCSV(csvText);
-  if (!rows.length) return [];
-
-  const head = rows[0].map(h => h.trim());
-  const idx = name => head.indexOf(name);
-  const iAddr = idx("주소"), iNo = idx("매물번호"), iN = idx("매물명"),
-        iP = idx("가격"), iT = idx("유형"), iD = idx("거래"), iM = idx("설명");
-  const photoIdxs = ["사진1", "사진2", "사진3", "사진4", "사진5"].map(idx).filter(i => i >= 0);
-  const legacyPhotoIdx = idx("사진");
-  const iShow = idx("노출"), iLat = idx("위도"), iLng = idx("경도");
-
-  if (iAddr < 0 || iNo < 0) return [];
-
-  const listings = [];
-  for (let r = 1; r < rows.length; r++) {
-    const row = rows[r];
-    const addr = (row[iAddr] || "").trim();
-
-    // "노출" 칸이 "N"이면 제외
-    const showVal = iShow >= 0 ? (row[iShow] || "").trim().toUpperCase() : "";
-    if (showVal === "N") continue;
-
-    // 매물명이 없거나 주소가 없으면 제외
-    const name = iN >= 0 ? (row[iN] || "").trim() : "";
-    if (!name) continue;
-
-    // 주소에서 지역명 추출해서 비교
-    const extractedRegion = extractRegion(addr);
-    if (extractedRegion !== region) continue;
-
-    // 위도/경도 또는 주소가 있어야 함
-    const lat = parseFloat(row[iLat]), lng = parseFloat(row[iLng]);
-    if ((isNaN(lat) || isNaN(lng)) && !addr) continue;
-
-    // 매물번호가 있어야 함
-    const no = (row[iNo] || "").trim();
-    if (!no) continue;
-
-    let rawPhoto = "";
-    for (const i of photoIdxs) {
-      if (row[i] && row[i].trim()) { rawPhoto = row[i].trim(); break; }
-    }
-    if (!rawPhoto && legacyPhotoIdx >= 0) rawPhoto = (row[legacyPhotoIdx] || "").trim();
-
-    listings.push({
-      no: no,
-      name: name,
-      addr: addr,
-      type: iT >= 0 ? (row[iT] || "").trim() : "",
-      deal: iD >= 0 ? (row[iD] || "").trim() : "",
-      price: iP >= 0 ? (row[iP] || "").trim() : "",
-      meta: iM >= 0 ? (row[iM] || "").trim() : "",
-      photo: toImageUrl(rawPhoto),
-      lat: lat,
-      lng: lng,
-    });
-  }
-
-  return listings;
-}
-
-/* CSV 안에서 특정 지역의 블로그 링크들을 찾습니다. */
-function findBlogLinksByRegion(csvText, region) {
-  const rows = parseCSV(csvText);
-  if (!rows.length) return [];
-
-  const head = rows[0].map(h => h.trim());
-  const idx = name => head.indexOf(name);
-  const iAddr = idx("주소"), iN = idx("매물명"), iShow = idx("노출"),
-        iLat = idx("위도"), iLng = idx("경도"), iBlog = idx("블로그링크");
-
-  if (iAddr < 0 || iBlog < 0) return [];
-
-  const seen = {};
-  const blogLinks = [];
-
-  for (let r = 1; r < rows.length; r++) {
-    const row = rows[r];
-    const addr = (row[iAddr] || "").trim();
-    const blogUrl = (row[iBlog] || "").trim();
-
-    // 필터링: 노출 N 제외, 매물명 필수, 위치 필수, 블로그링크 필수
-    const showVal = iShow >= 0 ? (row[iShow] || "").trim().toUpperCase() : "";
-    if (showVal === "N") continue;
-
-    const name = iN >= 0 ? (row[iN] || "").trim() : "";
-    if (!name) continue;
-
-    const lat = parseFloat(row[iLat]), lng = parseFloat(row[iLng]);
-    if ((isNaN(lat) || isNaN(lng)) && !addr) continue;
-
-    if (!blogUrl) continue;
-
-    // 주소에서 지역명 추출해서 비교
-    const extractedRegion = extractRegion(addr);
-    if (extractedRegion !== region) continue;
-
-    // 블로그 URL 중복 제거
-    if (!seen[blogUrl]) {
-      seen[blogUrl] = true;
-
-      // 블로그 URL에서 제목 추출 (네이버 블로그 포스트 번호로 식별)
-      const title = extractBlogTitle(blogUrl) || name;
-
-      blogLinks.push({
-        title: title,
-        url: blogUrl,
-      });
-    }
-  }
-
-  return blogLinks;
-}
-
-/* 블로그 URL에서 제목을 추출합니다 (간단한 버전) */
-function extractBlogTitle(blogUrl) {
-  // 네이버 블로그 URL 형식: https://blog.naver.com/realwalkers/XXXXXXXXX
-  // 포스트 번호로 식별하면 되고, 제목은 페이지 타이틀에서 가져와야 하지만
-  // 여기서는 간단하게 URL에서 추출하거나 기본값 사용
-  try {
-    const url = new URL(blogUrl);
-    // 여기서는 단순 구조이므로 기본값 반환
-    return null;
-  } catch (e) {
-    return null;
-  }
-}
-
-/* 주소에서 지역명(시/군/구)을 추출합니다 */
-function extractRegion(addr) {
-  if (!addr) return "";
-
-  // "경기도 김포시 통진읍" → "김포시"
-  // "서울 마포구 아현동" → "마포구"
-  // "인천 부평구" → "부평구"
-
-  const parts = addr.split(/\s+/);
-  if (parts.length < 2) return "";
-
-  // 첫 번째는 도/시, 두 번째가 시/군/구
-  // "경기도" "김포시" "..." → "김포시" 반환
-  // "서울" "마포구" "..." → "마포구" 반환
-  // "서울특별시" "마포구" "..." → "마포구" 반환
-
-  if (parts.length >= 2) {
-    return parts[1]; // 두 번째 항목이 지역명(시/군/구)
-  }
-
-  return "";
 }
 
 /* index.html의 parseCSV()와 동일한 로직입니다 */
@@ -1008,12 +415,4 @@ function parseCSV(text) {
   }
   if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
   return rows;
-}
-
-/* 구글드라이브 링크를 썸네일 주소로 바꿔줍니다 */
-function toImageUrl(url) {
-  if (!url) return "";
-  const m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
-  if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200`;
-  return url;
 }
