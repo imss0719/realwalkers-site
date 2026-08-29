@@ -114,31 +114,64 @@ function extractRegion(addr) {
 /* 지역별 매물 페이지 HTML을 생성합니다 */
 function generateRegionsPage(regionStats, origin) {
   // 지역을 매물 수 기준으로 내림차순 정렬
-  const regions = Object.keys(regionStats).sort((a, b) => regionStats[b].count - regionStats[a].count);
+  const allRegions = Object.keys(regionStats).sort((a, b) => regionStats[b].count - regionStats[a].count);
 
   // 가장 많은 매물 수를 기준으로 바의 최대값 설정
-  const maxCount = regions.length > 0 ? regionStats[regions[0]].count : 1;
+  const maxCount = allRegions.length > 0 ? regionStats[allRegions[0]].count : 1;
 
-  const regionCardsHtml = regions.map(region => {
-    const stat = regionStats[region];
-    const emoji = getRegionEmoji(region);
-    const barWidth = (stat.count / maxCount) * 100;
+  // 지역을 그룹별로 분류
+  const groupedRegions = {};
+  allRegions.forEach(region => {
+    const group = getRegionGroup(region);
+    if (!groupedRegions[group]) {
+      groupedRegions[group] = [];
+    }
+    groupedRegions[group].push(region);
+  });
+
+  // 그룹 순서 정의
+  const groupOrder = ['서울', '경기도', '인천'];
+  const sortedGroups = groupOrder.filter(g => groupedRegions[g]);
+  if (Object.keys(groupedRegions).some(g => !groupOrder.includes(g))) {
+    const otherGroups = Object.keys(groupedRegions).filter(g => !groupOrder.includes(g)).sort();
+    sortedGroups.push(...otherGroups);
+  }
+
+  // 섹션별 HTML 생성
+  const sectionsHtml = sortedGroups.map(group => {
+    const regions = groupedRegions[group];
+    const regionCardsHtml = regions.map(region => {
+      const stat = regionStats[region];
+      const emoji = getRegionEmoji(region);
+      const barWidth = (stat.count / maxCount) * 100;
+
+      return `
+      <a href="/region/${encodeURIComponent(region)}" class="region-card">
+        <div class="region-header">
+          <span class="region-emoji">${emoji}</span>
+          <div class="region-info">
+            <div class="region-name">${escapeHtml(region)}</div>
+            <div class="region-count">${stat.count}개</div>
+          </div>
+        </div>
+        <div class="region-bar-container">
+          <div class="region-bar" style="width: ${barWidth}%"></div>
+        </div>
+      </a>
+    `;
+    }).join('');
 
     return `
-    <a href="/region/${encodeURIComponent(region)}" class="region-card">
-      <div class="region-header">
-        <span class="region-emoji">${emoji}</span>
-        <div class="region-info">
-          <div class="region-name">${escapeHtml(region)}</div>
-          <div class="region-count">${stat.count}개</div>
-        </div>
+    <div class="region-section">
+      <div class="section-header-title">◀ ${group} (${regions.length}개 지역)</div>
+      <div class="regions-grid">
+        ${regionCardsHtml}
       </div>
-      <div class="region-bar-container">
-        <div class="region-bar" style="width: ${barWidth}%"></div>
-      </div>
-    </a>
+    </div>
   `;
   }).join('');
+
+  const regionCardsHtml = sectionsHtml;
 
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -195,6 +228,24 @@ function generateRegionsPage(regionStats, origin) {
             font-size: 16px;
             color: var(--gray-text);
             font-weight: 500;
+        }
+
+        .region-section {
+            margin-bottom: 50px;
+        }
+
+        .region-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-header-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--gold);
+            letter-spacing: -0.01em;
         }
 
         .regions-grid {
@@ -297,13 +348,22 @@ function generateRegionsPage(regionStats, origin) {
         }
 
         @media (max-width: 768px) {
+            .region-section {
+                margin-bottom: 40px;
+            }
+
             .regions-grid {
                 grid-template-columns: 1fr;
                 gap: 12px;
             }
 
-            .section-header h1 {
+            .section-header {
                 font-size: 28px;
+            }
+
+            .section-header-title {
+                font-size: 16px;
+                margin-bottom: 16px;
             }
 
             .region-card {
@@ -349,6 +409,28 @@ function getRegionEmoji(region) {
     '인천': '⚓', '부천': '🏭', '성남': '🏗️'
   };
   return emojiMap[region] || '🏠';
+}
+
+/* 지역을 대분류 그룹으로 분류합니다 */
+function getRegionGroup(region) {
+  const groupMap = {
+    // 서울
+    '마포구': '서울', '강남구': '서울', '송파구': '서울', '서초구': '서울',
+    '종로구': '서울', '강북구': '서울', '중구': '서울', '서대문구': '서울',
+    '은평구': '서울', '광진구': '서울', '강동구': '서울', '양천구': '서울',
+    '노원구': '서울', '동대문구': '서울', '성동구': '서울', '구로구': '서울',
+    '영등포구': '서울', '금천구': '서울', '동작구': '서울', '관악구': '서울',
+    '서초구': '서울', '강서구': '서울', '마포구': '서울',
+    // 경기도
+    '김포시': '경기도', '고양시': '경기도', '파주시': '경기도', '부천시': '경기도',
+    '성남시': '경기도', '수원시': '경기도', '용인시': '경기도', '안산시': '경기도',
+    '안양시': '경기도', '군포시': '경기도', '동두천시': '경기도', '의정부시': '경기도',
+    '남양주시': '경기도', '오산시': '경기도', '평택시': '경기도', '화성시': '경기도',
+    '광주시': '경기도', '이천시': '경기도', '여주시': '경기도', '가평군': '경기도',
+    // 인천
+    '인천': '인천', '인천시': '인천',
+  };
+  return groupMap[region] || '기타';
 }
 
 /* 지역별 설명을 반환합니다 */
