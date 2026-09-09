@@ -41,6 +41,7 @@ function getRegionStats(csvText) {
   const iN = head.indexOf("매물명");
   const iP = head.indexOf("가격");
   const iD = head.indexOf("거래");
+  const iRush = head.indexOf("급매");
 
   if (iAddr < 0) return {};
 
@@ -66,10 +67,16 @@ function getRegionStats(csvText) {
     if (!region) continue;
 
     if (!stats[region]) {
-      stats[region] = { count: 0, prices: [] };
+      stats[region] = { count: 0, prices: [], hasRush: false };
     }
 
     stats[region].count++;
+
+    // 급매 여부 확인
+    const rushVal = iRush >= 0 ? (row[iRush] || "").trim().toUpperCase() : "";
+    if (rushVal === "Y") {
+      stats[region].hasRush = true;
+    }
 
     // 평균가 계산용 가격 수집
     const price = iP >= 0 ? (row[iP] || "").trim() : "";
@@ -157,13 +164,18 @@ function generateRegionsPage(regionStats, origin) {
       const barWidth = (stat.count / maxCount) * 100;
       // 접두사 제거 (예: "서울_강남구" -> "강남구")
       const displayName = region.includes('_') ? region.split('_')[1] : region;
+      // 급매 텍스트
+      const rushBadge = stat.hasRush ? '<span class="rush-text">급매있음</span>' : '';
 
       return `
       <a href="/region/${encodeURIComponent(region)}" class="region-card">
         <div class="region-header">
           <span class="region-emoji">${emoji}</span>
           <div class="region-info">
-            <div class="region-name">${escapeHtml(displayName)}</div>
+            <div class="region-name-wrapper">
+              <div class="region-name">${escapeHtml(displayName)}</div>
+              ${rushBadge}
+            </div>
             <div class="region-count">${stat.count}개</div>
           </div>
         </div>
@@ -304,6 +316,13 @@ function generateRegionsPage(regionStats, origin) {
             min-width: 0;
         }
 
+        .region-name-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
         .region-name {
             font-size: 16px;
             font-weight: 700;
@@ -313,6 +332,18 @@ function generateRegionsPage(regionStats, origin) {
 
         .region-card:hover .region-name {
             color: var(--gold);
+        }
+
+        .rush-text {
+            display: inline-block;
+            color: #d32f2f;
+            font-size: 12px;
+            font-weight: 700;
+            background: #ffe0e0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .region-count {
