@@ -2,9 +2,11 @@ name: Sync Google Sheets to JSON
 
 on:
   schedule:
-    # 매시간 0분에 실행 (UTC 기준)
     - cron: '0 * * * *'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   sync:
@@ -32,7 +34,6 @@ jobs:
             const lines = csvText.trim().split('\n');
             if (lines.length === 0) return [];
 
-            // CSV 헤더 파싱
             const headers = [];
             let currentHeader = '';
             let inQuotes = false;
@@ -97,13 +98,11 @@ jobs:
                   data: jsonData
                 };
 
-                // data 폴더 생성
                 const dataDir = 'data';
                 if (!fs.existsSync(dataDir)) {
                   fs.mkdirSync(dataDir, { recursive: true });
                 }
 
-                // JSON 파일 저장
                 fs.writeFileSync(
                   path.join(dataDir, 'listings.json'),
                   JSON.stringify(output, null, 2)
