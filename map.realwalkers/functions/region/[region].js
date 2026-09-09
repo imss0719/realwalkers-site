@@ -96,7 +96,7 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
 
   const featuredListings = listings.slice(0, 3).map(l => `
     <div style="padding: 12px; background: var(--gray-light); border-radius: 6px; margin-bottom: 8px;">
-      <div style="font-weight: 700; color: var(--navy); font-size: 13px; margin-bottom: 4px;">${escapeHtml(l.name)}</div>
+      <div style="font-weight: 700; color: var(--navy); font-size: 13px; margin-bottom: 4px;">${l.rush === 'Y' ? '<span style="color: #d32f2f; margin-right: 4px;">🔴 급</span>' : ''}${escapeHtml(l.name)}</div>
       <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--gray-text);">
         <span>${escapeHtml(l.type)} · ${escapeHtml(l.deal)}</span>
         <span style="font-weight: 700; color: var(--gold);">${escapeHtml(l.price)}</span>
@@ -117,11 +117,12 @@ function generateRegionPage(region, listings, blogLinks, title, description, pag
 
   const listingsHtml = listings.map((l, idx) => {
     const priceRange = getPriceRange(l.price);
+    const rushBadge = l.rush === 'Y' ? '<span class="badge" style="background: #d32f2f; margin-right: 4px;">급</span>' : '';
     return `
     <div class="listing-item" data-index="${idx}" data-type="${escapeHtml(l.type)}" data-price="${escapeHtml(priceRange)}" style="${idx >= 8 ? 'display: none;' : ''}">
       <div class="listing-info">
         <div class="listing-name">${escapeHtml(l.name)}</div>
-        <div class="listing-meta"><span class="badge">${escapeHtml(l.type)}</span>${escapeHtml(l.deal)}</div>
+        <div class="listing-meta">${rushBadge}<span class="badge">${escapeHtml(l.type)}</span>${escapeHtml(l.deal)}</div>
       </div>
       <div class="listing-price">${escapeHtml(l.price)}</div>
       <a href="/m/${encodeURIComponent(l.no)}" class="view-btn">상세</a>
@@ -847,7 +848,7 @@ function findListingsByRegion(csvText, region) {
         iP = idx("가격"), iT = idx("유형"), iD = idx("거래"), iM = idx("설명");
   const photoIdxs = ["사진1", "사진2", "사진3", "사진4", "사진5"].map(idx).filter(i => i >= 0);
   const legacyPhotoIdx = idx("사진");
-  const iShow = idx("노출"), iLat = idx("위도"), iLng = idx("경도");
+  const iShow = idx("노출"), iRush = idx("급매"), iLng = idx("경도");
 
   if (iAddr < 0 || iNo < 0) return [];
 
@@ -872,9 +873,9 @@ function findListingsByRegion(csvText, region) {
     const extractedRegion = extractRegion(addr);
     if (extractedRegion !== region) continue;
 
-    // 위도/경도 또는 주소가 있어야 함
-    const lat = parseFloat(row[iLat]), lng = parseFloat(row[iLng]);
-    if ((isNaN(lat) || isNaN(lng)) && !addr) continue;
+    // 경도가 있어야 함
+    const lng = parseFloat(row[iLng]);
+    if (isNaN(lng) && !addr) continue;
 
     // 매물번호가 있어야 함
     const no = (row[iNo] || "").trim();
@@ -895,8 +896,8 @@ function findListingsByRegion(csvText, region) {
       price: iP >= 0 ? (row[iP] || "").trim() : "",
       meta: iM >= 0 ? (row[iM] || "").trim() : "",
       photo: toImageUrl(rawPhoto),
-      lat: lat,
       lng: lng,
+      rush: iRush >= 0 ? (row[iRush] || "").trim().toUpperCase() : "",
     });
   }
 
@@ -911,7 +912,7 @@ function findBlogLinksByRegion(csvText, region) {
   const head = rows[0].map(h => h.trim());
   const idx = name => head.indexOf(name);
   const iAddr = idx("주소"), iN = idx("매물명"), iShow = idx("노출"),
-        iLat = idx("위도"), iLng = idx("경도"), iBlog = idx("블로그링크"), iD = idx("거래");
+        iLng = idx("경도"), iBlog = idx("블로그링크"), iD = idx("거래");
 
   if (iAddr < 0 || iBlog < 0) return [];
 
@@ -933,8 +934,8 @@ function findBlogLinksByRegion(csvText, region) {
     const name = iN >= 0 ? (row[iN] || "").trim() : "";
     if (!name) continue;
 
-    const lat = parseFloat(row[iLat]), lng = parseFloat(row[iLng]);
-    if ((isNaN(lat) || isNaN(lng)) && !addr) continue;
+    const lng = parseFloat(row[iLng]);
+    if (isNaN(lng) && !addr) continue;
 
     if (!blogUrl) continue;
 
