@@ -133,5 +133,5 @@ jobs:
           else
             git add data/listings.json
             git commit -m "chore: sync listings data from Google Sheets [skip ci]"
-            git push
+            git push origin main
           fi
