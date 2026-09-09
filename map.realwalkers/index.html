@@ -2854,17 +2854,39 @@ function syncMoreCount(){
 
 /* ── 시작: 데이터 로딩 → 지도 초기화 ── */
 async function loadData(){
+  // 1단계: JSON 파일 시도 (GitHub Actions로 동기화된 데이터)
+  try {
+    const res = await fetch('/data/listings.json');
+    if (res.ok){
+      const jsonData = await res.json();
+      console.log(`✓ JSON 파일에서 ${jsonData.count || jsonData.data?.length || 0}개 매물 로드 (${jsonData.lastUpdated})`);
+      // JSON에서 CSV 형식으로 변환
+      if (jsonData.data && jsonData.data.length > 0){
+        const firstItem = jsonData.data[0];
+        const headers = Object.keys(firstItem);
+        const rows = [headers, ...jsonData.data.map(item => headers.map(h => item[h] || ''))];
+        const parsed = rowsToListings(rows);
+        if (parsed.length) return parsed;
+      }
+    }
+  } catch(e){
+    console.log("JSON 파일 없음 (초기 실행 또는 동기화 대기)");
+  }
+
+  // 2단계: 기존 CSV URL 시도 (폴백)
   if (CONFIG.SHEET_CSV_URL){
     try {
+      console.log("CSV URL에서 데이터 로딩...");
       const res = await fetch(CONFIG.SHEET_CSV_URL);
       const text = await res.text();
       const parsed = rowsToListings(parseCSV(text));
       if (parsed.length) return parsed;
       console.warn("시트에서 매물을 찾지 못해 예시 매물을 표시합니다.");
     } catch(e){
-      console.warn("구글시트 로딩 실패, 예시 매물을 표시합니다.", e);
+      console.warn("CSV 로딩 실패, 예시 매물을 표시합니다.", e);
     }
   }
+
   return SAMPLE_LISTINGS;
 }
 
