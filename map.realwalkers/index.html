@@ -143,6 +143,15 @@
     background-repeat:no-repeat;background-position:right 8px center;
   }
   .more-box select:focus{outline:none;border-color:var(--gold);}
+  /* 정렬 버튼 */
+  .sort-btn{
+    flex:0 0 auto;border:1.5px solid var(--line);background:#fff;color:#7A8299;
+    padding:7px 12px;border-radius:8px;font-size:.82rem;font-weight:700;
+    cursor:pointer;font-family:inherit;white-space:nowrap;
+    transition:all .15s ease;
+  }
+  .sort-btn:hover{border-color:var(--navy);color:var(--navy);}
+  .sort-btn.active{border-color:var(--gold);background:var(--gold);color:var(--navy);}
   .filter-reset{
     flex:0 0 auto;border:1.5px solid var(--line);background:#fff;color:#7A8299;
     padding:7px 10px;border-radius:8px;font-size:.82rem;font-weight:700;
@@ -187,6 +196,11 @@
   .done-badge{
     font-size:.72rem;font-weight:800;padding:3px 8px;border-radius:5px;
     background:#5A6478;color:#fff;letter-spacing:.02em;flex-shrink:0;
+  }
+  /* 급매 뱃지 */
+  .rush-list-badge{
+    font-size:.72rem;font-weight:800;padding:3px 8px;border-radius:5px;
+    background:#d32f2f;color:#fff;letter-spacing:.02em;flex-shrink:0;
   }
   .card.is-done{background:#FAFAF8;}
   .card.is-done .card-photo{filter:grayscale(.55);opacity:.85;}
@@ -247,6 +261,14 @@
     border-radius:50%;background:var(--gold);color:var(--navy);
     font-size:.72rem;font-weight:900;line-height:20px;text-align:center;
     border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);
+  }
+  .rush-marker-badge{
+    position:absolute;top:-8px;right:-8px;
+    width:22px;height:22px;
+    border-radius:50%;background:#d32f2f;color:#fff;
+    font-size:.7rem;font-weight:900;line-height:22px;text-align:center;
+    border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);
+    display:flex;align-items:center;justify-content:center;
   }
   .pop{font-family:'Malgun Gothic','맑은 고딕',sans-serif;min-width:230px;max-width:280px;position:relative;}
   .pop-scroll{padding:14px 16px;}
@@ -835,6 +857,8 @@
     <select id="typeFilter" title="매물유형"><option value="all">유형 전체</option></select>
     <select id="regionFilter" title="지역"><option value="all">전체 지역</option></select>
     <select id="priceFilter" title="가격대"><option value="all">전체 가격</option></select>
+    <button class="sort-btn" id="sortPrice" onclick="setSortBy('price')">가격순 ↑</button>
+    <button class="sort-btn" id="sortLatest" onclick="setSortBy('latest')">최신순</button>
     <button id="filterReset" class="filter-reset" title="조건 모두 지우기">초기화</button>
   </div>
 </div>
@@ -938,6 +962,8 @@ function typeColor(name){
 let LISTINGS = [];
 let currentType = "all";
 let currentDeal = "all";
+let currentSort = "latest"; // latest, price
+let sortAsc = true; // 가격순에서만 사용 (true: 낮은순, false: 높은순)
 let favOnly = false;
 let doneOnly = false;
 let currentRegion = "all";   // 상세검색: 지역
@@ -1023,7 +1049,7 @@ function rowsToListings(rows){
   const head = rows[0].map(h=>h.trim());
   const idx = name => head.indexOf(name);
   const iNo=idx("매물번호"), iT=idx("유형"), iD=idx("거래"), iN=idx("매물명"), iP=idx("가격"),
-        iM=idx("설명"), iAddr=idx("주소"), iLat=idx("위도"), iLng=idx("경도"), iShow=idx("노출");
+        iM=idx("설명"), iAddr=idx("주소"), iLat=idx("위도"), iLng=idx("경도"), iShow=idx("노출"), iRush=idx("급매");
   const iBlog = idx("블로그링크");
   const legacyPhotoIdx = idx("사진");
   const photoIdxs = ["사진1","사진2","사진3","사진4","사진5"].map(idx).filter(i=>i>=0);
@@ -1067,6 +1093,7 @@ function rowsToListings(rows){
       photos,
       photo: photoThumb,
       blog: iBlog >= 0 ? (row[iBlog]||"").trim() : "",
+      rush: iRush >= 0 ? (row[iRush]||"").trim().toUpperCase() : "",
       done,
     });
   }
@@ -1193,7 +1220,8 @@ function tagHtml(item, picked){
   const priceText = item.done ? maskPrice((item.price||"").split(" /")[0]) : (item.price||"").split(" /")[0];
   // 색깔만으로는 매물 유형을 구분하기 어려워, 위 줄에 "상가매매"처럼 유형+거래를 함께 표시합니다
   const label = `${item.type||""}${item.deal||""}`;
-  return `<div class="price-tag${picked?' picked':''}" style="background:${typeColor(item.type)}"><small>${label}</small>${priceText}</div>`;
+  const rushBadge = item.rush === 'Y' ? '<span class="rush-marker-badge">급</span>' : '';
+  return `<div class="price-tag${picked?' picked':''}" style="background:${typeColor(item.type)}"><small>${label}</small>${priceText}${rushBadge}</div>`;
 }
 function bundleTagHtml(group, picked, idx){
   const shown = group[idx] || group[0]; // 정보창에서 지금 보고 있는 매물을 마커에도 반영
@@ -2059,6 +2087,44 @@ function initLeafletMap(onReady){
   document.head.appendChild(s);
 }
 
+/* ── 정렬 함수 ── */
+function applySorting(arr){
+  if(currentSort === "price"){
+    arr.sort((a, b) => {
+      const priceA = parseFloat((a.price||"0").replace(/[^0-9.]/g, '')) || 0;
+      const priceB = parseFloat((b.price||"0").replace(/[^0-9.]/g, '')) || 0;
+      return sortAsc ? priceA - priceB : priceB - priceA;
+    });
+  } else if(currentSort === "latest"){
+    arr.sort((a, b) => {
+      // 매물번호에서 숫자만 추출 (RW-10111 → 10111)
+      const numA = parseInt((a.no||"").replace(/[^0-9]/g, '')) || 0;
+      const numB = parseInt((b.no||"").replace(/[^0-9]/g, '')) || 0;
+      return sortAsc ? numB - numA : numA - numB; // sortAsc에 따라 방향 결정
+    });
+  }
+}
+
+function setSortBy(type){
+  if(type === currentSort){
+    sortAsc = !sortAsc; // 같은 정렬이면 방향 토글
+  } else {
+    currentSort = type;
+    sortAsc = true; // 다른 정렬로 바꾸면 ascending으로 초기화
+  }
+  updateSortButtons();
+  render();
+}
+
+function updateSortButtons(){
+  const priceBtn = document.getElementById("sortPrice");
+  const latestBtn = document.getElementById("sortLatest");
+  if(priceBtn) priceBtn.className = currentSort === "price" ? "sort-btn active" : "sort-btn";
+  if(latestBtn) latestBtn.className = currentSort === "latest" ? "sort-btn active" : "sort-btn";
+  if(priceBtn && currentSort === "price") priceBtn.textContent = sortAsc ? "가격순 ↑" : "가격순 ↓";
+  if(latestBtn && currentSort === "latest") latestBtn.textContent = sortAsc ? "최신순" : "오래된순";
+}
+
 /* ── 목록/마커 렌더링 ── */
 function render(){
   mapApi.clear();
@@ -2074,6 +2140,10 @@ function render(){
                         .filter(it=>currentRegion==="all" || regionKeyOf(it)===currentRegion)
                         .filter(it=>currentPrice==="all" || priceBandOf(it)===currentPrice)
                         .filter(it=>!favOnly || isFav(it));
+
+  // 정렬 적용
+  applySorting(shown);
+
   if(!shown.length){
     list.innerHTML = favOnly
       ? '<div class="notice">아직 찜한 매물이 없습니다.<br>하트를 눌러 매물을 찜해보세요.</div>'
@@ -2101,7 +2171,7 @@ function render(){
     card.id = "card-"+it.id;
     card.innerHTML = `
       ${it.photo?`<img class="card-photo" src="${it.photo}" alt="${it.name}" loading="lazy" decoding="async" onerror="this.remove()">`:""}
-      <div class="top"><span class="badge" style="background:${typeColor(it.type)}">${it.type}</span><span class="deal">${it.deal}</span>${it.done?'<span class="done-badge">거래완료</span>':''}<button class="fav-inline" onclick="cardToggleFav(${it.id},event)">${isFav(it)?'♥':'♡'}</button>${it.no?`<span class="deal" style="margin-left:auto;color:#C9A227;">No.${it.no}</span>`:""}</div>
+      <div class="top"><span class="badge" style="background:${typeColor(it.type)}">${it.type}</span><span class="deal">${it.deal}</span>${it.rush==='Y'?'<span class="rush-list-badge">급매있음</span>':''}${it.done?'<span class="done-badge">거래완료</span>':''}<button class="fav-inline" onclick="cardToggleFav(${it.id},event)">${isFav(it)?'♥':'♡'}</button>${it.no?`<span class="deal" style="margin-left:auto;color:#C9A227;">No.${it.no}</span>`:""}</div>
       <h3>${it.name}</h3>
       <div class="price">${it.done ? `${it.deal} ${maskPrice(it.price)}` : `${it.deal} ${it.price}`}</div>
       <div class="meta">${it.meta}</div>`;
