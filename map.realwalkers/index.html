@@ -229,7 +229,7 @@ button{cursor:pointer}
   <section class="hero">
     <div class="container hero-inner">
       <div class="eyebrow">REAL WALKERS · MAPO REAL ESTATE</div>
-      <h1>찾고 싶은 부동산,<br><span>더 쉽게 찾으세요.</span></h1>
+      <h1>내가 필요한 부동산,<br><span>더 쉽게 찾으세요.</span></h1>
       <p class="hero-copy">아파트부터 상가·건물·토지까지. 리얼워커스가 직접 확인한 매물을 한곳에서 살펴보고, 필요한 경우 대표 공인중개사와 바로 상담할 수 있습니다.</p>
       <div class="search-box">
         <input id="homeSearch" type="search" placeholder="지역·매물명·주소로 검색해 보세요" autocomplete="off">
@@ -387,6 +387,8 @@ const CONFIG={
   DATA_CACHE_MS:60000
 };
 const INQUIRY_ENDPOINT="https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
+/* 이전 버전 캐시 제거: 완료/보류 상태가 누락된 캐시를 재사용하지 않습니다. */
+try{sessionStorage.removeItem("rw_listings_cache_v2")}catch(e){}
 const INQUIRY_FORM={
   ACTION:"https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
@@ -438,10 +440,10 @@ function rowsToListings(rows){
   const x=rows[r]; if(iN<0||!x[iN]||!String(x[iN]).trim())continue;
   const statusRaw=iShow>=0?String(x[iShow]||"").trim():"";
   const status=statusRaw.toUpperCase();
-  // 공개 상태는 N 계열만 완전히 숨깁니다. Y/보류/완료/빈칸은 노출합니다.
+  // N 계열만 완전히 숨깁니다. Y/보류/완료/빈칸은 모두 노출합니다.
   if(["N","NO","비공개","숨김","미노출","FALSE"].includes(status))continue;
-  const done=status==="완료"||status==="C"||status==="거래완료";
-  const hold=status==="보류";
+  const done=/^(완료|C|거래완료)$/i.test(statusRaw);
+  const hold=/^(보류|HOLD)$/i.test(statusRaw);
   let raw=photoIdxs.map(i=>String(x[i]||"").trim()).filter(Boolean);
   if(!raw.length&&legacy>=0&&x[legacy])raw=[String(x[legacy]).trim()];
   const lat=parseFloat(x[iLat]),lng=parseFloat(x[iLng]);
@@ -472,7 +474,7 @@ function sample(){return[
 async function loadData(){
  if(dataPromise)return dataPromise;
  dataPromise=(async()=>{
-  const cacheKey="rw_listings_cache_v2";
+  const cacheKey="rw_listings_cache_v3";
   try{
    const cached=JSON.parse(sessionStorage.getItem(cacheKey)||"null");
    if(cached && Array.isArray(cached.items)){
@@ -546,7 +548,7 @@ async function refreshDataInBackground(){
   }
   if(!parsed.length)return;
   parsed.forEach((x,i)=>{if(x._order==null)x._order=i;});
-  try{sessionStorage.setItem("rw_listings_cache_v2",JSON.stringify({time:Date.now(),items:parsed}));}catch(e){}
+  try{sessionStorage.setItem("rw_listings_cache_v3",JSON.stringify({time:Date.now(),items:parsed}));}catch(e){}
   const fresh=parsed.map(normalizeListingObject).filter(Boolean);
   const before=JSON.stringify(LISTINGS.map(x=>({no:x.no,type:x.type,deal:x.deal,name:x.name,price:x.price,meta:x.meta,addr:x.addr,photo:x.photo,photos:x.photos,blog:x.blog,status:x.status,hold:x.hold,done:x.done,lat:x.lat,lng:x.lng})));
   const after=JSON.stringify(fresh.map(x=>({no:x.no,type:x.type,deal:x.deal,name:x.name,price:x.price,meta:x.meta,addr:x.addr,photo:x.photo,photos:x.photos,blog:x.blog,status:x.status,hold:x.hold,done:x.done,lat:x.lat,lng:x.lng})));
@@ -579,7 +581,15 @@ function normalizeListingObject(o){
  const price=String(o.price??o["가격"]??o["매매가"]??o["거래가"]??"").trim();
  const meta=String(o.meta??o.desc??o.description??o["설명"]??o["상세설명"]??o["매물설명"]??"").trim();
  const addr=String(o.addr??o.address??o["주소"]??o["소재지"]??"").trim();
- const statusRaw=String(o.status??o["노출"]??"").trim();
+ const statusRaw=String(
+  o.status ??
+  o.show ??
+  o.visibility ??
+  o["노출"] ??
+  o["공개"] ??
+  o["상태"] ??
+  ""
+ ).trim();
  const status=statusRaw.toUpperCase();
  if(["N","NO","비공개","숨김","미노출","FALSE"].includes(status))return null;
  const lat=parseFloat(o.lat??o.latitude??o["위도"]);
@@ -597,7 +607,7 @@ function normalizeListingObject(o){
   blog:String(o.blog??o.link??o["블로그링크"]??o["블로그"]??"").trim(),
   createdAt:String(o.createdAt??o.created_at??o["등록일"]??o["등록일자"]??o["작성일"]??o["등록시간"]??"").trim(),
   _order:Number.isFinite(Number(o._order))?Number(o._order):null,
-  hold:!!(o.hold===true || /^보류$/i.test(statusRaw)),
+  hold:!!(o.hold===true || /^(보류|HOLD)$/i.test(statusRaw)),
   done:!!(o.done===true || /^(완료|C|거래완료)$/i.test(statusRaw))
  };
 }
@@ -1029,9 +1039,9 @@ async function openMap(){
    const cacheItems=LISTINGS.filter(x=>x.lat!=null&&x.lng!=null).map(x=>({
     no:x.no, type:x.type, deal:x.deal, name:x.name, price:x.price, meta:x.meta,
     addr:x.addr, lat:x.lat, lng:x.lng, photos:x.photos, photo:x.photo,
-    blog:x.blog, done:x.done
+    blog:x.blog, status:x.status, hold:x.hold, done:x.done
    }));
-   sessionStorage.setItem("rw_listings_cache_v2",JSON.stringify({time:Date.now(),items:cacheItems}));
+   sessionStorage.setItem("rw_listings_cache_v3",JSON.stringify({time:Date.now(),items:cacheItems}));
   }catch(e){}
 
   /* 이전 지도 마커 정리 */
