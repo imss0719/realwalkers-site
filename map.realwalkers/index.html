@@ -434,7 +434,7 @@ function sample(){return[
 async function loadData(){
  if(dataPromise)return dataPromise;
  dataPromise=(async()=>{
-  const cacheKey="rw_listings_cache_v1";
+  const cacheKey="rw_listings_cache_v2";
   try{
    const cached=JSON.parse(sessionStorage.getItem(cacheKey)||"null");
    if(cached && Array.isArray(cached.items) && (Date.now()-Number(cached.time||0))<CONFIG.DATA_CACHE_MS){
@@ -681,7 +681,173 @@ function loadNaver(){
  });
  return mapPromise;
 }
+
+function coordCacheGet(addr){
+ try{
+  const all=JSON.parse(sessionStorage.getItem("rw_geocode_cache_v1")||"{}");
+  const v=all[String(addr||"").trim()];
+  if(v&&Number.isFinite(Number(v.lat))&&Number.isFinite(Number(v.lng))) return {lat:Number(v.lat),lng:Number(v.lng)};
+ }catch(e){}
+ return null;
+}
+function coordCacheSet(addr,lat,lng){
+ try{
+  const key=String(addr||"").trim(); if(!key)return;
+  const all=JSON.parse(sessionStorage.getItem("rw_geocode_cache_v1")||"{}");
+  all[key]={lat:Number(lat),lng:Number(lng),time:Date.now()};
+  sessionStorage.setItem("rw_geocode_cache_v1",JSON.stringify(all));
+ }catch(e){}
+}
+function geocodeAddress(addr){
+ return new Promise(resolve=>{
+  const address=String(addr||"").replace(/\s+/g," ").trim();
+  if(!address){resolve(null);return}
+  const cached=coordCacheGet(address);
+  if(cached){resolve(cached);return}
+  if(!window.naver?.maps?.Service?.geocode){resolve(null);return}
+  naver.maps.Service.geocode({query:address},(status,response)=>{
+   try{
+    if(status!==naver.maps.Service.Status.OK){resolve(null);return}
+    const list=response?.v2?.addresses||response?.result?.items||[];
+    const a=list[0];
+    const x=Number(a?.x??a?.point?.x);
+    const y=Number(a?.y??a?.point?.y);
+    if(Number.isFinite(x)&&Number.isFinite(y)){
+     const result={lat:y,lng:x};
+     coordCacheSet(address,y,x);
+     resolve(result);
+    }else resolve(null);
+   }catch(e){resolve(null)}
+  });
+ });
+}
+async function geocodeListings(items,onProgress){
+ const targets=items.filter(x=>x&&x.addr&&!(x.lat!=null&&x.lng!=null));
+ let done=0;
+ const worker=async()=>{
+  while(true){
+   const idx=done++;
+   if(idx>=targets.length)return;
+   const x=targets[idx];
+   const c=await geocodeAddress(x.addr);
+   if(c){x.lat=c.lat;x.lng=c.lng}
+   if(onProgress)onProgress(x,idx+1,targets.length,c);
+  }
+ };
+ const workers=Array.from({length:Math.min(4,targets.length)},()=>worker());
+ await Promise.all(workers);
+ return items;
+}
+
 async function openMap(){
+ const all=filtered();
+ const countEl=document.getElementById("mapCount");
+ const mapList=document.getElementById("mapList");
+ const loading=document.getElementById("mapLoading");
+ loading.style.display="grid";
+ loading.textContent="주소를 확인해 지도 위치를 준비하고 있습니다…";
+
+ // 주소를 기준으로 좌표를 자동 변환한다. 구글시트의 위도/경도 입력은 필요하지 않다.
+ try{
+  await loadNaver();
+  await geocodeListings(all);
+ }catch(e){
+  console.warn("주소 지오코딩 준비 실패:",e);
+ }
+
+ const arr=all.filter(x=>x.lat!=null&&x.lng!=null);
+ countEl.textContent=arr.length;
+
+ // 이전 지도 마커 정리
+ if(mapApi && Array.isArray(mapApi.markers)){
+  mapApi.markers.forEach(m=>{try{m.setMap(null)}catch(e){}});
+  mapApi.markers=[];
+ }
+
+ if(!arr.length){
+  mapList.innerHTML='<div class="empty" style="margin:12px">주소로 위치를 찾을 수 있는 매물이 없습니다.</div>';
+ }else{
+  mapList.innerHTML="";
+  let li=0;
+  const paintMapList=()=>{
+   const end=Math.min(li+40,arr.length);
+   let html="";
+   for(;li<end;li++){
+    const x=arr[li];
+    html+=`<div class="map-card" data-no="${escapeHtml(x.no)}"><div class="photo">${x.photo?`<img src="${escapeHtml(x.photo)}" loading="lazy" decoding="async">`:""}</div><div><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(x.addr)}</span></div></div>`;
+   }
+   mapList.insertAdjacentHTML("beforeend",html);
+   if(li<arr.length) requestAnimationFrame(paintMapList);
+  };
+  requestAnimationFrame(paintMapList);
+ }
+ mapList.onclick=e=>{
+  const card=e.target.closest(".map-card");
+  if(card)openDetail(card.dataset.no);
+ };
+
+ try{
+  if(!mapApi){
+   mapApi={
+    map:new naver.maps.Map("map",{
+     center:new naver.maps.LatLng(37.549,126.950),
+     zoom:13,
+     zoomControl:true,
+     draggable:true,
+     pinchZoom:true,
+     scrollWheel:true
+    }),
+    markers:[]
+   };
+  }else{
+   mapApi.map.setCenter(new naver.maps.LatLng(37.549,126.950));
+  }
+
+  setTimeout(()=>{
+   try{naver.maps.Event.trigger(mapApi.map,"resize")}catch(e){}
+  },80);
+
+  let mi=0;
+  const paintMarkers=()=>{
+   const end=Math.min(mi+20,arr.length);
+   for(;mi<end;mi++){
+    const x=arr[mi];
+    try{
+     const marker=new naver.maps.Marker({
+      position:new naver.maps.LatLng(x.lat,x.lng),
+      map:mapApi.map,
+      title:x.name
+     });
+     naver.maps.Event.addListener(marker,"click",()=>openDetail(x.no));
+     mapApi.markers.push(marker);
+    }catch(markerErr){
+     console.warn("마커 생성 실패:",x.no,markerErr);
+    }
+   }
+   if(mi<arr.length){
+    requestAnimationFrame(paintMarkers);
+   }else{
+    loading.style.display="none";
+    if(arr.length){
+     const first=arr[0];
+     try{mapApi.map.setCenter(new naver.maps.LatLng(first.lat,first.lng))}catch(e){}
+    }
+    setTimeout(()=>{
+     try{naver.maps.Event.trigger(mapApi.map,"resize")}catch(e){}
+    },80);
+   }
+  };
+
+  if(!arr.length) loading.style.display="none";
+  else requestAnimationFrame(paintMarkers);
+
+ }catch(e){
+  console.error("지도 로딩 오류:",e);
+  loading.textContent="지도를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+ }
+}
+
+
  const arr=filtered().filter(x=>x.lat!=null&&x.lng!=null);
  const countEl=document.getElementById("mapCount");
  const mapList=document.getElementById("mapList");
