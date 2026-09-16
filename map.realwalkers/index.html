@@ -72,6 +72,9 @@ button{cursor:pointer}
 .card-fav:active{transform:scale(.9)}
 .urgent-badge{position:absolute;left:10px;top:10px;background:#b43b4b;color:#fff;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:900;z-index:2;box-shadow:0 3px 8px rgba(0,0,0,.12)}
 .card.is-urgent{border-color:#e4bfc4}
+.card.is-done{filter:none}
+.card-done-overlay{position:absolute;inset:0;background:rgba(20,24,32,.48);display:flex;align-items:center;justify-content:center;z-index:4;pointer-events:none}
+.card-done-overlay span{display:inline-flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.9);border-radius:8px;padding:11px 18px;background:rgba(25,29,38,.72);color:#fff;font-size:20px;font-weight:900;letter-spacing:-.04em;box-shadow:0 4px 16px rgba(0,0,0,.18)}
 #sortFilter{min-width:105px}
 
 .card:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(27,42,74,.09);border-color:#cfd5df}
@@ -211,7 +214,7 @@ button{cursor:pointer}
   <section class="hero">
     <div class="container hero-inner">
       <div class="eyebrow">REAL WALKERS · MAPO REAL ESTATE</div>
-      <h1>내가 필요한 부동산,<br><span>더 쉽게 찾으세요.</span></h1>
+      <h1>찾고 싶은 부동산,<br><span>더 쉽게 찾으세요.</span></h1>
       <p class="hero-copy">아파트부터 상가·건물·토지까지. 리얼워커스가 직접 확인한 매물을 한곳에서 살펴보고, 필요한 경우 대표 공인중개사와 바로 상담할 수 있습니다.</p>
       <div class="search-box">
         <input id="homeSearch" type="search" placeholder="지역·매물명·주소로 검색해 보세요" autocomplete="off">
@@ -614,7 +617,7 @@ function sortListings(arr){
 }
 function filtered(){
  const q=current.q.toLowerCase();
- const arr=LISTINGS.filter(x=>current.done?x.done:!x.done)
+ const arr=LISTINGS.filter(x=>true)
   .filter(x=>current.type==="all"||x.type===current.type)
   .filter(x=>current.deal==="all"||x.deal===current.deal)
   .filter(x=>current.region==="all"||regionOf(x)===current.region)
@@ -622,7 +625,8 @@ function filtered(){
   .filter(x=>!current.fav||isFav(x))
   .filter(x=>!q||[x.name,x.addr,x.meta,x.type,x.deal,x.no].join(" ").toLowerCase().includes(q));
  if(current.sort==="urgent")return sortListings(arr.filter(isUrgent));
- return sortListings(arr);
+ const sorted=sortListings(arr);
+ return sorted.sort((a,b)=>{ if(!!a.done!==!!b.done) return a.done?1:-1; return 0; });
 }
 function regionOf(x){
  const a=(x.addr||"").replace(/\s+/g," ").trim().split(" ");
@@ -644,7 +648,7 @@ function priceOf(x){
 }
 function cardHtml(x){
  return `<article class="card ${isUrgent(x)?"is-urgent":""}" data-no="${escapeHtml(x.no)}">
-  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.no||''))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}</div>
+  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.no||''))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${x.done?'<div class="card-done-overlay"><span>거래완료</span></div>':''}</div>
   <div class="card-body"><div class="top"><span class="badge" style="background:${typeColor(x.type)}">${escapeHtml(x.type)}</span><span class="deal">${escapeHtml(x.deal)}</span>${x.no?`<span class="no">No.${escapeHtml(x.no)}</span>`:""}</div>
   <h3>${escapeHtml(x.name)}</h3><div class="price">${escapeHtml(x.deal)} ${escapeHtml(x.price)}</div><div class="meta">${escapeHtml(x.meta||publicAddress(x.addr,x.type))}</div></div>
  </article>`;
