@@ -136,10 +136,16 @@ button{cursor:pointer}
 .map-list-head strong{color:var(--navy)}
 .map-card{display:flex;gap:10px;padding:12px;border-bottom:1px solid #f0f1f3;cursor:pointer}
 .map-card:hover{background:#fafafa}
-.map-card img{width:82px;height:62px;object-fit:cover;border-radius:7px;background:#eee;flex:none}
+.map-card .photo{width:82px;height:62px;min-width:82px;flex:0 0 82px;border-radius:7px;background:#eee;overflow:hidden;display:block}
+.map-card .photo img{width:82px;height:62px;min-width:82px;min-height:62px;max-width:none;object-fit:cover;object-position:center;display:block;border-radius:7px;background:#eee}
+.map-card .photo.no-photo{display:grid;place-items:center;color:#9aa3b5;font-size:10px}
 .map-card b{display:block;color:var(--navy);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .map-card span{display:block;font-size:11px;color:var(--muted);margin-top:3px}
 .map-loading{position:absolute;inset:0;display:grid;place-items:center;background:#eef1f4;color:var(--muted);z-index:5}
+.rw-map-marker{width:38px;height:38px;border-radius:50% 50% 50% 8px;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.28);box-sizing:border-box}
+.rw-map-marker span{transform:rotate(45deg);color:#fff;font-size:10px;font-weight:900;line-height:1;text-align:center;white-space:nowrap}
+.rw-map-marker.picked{width:42px;height:42px;border-width:3px;box-shadow:0 4px 13px rgba(0,0,0,.34)}
+
 .modal-backdrop{position:fixed;inset:0;background:rgba(8,15,30,.58);z-index:200;display:none;align-items:center;justify-content:center;padding:18px}
 .modal-backdrop.open{display:flex}
 .modal{width:min(620px,100%);background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)}
@@ -437,8 +443,12 @@ async function loadData(){
   const cacheKey="rw_listings_cache_v2";
   try{
    const cached=JSON.parse(sessionStorage.getItem(cacheKey)||"null");
-   if(cached && Array.isArray(cached.items) && (Date.now()-Number(cached.time||0))<CONFIG.DATA_CACHE_MS){
-    return cached.items.map(normalizeListingObject).filter(Boolean);
+   if(cached && Array.isArray(cached.items)){
+    const cachedItems=cached.items.map(normalizeListingObject).filter(Boolean);
+    /* 캐시가 있으면 유효기간과 관계없이 먼저 즉시 표시합니다.
+       최신 시트 데이터는 뒤에서 조용히 갱신합니다. */
+    setTimeout(()=>refreshDataInBackground(),0);
+    return cachedItems;
    }
   }catch(e){}
 
@@ -480,6 +490,50 @@ async function loadData(){
  })();
  return dataPromise;
 }
+async function refreshDataInBackground(){
+ try{
+  if(!CONFIG.SHEET_API_URL || CONFIG.SHEET_API_URL.includes("여기에_"))return;
+  const res=await fetch(CONFIG.SHEET_API_URL,{cache:"no-store"});
+  if(!res.ok)return;
+  const raw=await res.text();
+  let data; try{data=JSON.parse(raw)}catch(e){return;}
+  let parsed=[];
+  if(Array.isArray(data)){
+   if(data.length&&Array.isArray(data[0]))parsed=rowsToListings(data);
+   else if(data.length&&typeof data[0]==="object")parsed=data.map(normalizeListingObject).filter(Boolean);
+  }else if(Array.isArray(data.items)){
+   parsed=data.items.map(normalizeListingObject).filter(Boolean);
+  }else if(Array.isArray(data.listings)){
+   parsed=data.listings.map(normalizeListingObject).filter(Boolean);
+  }else if(Array.isArray(data.rows)){
+   parsed=rowsToListings(data.rows);
+  }else if(Array.isArray(data.data)){
+   parsed=Array.isArray(data.data[0])?rowsToListings(data.data):data.data.map(normalizeListingObject).filter(Boolean);
+  }
+  if(!parsed.length)return;
+  try{sessionStorage.setItem("rw_listings_cache_v2",JSON.stringify({time:Date.now(),items:parsed}));}catch(e){}
+  const fresh=parsed.map(normalizeListingObject).filter(Boolean);
+  const before=JSON.stringify(LISTINGS.map(x=>({no:x.no,type:x.type,deal:x.deal,name:x.name,price:x.price,meta:x.meta,addr:x.addr,photo:x.photo,photos:x.photos,blog:x.blog,done:x.done,lat:x.lat,lng:x.lng})));
+  const after=JSON.stringify(fresh.map(x=>({no:x.no,type:x.type,deal:x.deal,name:x.name,price:x.price,meta:x.meta,addr:x.addr,photo:x.photo,photos:x.photos,blog:x.blog,done:x.done,lat:x.lat,lng:x.lng})));
+  if(before!==after){
+   LISTINGS=fresh;
+   try{
+    const v=getView();
+    if(v==="home")renderHome();
+    else if(v==="list")renderList();
+    else if(v==="map")openMap();
+    else if(v==="detail"){
+     const params=new URLSearchParams(location.search);
+     const no=params.get("m");
+     if(no)renderDetail(no);
+    }
+   }catch(e){}
+  }
+ }catch(e){
+  console.debug("백그라운드 매물 갱신 건너뜀:",e);
+ }
+}
+
 function normalizeListingObject(o){
  if(!o||typeof o!=="object")return null;
  const no=String(o.no??o["매물번호"]??o["번호"]??"").trim();
@@ -589,6 +643,42 @@ function openDetail(no){
  history.pushState({view:"detail",no:x.no},"",`?m=${encodeURIComponent(x.no)}`);
  renderDetail(x.no);showView("detail");
 }
+/* ── 방문자에게 보여줄 공개 주소 ── */
+function publicAddress(addr, type){
+ const raw=String(addr||"").replace(/\\s+/g," ").trim();
+ if(!raw)return "";
+ let a=raw.replace(/\\([^)]*\\)/g," ")
+          .replace(/\\b\\d+\\s*층\\b/g," ")
+          .replace(/\\b\\d+\\s*호\\b/g," ")
+          .replace(/\\b\\d+\\s*동\\b/g," ")
+          .replace(/\\s+/g," ").trim();
+ const parts=a.split(" ");
+ const dongIdx=parts.findIndex(x=>/(동|읍|면)$/.test(x) && !/^\\d/.test(x));
+ if(dongIdx>=0){
+   const after=parts[dongIdx+1]||"";
+   if(/^(?:산)?\\d+(?:-\\d+)?$/.test(after)) return parts.slice(0,dongIdx+1).join(" ");
+ }
+ const roadIdx=parts.findIndex(x=>/(대로|로|길)$/.test(x));
+ if(roadIdx>=0){
+   const roadNo=parts[roadIdx+1]||"";
+   if(/^\\d+(?:-\\d+)?$/.test(roadNo)) return parts.slice(0,roadIdx+2).join(" ");
+ }
+ if(dongIdx>=0)return parts.slice(0,dongIdx+1).join(" ");
+ return parts.slice(0,Math.min(3,parts.length)).join(" ");
+}
+const MAP_TYPE_MARKERS={
+ "아파트":{bg:"#2E4A7A",label:"아파트"},"상가":{bg:"#5C7A4A",label:"상가"},
+ "빌라":{bg:"#8A5A7A",label:"빌라"},"주택":{bg:"#7A5A3A",label:"주택"},
+ "건물":{bg:"#8A6D1F",label:"건물"},"빌딩":{bg:"#8A6D1F",label:"빌딩"},
+ "토지":{bg:"#7A4A4A",label:"토지"},"공장":{bg:"#4A6E7A",label:"공장"},
+ "창고":{bg:"#3F6060",label:"창고"},"오피스텔":{bg:"#5A6478",label:"오피스텔"}
+};
+function mapMarkerIcon(item,picked){
+ const cfg=MAP_TYPE_MARKERS[item.type]||{bg:"#5A6478",label:item.type||"기타"};
+ const short=cfg.label.length>2?cfg.label.slice(0,2):cfg.label;
+ const html=`<div class="rw-map-marker${picked?" picked":""}" style="background:${cfg.bg}" title="${escapeHtml(cfg.label)}"><span>${escapeHtml(short)}</span></div>`;
+ return {content:html,anchor:new naver.maps.Point(picked?21:19,picked?21:19)};
+}
 function renderDetail(no){
  const x=LISTINGS.find(x=>String(x.no)===String(no));if(!x)return;
  const photos=x.photos?.length?x.photos:(x.photo?[x.photo]:[]);
@@ -599,7 +689,7 @@ function renderDetail(no){
     <div class="top"><span class="badge" style="background:${typeColor(x.type)}">${escapeHtml(x.type)}</span><span class="deal">${escapeHtml(x.deal)}</span>${x.no?`<span class="no">No.${escapeHtml(x.no)}</span>`:""}</div>
     <h1>${escapeHtml(x.name)}</h1><div class="detail-price">${escapeHtml(x.deal)} ${escapeHtml(x.price)}</div>
     <div class="detail-meta">${escapeHtml(x.meta||"상세 설명이 등록되어 있지 않습니다.")}</div>
-    ${x.addr?`<div class="detail-address">주소 · ${escapeHtml(x.addr)}</div>`:""}
+    ${publicAddress(x.addr,x.type)?`<div class="detail-address">주소 · ${escapeHtml(publicAddress(x.addr,x.type))}</div>`:""}
     <div class="detail-actions">
       <button class="yellow" id="detailAsk">이 매물 문의</button>
       <button class="outline" id="detailFav">${isFav(x)?"♥ 찜 취소":"♡ 찜하기"}</button>
@@ -872,7 +962,7 @@ async function openMap(){
     let html="";
     for(;li<end;li++){
      const x=arr[li];
-     html+=`<div class="map-card" data-no="${escapeHtml(x.no)}"><div class="photo">${x.photo?`<img src="${escapeHtml(x.photo)}" loading="lazy" decoding="async">`:""}</div><div><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(x.addr)}</span></div></div>`;
+     html+=`<div class="map-card" data-no="${escapeHtml(x.no)}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
     }
     mapList.insertAdjacentHTML("beforeend",html);
     if(li<arr.length) requestAnimationFrame(paintMapList);
@@ -916,9 +1006,13 @@ async function openMap(){
      const marker=new naver.maps.Marker({
       position:new naver.maps.LatLng(x.lat,x.lng),
       map:mapApi.map,
-      title:x.name
+      title:`${x.type||"기타"} · ${x.name}`,
+      icon:mapMarkerIcon(x,false)
      });
-     naver.maps.Event.addListener(marker,"click",()=>openDetail(x.no));
+     naver.maps.Event.addListener(marker,"click",()=>{
+      try{marker.setIcon(mapMarkerIcon(x,true));}catch(e){}
+      openDetail(x.no);
+     });
      mapApi.markers.push(marker);
     }catch(markerErr){
      console.warn("마커 생성 실패:",x.no,markerErr);
