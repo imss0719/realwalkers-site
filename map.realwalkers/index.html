@@ -196,7 +196,7 @@ button{cursor:pointer}
   <section class="hero">
     <div class="container hero-inner">
       <div class="eyebrow">REAL WALKERS · MAPO REAL ESTATE</div>
-      <h1>내가 필요한 부동산,<br><span>더 쉽게 찾으세요.</span></h1>
+      <h1>찾고 싶은 부동산,<br><span>더 쉽게 찾으세요.</span></h1>
       <p class="hero-copy">아파트부터 상가·건물·토지까지. 리얼워커스가 직접 확인한 매물을 한곳에서 살펴보고, 필요한 경우 대표 공인중개사와 바로 상담할 수 있습니다.</p>
       <div class="search-box">
         <input id="homeSearch" type="search" placeholder="지역·매물명·주소로 검색해 보세요" autocomplete="off">
@@ -700,25 +700,57 @@ function coordCacheSet(addr,lat,lng){
 }
 function geocodeAddress(addr){
  return new Promise(resolve=>{
-  const address=String(addr||"").replace(/\s+/g," ").trim();
-  if(!address){resolve(null);return}
-  const cached=coordCacheGet(address);
-  if(cached){resolve(cached);return}
+  const original=String(addr||"").replace(/\s+/g," ").trim();
+  if(!original){resolve(null);return}
   if(!window.naver?.maps?.Service?.geocode){resolve(null);return}
-  naver.maps.Service.geocode({query:address},(status,response)=>{
+
+  const candidates=[];
+  const add=v=>{
+   v=String(v||"").replace(/\s+/g," ").trim();
+   if(v && !candidates.includes(v)) candidates.push(v);
+  };
+  add(original);
+  // 쉼표 뒤의 상세 설명을 제거
+  add(original.split(",")[0]);
+  // 층/호/동 등의 상세 표기를 제거하여 지번·도로명 주소 중심으로 재시도
+  let simplified=original
+    .replace(/\s+\d+\s*층\b/gi," ")
+    .replace(/\s+\d+\s*호\b/gi," ")
+    .replace(/\s+\d+\s*동\b/gi," ")
+    .replace(/\s+\([^)]*\)\s*$/g," ")
+    .replace(/\s+/g," ").trim();
+  add(simplified);
+  // 건물명/상세정보가 붙은 경우 앞쪽 주소만 사용
+  const m=simplified.match(/^(.*?\d+(?:-\d+)?)(?:\s|$)/);
+  if(m) add(m[1]);
+
+  let i=0;
+  const next=()=>{
+   if(i>=candidates.length){resolve(null);return;}
+   const query=candidates[i++];
    try{
-    if(status!==naver.maps.Service.Status.OK){resolve(null);return}
-    const list=response?.v2?.addresses||response?.result?.items||[];
-    const a=list[0];
-    const x=Number(a?.x??a?.point?.x);
-    const y=Number(a?.y??a?.point?.y);
-    if(Number.isFinite(x)&&Number.isFinite(y)){
-     const result={lat:y,lng:x};
-     coordCacheSet(address,y,x);
-     resolve(result);
-    }else resolve(null);
-   }catch(e){resolve(null)}
-  });
+    naver.maps.Service.geocode({query},(status,response)=>{
+     try{
+      if(status===naver.maps.Service.Status.OK){
+       const list=response?.v2?.addresses||response?.result?.items||[];
+       const a=list[0];
+       const x=Number(a?.x??a?.point?.x);
+       const y=Number(a?.y??a?.point?.y);
+       if(Number.isFinite(x)&&Number.isFinite(y)){
+        const result={lat:y,lng:x};
+        coordCacheSet(original,y,x);
+        resolve(result);return;
+       }
+      }
+     }catch(e){}
+     // 네이버 응답이 없거나 좌표가 없으면 다음 형태의 주소로 재시도
+     setTimeout(next,80);
+    });
+   }catch(e){setTimeout(next,80)}
+  };
+  const cached=coordCacheGet(original);
+  if(cached){resolve(cached);return}
+  next();
  });
 }
 async function geocodeListings(items,onProgress){
@@ -734,7 +766,7 @@ async function geocodeListings(items,onProgress){
    if(onProgress)onProgress(x,idx+1,targets.length,c);
   }
  };
- const workers=Array.from({length:Math.min(4,targets.length)},()=>worker());
+ const workers=Array.from({length:Math.min(2,targets.length)},()=>worker());
  await Promise.all(workers);
  return items;
 }
@@ -847,109 +879,6 @@ async function openMap(){
  }
 }
 
-
- const arr=filtered().filter(x=>x.lat!=null&&x.lng!=null);
- const countEl=document.getElementById("mapCount");
- const mapList=document.getElementById("mapList");
- const loading=document.getElementById("mapLoading");
- countEl.textContent=arr.length;
- loading.style.display="grid";
- loading.textContent="지도를 준비하고 있습니다…";
-
- // 이전 지도 마커 정리
- if(mapApi && Array.isArray(mapApi.markers)){
-  mapApi.markers.forEach(m=>{try{m.setMap(null)}catch(e){}});
-  mapApi.markers=[];
- }
-
- // 지도 왼쪽 목록은 40개 단위로 나눠 그리되, 각 카드 클릭은 위임 방식으로 처리
- if(!arr.length){
-  mapList.innerHTML='<div class="empty" style="margin:12px">좌표가 있는 매물이 없습니다.</div>';
- }else{
-  mapList.innerHTML="";
-  let li=0;
-  const paintMapList=()=>{
-   const end=Math.min(li+40,arr.length);
-   let html="";
-   for(;li<end;li++){
-    const x=arr[li];
-    html+=`<div class="map-card" data-no="${escapeHtml(x.no)}"><div class="photo">${x.photo?`<img src="${escapeHtml(x.photo)}" loading="lazy" decoding="async">`:""}</div><div><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(x.addr)}</span></div></div>`;
-   }
-   mapList.insertAdjacentHTML("beforeend",html);
-   if(li<arr.length) requestAnimationFrame(paintMapList);
-  };
-  requestAnimationFrame(paintMapList);
- }
- mapList.onclick=e=>{
-  const card=e.target.closest(".map-card");
-  if(card)openDetail(card.dataset.no);
- };
-
- try{
-  await loadNaver();
-
-  if(!mapApi){
-   mapApi={
-    map:new naver.maps.Map("map",{
-     center:new naver.maps.LatLng(37.549,126.950),
-     zoom:13,
-     zoomControl:true,
-     draggable:true,
-     pinchZoom:true,
-     scrollWheel:true
-    }),
-    markers:[]
-   };
-  }else{
-   mapApi.map.setCenter(new naver.maps.LatLng(37.549,126.950));
-  }
-
-  // 컨테이너가 보인 뒤 지도 크기를 다시 계산
-  setTimeout(()=>{
-   try{naver.maps.Event.trigger(mapApi.map,"resize")}catch(e){}
-  },80);
-
-  // 마커는 작은 묶음으로 만들되, 개별 오류가 전체 렌더링을 중단시키지 않도록 처리
-  let mi=0;
-  const paintMarkers=()=>{
-   const end=Math.min(mi+20,arr.length);
-   for(;mi<end;mi++){
-    const x=arr[mi];
-    try{
-     const marker=new naver.maps.Marker({
-      position:new naver.maps.LatLng(x.lat,x.lng),
-      map:mapApi.map,
-      title:x.name
-     });
-     naver.maps.Event.addListener(marker,"click",()=>openDetail(x.no));
-     mapApi.markers.push(marker);
-    }catch(markerErr){
-     console.warn("마커 생성 실패:",x.no,markerErr);
-    }
-   }
-
-   if(mi<arr.length){
-    requestAnimationFrame(paintMarkers);
-   }else{
-    loading.style.display="none";
-    setTimeout(()=>{
-     try{naver.maps.Event.trigger(mapApi.map,"resize")}catch(e){}
-    },80);
-   }
-  };
-
-  // 매물이 없는 경우에도 로딩 화면이 남지 않도록 처리
-  if(!arr.length){
-   loading.style.display="none";
-  }else{
-   requestAnimationFrame(paintMarkers);
-  }
-
- }catch(e){
-  console.error("지도 로딩 오류:",e);
-  loading.textContent="지도를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
- }
-}
 
 /* 이벤트는 위임 방식으로 최소화 */
 document.addEventListener("click",e=>{
