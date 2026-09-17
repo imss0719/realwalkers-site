@@ -413,7 +413,7 @@ const CONFIG={
 };
 const INQUIRY_ENDPOINT="https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
 /* 이전 버전 캐시 제거: 완료/보류 상태가 누락된 캐시를 재사용하지 않습니다. */
-try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v5")}catch(e){}
+try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v6")}catch(e){}
 const INQUIRY_FORM={
   ACTION:"https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
@@ -1053,6 +1053,31 @@ function loadNaver(){
    구글시트에는 주소만 입력해도 됩니다.
    기존 정상 작동하던 지도 파일의 Geocoding 방식을 그대로 사용합니다.
    지도 본체와 Geocoding은 같은 네이버 Maps API에서 불러옵니다. */
+
+function rwAddGeocodedMarker(item){
+  try{
+    if(!mapApi || !mapApi.map || !Number.isFinite(Number(item.lat)) || !Number.isFinite(Number(item.lng))) return;
+    const existing=Array.isArray(mapApi.markers)
+      ? mapApi.markers.find(m=>m.__rwItem && String(m.__rwItem.id)===String(item.id))
+      : null;
+    if(existing){
+      existing.setPosition(new naver.maps.LatLng(Number(item.lat),Number(item.lng)));
+      existing.setMap(showCompletedOnMap || String(item.status||"").trim().toLowerCase()!=="completed" ? mapApi.map : null);
+      existing.setIcon(mapMarkerIcon(item,false));
+      return;
+    }
+    const marker=new naver.maps.Marker({
+      position:new naver.maps.LatLng(Number(item.lat),Number(item.lng)),
+      map:(showCompletedOnMap || String(item.status||"").trim().toLowerCase()!=="completed") ? mapApi.map : null,
+      title:`${item.type||"기타"} · ${item.name}`,
+      icon:mapMarkerIcon(item,false)
+    });
+    marker.__rwItem=item;
+    marker.addListener("click",()=>openDetail(item.id||item.listingNo));
+    if(!Array.isArray(mapApi.markers)) mapApi.markers=[];
+    mapApi.markers.push(marker);
+  }catch(e){}
+}
 function geocodeMissing(done){
   const targets = LISTINGS.filter(it => (it.lat == null || it.lng == null) && it.addr);
   if (!targets.length || !window.naver){ done(); return; }
@@ -1320,7 +1345,7 @@ async function openMap(){
      addr:x.addr,lat:x.lat,lng:x.lng,photos:x.photos,photo:x.photo,
      blog:x.blog,status:x.status,hold:x.hold,done:x.done
     }));
-    sessionStorage.setItem("rw_listings_cache_v5",JSON.stringify({time:Date.now(),items:cacheItems}));
+    sessionStorage.setItem("rw_listings_cache_v6",JSON.stringify({time:Date.now(),items:cacheItems}));
    }catch(e){}
   });
 
