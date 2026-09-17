@@ -579,8 +579,9 @@ async function fetchSupabaseListings(){
    deposit:String(row.deposit??"").trim(),
    rent:String(row.rent??"").trim(),
    _order:i,
-   hold:rwStatusFlags(row.status).hold,
-   done:rwStatusFlags(row.status).done
+   status:String(row.status??"").trim().toLowerCase(),
+   hold:String(row.status??"").trim().toLowerCase()==="hold",
+   done:String(row.status??"").trim().toLowerCase()==="completed"
   };
   return normalizeListingObject(obj);
  }).filter(Boolean);
@@ -591,7 +592,7 @@ async function fetchSupabaseListings(){
 function saveListingsCache(items){
  try{
   sessionStorage.setItem(
-   "rw_listings_cache_v7",
+   "rw_listings_cache_v8",
    JSON.stringify({time:Date.now(),items})
   );
  }catch(e){}
@@ -599,7 +600,7 @@ function saveListingsCache(items){
 
 function readListingsCache(){
  try{
-  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v7")||"null");
+  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v8")||"null");
   if(cached && Array.isArray(cached.items)){
    return cached.items.map(normalizeListingObject).filter(Boolean);
   }
@@ -735,18 +736,12 @@ function normalizeListingObject(o){
  const price=String(o.price??o["가격"]??o["매매가"]??o["거래가"]??"").trim();
  const meta=String(o.meta??o.desc??o.description??o["설명"]??o["상세설명"]??o["매물설명"]??"").trim();
  const addr=String(o.addr??o.address??o["주소"]??o["소재지"]??"").trim();
- const statusRaw=String(
-  o.status ??
-  o.show ??
-  o.visibility ??
-  o["노출"] ??
-  o["공개"] ??
-  o["상태"] ??
-  ""
- ).trim();
- const statusInfo=rwStatusFlags(statusRaw);
- const status=statusInfo.raw.toUpperCase().replace(/\s+/g,"");
- if(["N","NO","비공개","숨김","미노출","FALSE"].includes(status))return null;
+
+ // 홈페이지 노출/거래완료 판단은 Supabase DB 기준만 사용합니다.
+ const status=String(o.status??"").trim().toLowerCase();
+ const done=status==="completed";
+ const hold=status==="hold";
+
  const lat=parseFloat(o.lat??o.latitude??o["위도"]);
  const lng=parseFloat(o.lng??o.longitude??o["경도"]);
  let photos=o.photos??o["사진"]??[];
@@ -754,6 +749,7 @@ function normalizeListingObject(o){
  if(!Array.isArray(photos))photos=[];
  const single=String(o.photo??o["대표사진"]??"").trim();
  if(!photos.length&&single)photos=[single];
+
  return {
   id:String(o.id??o.uuid??"").trim(),
   no,type,deal,name,price,meta,addr,
@@ -767,13 +763,10 @@ function normalizeListingObject(o){
   urgent:o.urgent===true || /급매/i.test([name,meta,price,deal].filter(Boolean).join(" ")),
   deposit:String(o.deposit??"").trim(),
   rent:String(o.rent??"").trim(),
+  status,
   _order:Number.isFinite(Number(o._order))?Number(o._order):null,
-  hold:!!(o.hold===true || statusInfo.hold),
-  done:!!(
-    o.done===true ||
-    statusInfo.done ||
-    /거래완료|완료매물/i.test([name,meta,deal,statusRaw].filter(Boolean).join(" "))
-  )
+  hold,
+  done
  };
 }
 function showApiError(err){
@@ -874,7 +867,7 @@ function renderHome(){
   arr.splice(0,arr.length,...featured.slice(0,6));
  }
  document.getElementById("totalCount").textContent=LISTINGS.length;
- console.log("[RW STATUS] 전체:",LISTINGS.length,"거래완료:",LISTINGS.filter(x=>x.done).length,"보류:",LISTINGS.filter(x=>x.hold).length);
+ 
  if(!arr.length){grid.innerHTML=`<div class="empty">등록된 매물이 없습니다.</div>`;return}
  grid.innerHTML=arr.map(cardHtml).join("");
 }
