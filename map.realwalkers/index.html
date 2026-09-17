@@ -164,7 +164,7 @@ button{cursor:pointer}
 .rw-map-marker.completed span{font-size:10px}
 .detail-done-badge{display:inline-flex;align-items:center;justify-content:center;margin-left:7px;padding:4px 8px;border-radius:6px;background:#B42318;color:#fff;font-size:11px;font-weight:900;vertical-align:middle}
 .map-card{position:relative}
-.map-done-badge{display:inline-flex;align-items:center;justify-content:center;margin-top:5px;padding:3px 7px;border-radius:5px;background:#d92d20;color:#fff !important;font-size:10px;font-weight:900}
+.map-done-badge{display:inline-flex;align-items:center;justify-content:center;margin-top:5px;padding:3px 7px;border-radius:5px;background:#d92d20;color:#fff!important;font-size:10px;font-weight:900}
 .map-done-toggle{margin-left:8px;border:1px solid var(--line);background:#fff!important;color:var(--navy);border-radius:7px;padding:5px 9px;font-size:11px;font-weight:900;cursor:pointer;vertical-align:middle}
 .map-done-toggle.active{background:var(--navy);color:#fff!important;border-color:var(--navy)}
 
@@ -413,7 +413,7 @@ const CONFIG={
 };
 const INQUIRY_ENDPOINT="https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
 /* 이전 버전 캐시 제거: 완료/보류 상태가 누락된 캐시를 재사용하지 않습니다. */
-try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v6")}catch(e){}
+try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v7")}catch(e){}
 const INQUIRY_FORM={
   ACTION:"https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
@@ -1095,6 +1095,8 @@ function geocodeMissing(done){
     if(hit && Number.isFinite(Number(hit.lat)) && Number.isFinite(Number(hit.lng))){
       it.lat = Number(hit.lat);
       it.lng = Number(hit.lng);
+      // 캐시 좌표도 발견 즉시 지도에 표시
+      rwAddGeocodedMarker(it);
     }else{
       pending.push(it);
     }
@@ -1197,6 +1199,8 @@ function geocodeMissing(done){
                     it.lng = lng;
                     it.geoFrom = q;
                     saveCache(it);
+                    // 지오코딩 성공 즉시 해당 매물 마커를 지도에 표시
+                    rwAddGeocodedMarker(it);
                     step();
                     next();
                     return;
@@ -1345,7 +1349,7 @@ async function openMap(){
      addr:x.addr,lat:x.lat,lng:x.lng,photos:x.photos,photo:x.photo,
      blog:x.blog,status:x.status,hold:x.hold,done:x.done
     }));
-    sessionStorage.setItem("rw_listings_cache_v6",JSON.stringify({time:Date.now(),items:cacheItems}));
+    sessionStorage.setItem("rw_listings_cache_v7",JSON.stringify({time:Date.now(),items:cacheItems}));
    }catch(e){}
   });
 
