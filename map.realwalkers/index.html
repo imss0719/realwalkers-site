@@ -1068,18 +1068,12 @@ async function submitInquiry(e){
   if(INQUIRY_ENDPOINT){
    await fetch(INQUIRY_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   }
-  if(INQUIRY_FORM.ACTION){
-   const u=new URL(INQUIRY_FORM.ACTION);
-   u.searchParams.set(INQUIRY_FORM.ENTRY_TYPE,"매물문의");
-   u.searchParams.set(INQUIRY_FORM.ENTRY_NAME,name);
-   u.searchParams.set(INQUIRY_FORM.ENTRY_PHONE,phone);
-   u.searchParams.set(INQUIRY_FORM.ENTRY_CONTENT,content);
-   u.searchParams.set(INQUIRY_FORM.ENTRY_DEVICE,navigator.userAgent);
-   u.searchParams.set(INQUIRY_FORM.ENTRY_LISTING,listing);
-   window.open(u.toString(),"_blank","noopener");
-  }
-  closeModal("ask");document.getElementById("askForm").reset();toast("문의창을 열었습니다. 제출만 완료해 주세요.");
- }catch(err){toast("문의 전송 준비 중 오류가 발생했습니다. 전화로 문의해 주세요.")}
+  closeModal("ask");
+  document.getElementById("askForm").reset();
+  toast("문의가 접수되었습니다. 곧 연락드리겠습니다.");
+ }catch(err){
+  toast("문의 전송 중 오류가 발생했습니다. 전화로 문의해 주세요.");
+ }
 }
 function closeModal(name){
  const el=document.getElementById(name==="about"?"aboutModal":name==="ask"?"askModal":"roadModal");
