@@ -211,45 +211,6 @@ button{cursor:pointer}
  .nav-call::before{content:"☎";font-size:15px}
 }
 </style>
-
-<script>
-/* =========================
-   REAL WALKERS 성능 측정용
-   기존 기능/데이터 로딩은 변경하지 않습니다.
-   ========================= */
-window.RW_PERF = {
-  t0: performance.now(),
-  marks: {},
-  mark(name){
-    const v = +(performance.now() - this.t0).toFixed(1);
-    this.marks[name] = v;
-    console.log("[RW PERF]", name, v + "ms");
-  },
-  report(){
-    console.table(this.marks);
-    console.log("[RW PERF] 전체", +(performance.now()-this.t0).toFixed(1) + "ms");
-  }
-};
-RW_PERF.mark("HTML/JS 시작");
-
-const _rwFetchOriginal = window.fetch;
-window.fetch = async function(...args){
-  const start = performance.now();
-  const url = String(args[0] || "");
-  const result = await _rwFetchOriginal.apply(this, args);
-  const ms = +(performance.now()-start).toFixed(1);
-  let label = url;
-  try { label = new URL(url, location.href).pathname; } catch(e) {}
-  console.log("[RW FETCH]", ms + "ms", label);
-  return result;
-};
-
-window.addEventListener("load", ()=>{
-  RW_PERF.mark("window.load");
-  setTimeout(()=>RW_PERF.report(), 100);
-});
-</script>
-
 </head>
 <body>
 <header class="header">
@@ -463,7 +424,7 @@ let mapApi=null;
 let current={type:"all",deal:"all",region:"all",price:"all",sort:"latest",q:"",fav:false,done:false};
 let favorites=new Set();
 try{favorites=new Set(JSON.parse(localStorage.getItem("rw_favorites")||"[]"))}catch(e){}
-function favKey(x){return x.no?`no:${x.no}`:`na:${x.name}|${x.addr||""}`}
+function favKey(x){return x.id?`id:${x.id}`:(x.no?`no:${x.no}`:`na:${x.name}|${x.addr||""}`)}
 function isFav(x){return favorites.has(favKey(x))}
 function saveFav(){try{localStorage.setItem("rw_favorites",JSON.stringify([...favorites]))}catch(e){}}
 function toggleFav(x,e){if(e)e.stopPropagation();const k=favKey(x);favorites.has(k)?favorites.delete(k):favorites.add(k);saveFav();renderList();if(getView()==="detail")renderDetail(x.no)}
@@ -546,7 +507,6 @@ async function supabaseFetch(path, options={}){
 }
 
 async function fetchSupabaseListings(){
- RW_PERF?.mark("Supabase 조회 시작");
  /*
   * exposure=true인 매물만 홈페이지에 공개합니다.
   * 현재 Sheet 기준으로 공개 362건이며,
@@ -566,7 +526,6 @@ async function fetchSupabaseListings(){
 
  const res=await supabaseFetch("listings?"+params.toString());
  const rows=await res.json();
- RW_PERF?.mark("Supabase 매물 응답 완료");
  if(!Array.isArray(rows))throw new Error("Supabase listings 응답 형식이 올바르지 않습니다.");
 
  /*
@@ -582,7 +541,6 @@ async function fetchSupabaseListings(){
  try{
   const imageRes=await supabaseFetch("listing_images?"+imageParams.toString());
   const json=await imageRes.json();
-  RW_PERF?.mark("Supabase 사진 응답 완료");
   if(Array.isArray(json))imageRows=json;
  }catch(e){
   console.warn("Supabase 사진 조회 실패:",e);
@@ -627,7 +585,6 @@ async function fetchSupabaseListings(){
   return normalizeListingObject(obj);
  }).filter(Boolean);
 
- RW_PERF?.mark("Supabase 데이터 가공 완료");
  return parsed;
 }
 
@@ -747,8 +704,9 @@ async function refreshDataInBackground(){
     else if(v==="map")openMap();
     else if(v==="detail"){
      const params=new URLSearchParams(location.search);
-     const no=params.get("m");
-     if(no)renderDetail(no);
+     const id=params.get("id"), no=params.get("m");
+     if(id)renderDetail(id);
+     else if(no)renderDetail(no);
     }
    }catch(e){}
   }
@@ -874,19 +832,18 @@ function priceOf(x){
  return "etc";
 }
 function cardHtml(x){
- return `<article class="card ${isUrgent(x)?"is-urgent":""}" data-no="${escapeHtml(x.no)}">
-  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.no||''))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${(x.hold||x.done)?'<div class="card-done-overlay"><span>보류</span></div>':''}</div>
+ return `<article class="card ${isUrgent(x)?"is-urgent":""}" data-id="${escapeHtml(String(x.id||""))}">
+  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.id||''))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${(x.hold||x.done)?'<div class="card-done-overlay"><span>보류</span></div>':''}</div>
   <div class="card-body"><div class="top"><span class="badge" style="background:${typeColor(x.type)}">${escapeHtml(x.type)}</span><span class="deal">${escapeHtml(x.deal)}</span>${x.no?`<span class="no">No.${escapeHtml(x.no)}</span>`:""}</div>
   <h3>${escapeHtml(x.name)}</h3><div class="price">${escapeHtml(x.deal)} ${escapeHtml(x.price)}</div><div class="meta">${escapeHtml(x.meta||publicAddress(x.addr,x.type))}</div></div>
  </article>`;
 }
-function cardToggleFav(no,e){
+function cardToggleFav(id,e){
  if(e)e.stopPropagation();
- const x=LISTINGS.find(it=>String(it.no)===String(no));
+ const x=LISTINGS.find(it=>String(it.id||"")===String(id||""));
  if(x)toggleFav(x,e);
 }
 function renderHome(){
- RW_PERF?.mark("홈 렌더링 시작");
  const grid=document.getElementById("homeGrid");
  const arr=sortListings(LISTINGS).slice(0,6);
  // 주요 매물은 급매를 우선 배치하고, 급매가 부족하면 최신 매물을 이어서 보여줍니다.
@@ -922,11 +879,21 @@ function buildFilters(){
  type.value=current.type;deal.value=current.deal;region.value=current.region;price.value=current.price;
  if(sort)sort.value=current.sort;
 }
-function openDetail(no){
- const x=LISTINGS.find(x=>String(x.no)===String(no));if(!x)return;
- history.pushState({view:"detail",no:x.no},"",`?m=${encodeURIComponent(x.no)}`);
- renderDetail(x.no);showView("detail");
+function findListing(ref){
+ const key=String(ref??"").trim();
+ if(!key)return null;
+ return LISTINGS.find(x=>String(x.id||"")===key)
+     || LISTINGS.find(x=>String(x.no||"")===key)
+     || null;
 }
+function openDetail(ref){
+ const x=findListing(ref);if(!x)return;
+ const stable=String(x.id||"").trim();
+ const url=stable?`?id=${encodeURIComponent(stable)}`:`?m=${encodeURIComponent(x.no)}`;
+ history.pushState({view:"detail",id:x.id||"",no:x.no},"",url);
+ renderDetail(x.id||x.no);showView("detail");
+}
+/* 지도/카드 상세 연결은 매물번호가 아닌 Supabase UUID를 사용합니다.\n   기존 ?m=매물번호 링크는 하위 호환합니다. */
 /* ── 방문자에게 보여줄 공개 주소 ── */
 function publicAddress(addr, type){
  const raw=String(addr||"").replace(/\\s+/g," ").trim();
@@ -963,8 +930,8 @@ function mapMarkerIcon(item,picked){
  const html=`<div class="rw-map-marker${picked?" picked":""}" style="background:${cfg.bg}" title="${escapeHtml(cfg.label)}"><span>${escapeHtml(short)}</span></div>`;
  return {content:html,anchor:new naver.maps.Point(picked?21:19,picked?21:19)};
 }
-function renderDetail(no){
- const x=LISTINGS.find(x=>String(x.no)===String(no));if(!x)return;
+function renderDetail(ref){
+ const x=findListing(ref);if(!x)return;
  const photos=x.photos?.length?x.photos:(x.photo?[x.photo]:[]);
  document.getElementById("detailRoot").innerHTML=`<div class="detail-shell">
   <div class="detail-top">
@@ -986,7 +953,7 @@ function renderDetail(no){
   ${photos.length>1?`<div class="detail-gallery">${photos.slice(0,5).map((p,i)=>`<img src="${escapeHtml(p)}" data-photo="${i}" loading="lazy" decoding="async">`).join("")}</div>`:""}
  </div>`;
  document.getElementById("detailAsk").onclick=()=>openAsk(x);
- document.getElementById("detailFav").onclick=()=>{toggleFav(x);renderDetail(x.no)};
+ document.getElementById("detailFav").onclick=()=>{toggleFav(x);renderDetail(x.id||x.no)};
  const road=document.getElementById("detailRoad");if(road)road.onclick=()=>openRoadview(x);
  document.querySelectorAll("[data-photo]").forEach(el=>el.onclick=()=>document.getElementById("detailMainImg").src=photos[+el.dataset.photo]);
 }
@@ -1246,7 +1213,7 @@ async function openMap(){
     let html="";
     for(;li<end;li++){
      const x=arr[li];
-     html+=`<div class="map-card" data-no="${escapeHtml(x.no)}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
+     html+=`<div class="map-card" data-id="${escapeHtml(String(x.id||""))}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
     }
     mapList.insertAdjacentHTML("beforeend",html);
     if(li<arr.length) requestAnimationFrame(paintMapList);
@@ -1256,7 +1223,7 @@ async function openMap(){
 
   mapList.onclick=e=>{
    const card=e.target.closest(".map-card");
-   if(card)openDetail(card.dataset.no);
+   if(card)openDetail(card.dataset.id||card.dataset.no);
   };
 
   if(!mapApi){
@@ -1295,7 +1262,7 @@ async function openMap(){
      });
      naver.maps.Event.addListener(marker,"click",()=>{
       try{marker.setIcon(mapMarkerIcon(x,true));}catch(e){}
-      openDetail(x.no);
+      openDetail(x.id||x.no);
      });
      mapApi.markers.push(marker);
     }catch(markerErr){
@@ -1329,7 +1296,7 @@ async function openMap(){
 document.addEventListener("click",e=>{
  const view=e.target.closest("[data-view]");if(view){e.preventDefault();showView(view.dataset.view);return}
  const type=e.target.closest("[data-type]");if(type){current.type=type.dataset.type;current.q="";showView("list");return}
- const card=e.target.closest(".card");if(card){openDetail(card.dataset.no);return}
+ const card=e.target.closest(".card");if(card){openDetail(card.dataset.id||card.dataset.no);return}
  const about=e.target.closest("[data-open='about']");if(about){document.getElementById("aboutModal").classList.add("open");document.body.classList.add("lock");return}
  const close=e.target.closest("[data-close]");if(close){closeModal(close.dataset.close);return}
 });
@@ -1347,8 +1314,10 @@ document.getElementById("askForm").addEventListener("submit",submitInquiry);
 document.querySelectorAll(".modal-backdrop").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closeModal(m.id==="aboutModal"?"about":m.id==="askModal"?"ask":"road")}));
 window.addEventListener("keydown",e=>{if(e.key==="Escape"){["about","ask","road"].forEach(closeModal)}});
 window.addEventListener("popstate",()=>{
- const p=new URLSearchParams(location.search),m=p.get("m"),v=p.get("view");
- if(m){renderDetail(m);showView("detail",true)}else showView(v||"home",true);
+ const p=new URLSearchParams(location.search),id=p.get("id"),m=p.get("m"),v=p.get("view");
+ if(id){renderDetail(id);showView("detail",true)}
+ else if(m){renderDetail(m);showView("detail",true)}
+ else showView(v||"home",true);
 });
 
 /* 최초 접속에서는 지도 API를 로드하지 않습니다.
@@ -1370,16 +1339,5 @@ function idle(fn){if("requestIdleCallback" in window)requestIdleCallback(fn,{tim
  }
 })();
 </script>
-
-<script>
-if (new URLSearchParams(location.search).get("perf") === "1") {
-  const b = document.createElement("button");
-  b.textContent = "성능 로그";
-  b.style.cssText = "position:fixed;right:12px;bottom:12px;z-index:9999;border:0;border-radius:9px;padding:9px 12px;background:#1B2A4A;color:#fff;font-weight:900;box-shadow:0 4px 15px rgba(0,0,0,.2)";
-  b.onclick = ()=>RW_PERF.report();
-  document.body.appendChild(b);
-}
-</script>
-
 </body>
 </html>
