@@ -413,7 +413,7 @@ const CONFIG={
 };
 const INQUIRY_ENDPOINT="https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
 /* 이전 버전 캐시 제거: 완료/보류 상태가 누락된 캐시를 재사용하지 않습니다. */
-try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v5");sessionStorage.removeItem("rw_listings_cache_v5");sessionStorage.removeItem("rw_listings_cache_v5")}catch(e){}
+try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v5")}catch(e){}
 const INQUIRY_FORM={
   ACTION:"https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
@@ -1198,111 +1198,10 @@ async function openMap(){
  const countEl=document.getElementById("mapCount");
  const mapList=document.getElementById("mapList");
  const loading=document.getElementById("mapLoading");
- loading.style.display="grid";
- loading.textContent="매물 위치를 확인하고 있습니다…";
 
  try{
-  /* ★ 핵심:
-     시트의 위도·경도를 요구하지 않습니다.
-     주소가 있는 매물은 네이버 Geocoding으로 좌표를 자동 생성한 뒤
-     그 결과를 지도에 사용합니다. */
+  /* 지도 자체를 먼저 준비합니다. 주소 지오코딩은 절대로 지도 표시를 막지 않습니다. */
   await loadNaver();
-  await new Promise(resolve=>geocodeMissing(resolve));
-
-  const arr=filtered().filter(x=>x.lat!=null&&x.lng!=null);
-  countEl.textContent=arr.length;
-
-  /* 지오코딩 후 최신 좌표를 캐시에 반영 */
-  try{
-   const cacheItems=LISTINGS.filter(x=>x.lat!=null&&x.lng!=null).map(x=>({
-    no:x.no, type:x.type, deal:x.deal, name:x.name, price:x.price, meta:x.meta,
-    addr:x.addr, lat:x.lat, lng:x.lng, photos:x.photos, photo:x.photo,
-    blog:x.blog, status:x.status, hold:x.hold, done:x.done
-   }));
-   sessionStorage.setItem("rw_listings_cache_v5",JSON.stringify({time:Date.now(),items:cacheItems}));
-  }catch(e){}
-
-  /* 이전 지도 마커 정리 */
-  if(mapApi && Array.isArray(mapApi.markers)){
-   mapApi.markers.forEach(m=>{try{m.setMap(null)}catch(e){}});
-   mapApi.markers=[];
-  }
-
-  /* 지도 왼쪽 목록 */
-  const renderMapList=()=>{
-   const visibleItems=showCompletedOnMap
-    ? arr
-    : arr.filter(x=>String(x.status||"").trim().toLowerCase()!=="completed");
-
-   countEl.textContent=visibleItems.length;
-   mapList.innerHTML="";
-
-   if(!visibleItems.length){
-    mapList.innerHTML='<div class="empty" style="margin:12px">표시할 매물이 없습니다.</div>';
-    return;
-   }
-
-   // 지도 진입 후 목록을 10개씩 나눠 렌더링해 첫 화면을 최대한 빨리 보여줍니다.
-   let li=0;
-   const CHUNK=10;
-
-   const paintChunk=()=>{
-    const endIndex=Math.min(li+CHUNK,visibleItems.length);
-    let chunkHtml="";
-
-    for(;li<endIndex;li++){
-     const x=visibleItems[li];
-     const isDone=String(x.status||"").trim().toLowerCase()==="completed";
-     chunkHtml+=`<div class="map-card" data-id="${escapeHtml(String(x.id||""))}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b>${showCompletedOnMap&&isDone?'<span class="map-done-badge">완료</span>':""}<span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
-    }
-
-    mapList.insertAdjacentHTML("beforeend",chunkHtml);
-
-    if(li<visibleItems.length){
-     requestAnimationFrame(paintChunk);
-    }
-   };
-
-   requestAnimationFrame(paintChunk);
-  };
-
-  renderMapList();
-
-  const doneToggle=document.getElementById("mapDoneToggle");
-  if(doneToggle){
-   doneToggle.classList.toggle("active",showCompletedOnMap);
-   doneToggle.setAttribute("aria-pressed",String(showCompletedOnMap));
-   doneToggle.onclick=(e)=>{
-    e.preventDefault();
-    e.stopPropagation();
-
-    showCompletedOnMap=!showCompletedOnMap;
-    doneToggle.classList.toggle("active",showCompletedOnMap);
-    doneToggle.setAttribute("aria-pressed",String(showCompletedOnMap));
-
-    // 완료표시 ON/OFF: 왼쪽 목록과 지도 마커를 동시에 갱신합니다.
-    renderMapList();
-
-    if(mapApi && Array.isArray(mapApi.markers)){
-     mapApi.markers.forEach(m=>{
-      try{
-       const item=m.__rwItem;
-       if(!item)return;
-       const isCompleted=String(item.status||"").trim().toLowerCase()==="completed";
-       if(isCompleted){
-        m.setMap(showCompletedOnMap ? mapApi.map : null);
-        if(showCompletedOnMap)m.setIcon(mapMarkerIcon(item,false));
-       }
-      }catch(err){}
-     });
-    }
-   };
-  }
-
-  mapList.onclick=e=>{
-   const card=e.target.closest(".map-card");
-   if(card)openDetail(card.dataset.id||card.dataset.no);
-  };
 
   if(!mapApi){
    mapApi={
@@ -1320,53 +1219,114 @@ async function openMap(){
    mapApi.map.setCenter(new naver.maps.LatLng(37.549,126.950));
   }
 
-  /* 컨테이너가 보인 뒤 지도 크기 재계산 */
-  setTimeout(()=>{
-   try{naver.maps.Event.trigger(mapApi.map,"resize")}catch(e){}
-  },80);
+  /* 이전 마커 정리 */
+  if(mapApi && Array.isArray(mapApi.markers)){
+   mapApi.markers.forEach(m=>{try{m.setMap(null)}catch(e){}});
+   mapApi.markers=[];
+  }
 
-  /* 기존 현재 홈페이지 스타일의 마커를 그대로 사용 */
-  let mi=0;
-  const paintMarkers=()=>{
-   const end=Math.min(mi+20,arr.length);
-   for(;mi<end;mi++){
-    const x=arr[mi];
-    try{
-     const marker=new naver.maps.Marker({
-      position:new naver.maps.LatLng(x.lat,x.lng),
-      map:(showCompletedOnMap || String(x.status||"").trim().toLowerCase()!=="completed") ? mapApi.map : null,
-      title:`${x.type||"기타"} · ${x.name}`,
-      icon:mapMarkerIcon(x,false)
-     });
-     marker.__rwItem=x;
-     naver.maps.Event.addListener(marker,"click",()=>{
-      try{marker.setIcon(mapMarkerIcon(x,true));}catch(e){}
-      openDetail(x.id||x.no);
-     });
-     mapApi.markers.push(marker);
-    }catch(markerErr){
-     console.warn("마커 생성 실패:",x.no,markerErr);
+  /* 좌표가 없어도 목록은 즉시 보여줍니다. */
+  const arr=filtered();
+  let visibleItems=showCompletedOnMap
+    ? arr
+    : arr.filter(x=>String(x.status||"").trim().toLowerCase()!=="completed");
+
+  countEl.textContent=visibleItems.length;
+  loading.style.display="none";
+
+  /* 지도 컨테이너를 먼저 그린 뒤 목록을 10개씩 표시 */
+  mapList.innerHTML="";
+  if(!visibleItems.length){
+   mapList.innerHTML='<div class="empty" style="margin:12px">표시할 매물이 없습니다.</div>';
+  }else{
+   let li=0;
+   const CHUNK=10;
+   const paintList=()=>{
+    const end=Math.min(li+CHUNK,visibleItems.length);
+    let chunkHtml="";
+    for(;li<end;li++){
+     const x=visibleItems[li];
+     const isDone=String(x.status||"").trim().toLowerCase()==="completed";
+     chunkHtml+=`<div class="map-card" data-id="${escapeHtml(String(x.id||""))}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b>${showCompletedOnMap&&isDone?'<span class="map-done-badge">완료</span>':""}<span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
     }
-   }
+    mapList.insertAdjacentHTML("beforeend",chunkHtml);
+    if(li<visibleItems.length)requestAnimationFrame(paintList);
+   };
+   requestAnimationFrame(paintList);
+  }
 
-   if(mi<arr.length){
-    requestAnimationFrame(paintMarkers);
-   }else{
-    loading.style.display="none";
-    setTimeout(()=>{
-     try{naver.maps.Event.trigger(mapApi.map,"resize")}catch(e){}
-    },80);
-   }
+  const doneToggle=document.getElementById("mapDoneToggle");
+  if(doneToggle){
+   doneToggle.classList.toggle("active",showCompletedOnMap);
+   doneToggle.setAttribute("aria-pressed",String(showCompletedOnMap));
+   doneToggle.onclick=(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    showCompletedOnMap=!showCompletedOnMap;
+    doneToggle.classList.toggle("active",showCompletedOnMap);
+    doneToggle.setAttribute("aria-pressed",String(showCompletedOnMap));
+    openMap();
+   };
+  }
+
+  mapList.onclick=e=>{
+   const card=e.target.closest(".map-card");
+   if(card)openDetail(card.dataset.id||card.dataset.no);
   };
 
-  if(!arr.length){
-   loading.style.display="none";
-  }else{
-   requestAnimationFrame(paintMarkers);
-  }
+  setTimeout(()=>{
+   try{naver.maps.Event.trigger(mapApi.map,"resize")}catch(e){}
+  },30);
+
+  /* 좌표가 이미 있는 매물부터 즉시 마커를 10개씩 생성 */
+  let markerItems=arr.filter(x=>x.lat!=null&&x.lng!=null);
+  let mi=0;
+  const addMarker=(x)=>{
+   try{
+    const marker=new naver.maps.Marker({
+     position:new naver.maps.LatLng(x.lat,x.lng),
+     map:(showCompletedOnMap || String(x.status||"").trim().toLowerCase()!=="completed") ? mapApi.map : null,
+     title:`${x.type||"기타"} · ${x.name}`,
+     icon:mapMarkerIcon(x,false)
+    });
+    marker.__rwItem=x;
+    naver.maps.Event.addListener(marker,"click",()=>{
+     try{marker.setIcon(mapMarkerIcon(x,true));}catch(e){}
+     openDetail(x.id||x.no);
+    });
+    mapApi.markers.push(marker);
+   }catch(e){}
+  };
+  const paintMarkers=()=>{
+   const end=Math.min(mi+10,markerItems.length);
+   for(;mi<end;mi++)addMarker(markerItems[mi]);
+   if(mi<markerItems.length)requestAnimationFrame(paintMarkers);
+  };
+  requestAnimationFrame(paintMarkers);
+
+  /* 중요: 좌표 없는 주소의 지오코딩은 백그라운드에서 시작합니다.
+     완료될 때까지 사용자를 기다리게 하지 않습니다. */
+  geocodeMissing(()=>{
+   const newlyLocated=filtered().filter(x=>x.lat!=null&&x.lng!=null);
+   const existingIds=new Set(mapApi.markers.map(m=>String(m.__rwItem?.id||"")));
+   newlyLocated.forEach(x=>{
+    if(existingIds.has(String(x.id||"")))return;
+    addMarker(x);
+   });
+
+   try{
+    const cacheItems=LISTINGS.filter(x=>x.lat!=null&&x.lng!=null).map(x=>({
+     no:x.no,type:x.type,deal:x.deal,name:x.name,price:x.price,meta:x.meta,
+     addr:x.addr,lat:x.lat,lng:x.lng,photos:x.photos,photo:x.photo,
+     blog:x.blog,status:x.status,hold:x.hold,done:x.done
+    }));
+    sessionStorage.setItem("rw_listings_cache_v5",JSON.stringify({time:Date.now(),items:cacheItems}));
+   }catch(e){}
+  });
 
  }catch(e){
   console.error("지도 로딩 오류:",e);
+  loading.style.display="grid";
   loading.textContent="지도를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
  }
 }
