@@ -573,14 +573,13 @@ async function fetchSupabaseListings(){
    photo:photos[0]?toImageUrl(photos[0],640):"",
    blog:String(row.blog_url??"").trim(),
    createdAt:String(row.created_at??"").trim(),
-   status:String(row.status??"").trim(),
+   status:String(row.status??"").trim().toLowerCase(),
    exposure:row.exposure===true,
    urgent:row.urgent===true,
    deposit:String(row.deposit??"").trim(),
    rent:String(row.rent??"").trim(),
    _order:i,
-   status:String(row.status??"").trim().toLowerCase(),
-   hold:String(row.status??"").trim().toLowerCase()==="hold",
+   hold:false,
    done:String(row.status??"").trim().toLowerCase()==="completed"
   };
   return normalizeListingObject(obj);
@@ -736,12 +735,17 @@ function normalizeListingObject(o){
  const price=String(o.price??o["가격"]??o["매매가"]??o["거래가"]??"").trim();
  const meta=String(o.meta??o.desc??o.description??o["설명"]??o["상세설명"]??o["매물설명"]??"").trim();
  const addr=String(o.addr??o.address??o["주소"]??o["소재지"]??"").trim();
-
- // 홈페이지 노출/거래완료 판단은 Supabase DB 기준만 사용합니다.
- const status=String(o.status??"").trim().toLowerCase();
- const done=status==="completed";
- const hold=status==="hold";
-
+ const statusRaw=String(
+  o.status ??
+  o.show ??
+  o.visibility ??
+  o["노출"] ??
+  o["공개"] ??
+  o["상태"] ??
+  ""
+ ).trim();
+ const status=statusRaw.toLowerCase();
+ if(o.exposure===false || String(o.exposure??"").toLowerCase()==="false")return null;
  const lat=parseFloat(o.lat??o.latitude??o["위도"]);
  const lng=parseFloat(o.lng??o.longitude??o["경도"]);
  let photos=o.photos??o["사진"]??[];
@@ -749,7 +753,6 @@ function normalizeListingObject(o){
  if(!Array.isArray(photos))photos=[];
  const single=String(o.photo??o["대표사진"]??"").trim();
  if(!photos.length&&single)photos=[single];
-
  return {
   id:String(o.id??o.uuid??"").trim(),
   no,type,deal,name,price,meta,addr,
@@ -763,10 +766,9 @@ function normalizeListingObject(o){
   urgent:o.urgent===true || /급매/i.test([name,meta,price,deal].filter(Boolean).join(" ")),
   deposit:String(o.deposit??"").trim(),
   rent:String(o.rent??"").trim(),
-  status,
   _order:Number.isFinite(Number(o._order))?Number(o._order):null,
-  hold,
-  done
+  hold:false,
+  done:status==="completed"
  };
 }
 function showApiError(err){
@@ -843,7 +845,7 @@ function priceOf(x){
 }
 function cardHtml(x){
  return `<article class="card ${isUrgent(x)?"is-urgent":""}" data-id="${escapeHtml(String(x.id||""))}">
-  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.id||''))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${x.hold?'<div class="card-done-overlay"><span>보류</span></div>':x.done?'<div class="card-done-overlay"><span>거래완료</span></div>':''}</div>
+  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.id||''))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${x.status==="completed"?'<div class="card-done-overlay"><span>거래완료</span></div>':''}</div>
   <div class="card-body"><div class="top"><span class="badge" style="background:${typeColor(x.type)}">${escapeHtml(x.type)}</span><span class="deal">${escapeHtml(x.deal)}</span>${x.no?`<span class="no">No.${escapeHtml(x.no)}</span>`:""}</div>
   <h3>${escapeHtml(x.name)}</h3><div class="price">${escapeHtml(x.deal)} ${escapeHtml(x.price)}</div><div class="meta">${escapeHtml(x.meta||publicAddress(x.addr,x.type))}</div></div>
  </article>`;
@@ -867,7 +869,7 @@ function renderHome(){
   arr.splice(0,arr.length,...featured.slice(0,6));
  }
  document.getElementById("totalCount").textContent=LISTINGS.length;
- 
+ console.log("[RW STATUS] 전체:",LISTINGS.length,"거래완료:",LISTINGS.filter(x=>x.status==="completed").length,"active:",LISTINGS.filter(x=>x.status==="active").length);
  if(!arr.length){grid.innerHTML=`<div class="empty">등록된 매물이 없습니다.</div>`;return}
  grid.innerHTML=arr.map(cardHtml).join("");
 }
