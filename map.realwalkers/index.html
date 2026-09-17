@@ -77,8 +77,8 @@ button{cursor:pointer}
 .urgent-badge{position:absolute;left:10px;top:10px;background:#b43b4b;color:#fff;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:900;z-index:2;box-shadow:0 3px 8px rgba(0,0,0,.12)}
 .card.is-urgent{border-color:#e4bfc4}
 .card.is-done{filter:none}
-.card-done-overlay{position:absolute;inset:0;background:rgba(20,24,32,.48);display:flex;align-items:center;justify-content:center;z-index:4;pointer-events:none}
-.card-done-overlay span{display:inline-flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.9);border-radius:8px;padding:11px 18px;background:rgba(25,29,38,.72);color:#fff;font-size:20px;font-weight:900;letter-spacing:-.04em;box-shadow:0 4px 16px rgba(0,0,0,.18)}
+.card-done-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:4;pointer-events:none}
+.card-done-overlay span{display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.92);border-radius:6px;padding:6px 10px;background:rgba(25,29,38,.72);color:#fff;font-size:12px;font-weight:900;letter-spacing:-.03em;box-shadow:0 3px 9px rgba(0,0,0,.16)}
 #sortFilter{min-width:105px}
 
 .card:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(27,42,74,.09);border-color:#cfd5df}
@@ -406,7 +406,7 @@ const CONFIG={
 };
 const INQUIRY_ENDPOINT="https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
 /* 이전 버전 캐시 제거: 완료/보류 상태가 누락된 캐시를 재사용하지 않습니다. */
-try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v3")}catch(e){}
+try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v3");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v5")}catch(e){}
 const INQUIRY_FORM={
   ACTION:"https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
@@ -579,8 +579,8 @@ async function fetchSupabaseListings(){
    deposit:String(row.deposit??"").trim(),
    rent:String(row.rent??"").trim(),
    _order:i,
-   hold:/^(보류|HOLD)$/i.test(String(row.status??"")),
-   done:/^(완료|C|거래완료)$/i.test(String(row.status??""))
+   hold:/^(보류|HOLD|보류중|대기)$/i.test(String(row.status??"").trim().replace(/\\s+/g,"")),
+   done:/^(완료|C|거래완료|COMPLETED|COMPLETE|SOLD|CLOSED)$/i.test(String(row.status??"").trim().replace(/\\s+/g,""))
   };
   return normalizeListingObject(obj);
  }).filter(Boolean);
@@ -591,7 +591,7 @@ async function fetchSupabaseListings(){
 function saveListingsCache(items){
  try{
   sessionStorage.setItem(
-   "rw_listings_cache_v4",
+   "rw_listings_cache_v6",
    JSON.stringify({time:Date.now(),items})
   );
  }catch(e){}
@@ -599,7 +599,7 @@ function saveListingsCache(items){
 
 function readListingsCache(){
  try{
-  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v4")||"null");
+  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v6")||"null");
   if(cached && Array.isArray(cached.items)){
    return cached.items.map(normalizeListingObject).filter(Boolean);
   }
@@ -734,7 +734,7 @@ function normalizeListingObject(o){
   o["상태"] ??
   ""
  ).trim();
- const status=statusRaw.toUpperCase();
+ const status=statusRaw.toUpperCase().replace(/\\s+/g,"");
  if(["N","NO","비공개","숨김","미노출","FALSE"].includes(status))return null;
  const lat=parseFloat(o.lat??o.latitude??o["위도"]);
  const lng=parseFloat(o.lng??o.longitude??o["경도"]);
@@ -757,8 +757,8 @@ function normalizeListingObject(o){
   deposit:String(o.deposit??"").trim(),
   rent:String(o.rent??"").trim(),
   _order:Number.isFinite(Number(o._order))?Number(o._order):null,
-  hold:!!(o.hold===true || /^(보류|HOLD)$/i.test(statusRaw)),
-  done:!!(o.done===true || /^(완료|C|거래완료)$/i.test(statusRaw))
+  hold:!!(o.hold===true || /^(보류|HOLD|보류중|대기)$/i.test(status)),
+  done:!!(o.done===true || /^(완료|C|거래완료|COMPLETED|COMPLETE|SOLD|CLOSED)$/i.test(status))
  };
 }
 function showApiError(err){
@@ -833,7 +833,7 @@ function priceOf(x){
 }
 function cardHtml(x){
  return `<article class="card ${isUrgent(x)?"is-urgent":""}" data-id="${escapeHtml(String(x.id||""))}">
-  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.id||''))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${(x.hold||x.done)?'<div class="card-done-overlay"><span>보류</span></div>':''}</div>
+  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.id||''))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${x.hold?'<div class="card-done-overlay"><span>보류</span></div>':x.done?'<div class="card-done-overlay"><span>거래완료</span></div>':''}</div>
   <div class="card-body"><div class="top"><span class="badge" style="background:${typeColor(x.type)}">${escapeHtml(x.type)}</span><span class="deal">${escapeHtml(x.deal)}</span>${x.no?`<span class="no">No.${escapeHtml(x.no)}</span>`:""}</div>
   <h3>${escapeHtml(x.name)}</h3><div class="price">${escapeHtml(x.deal)} ${escapeHtml(x.price)}</div><div class="meta">${escapeHtml(x.meta||publicAddress(x.addr,x.type))}</div></div>
  </article>`;
