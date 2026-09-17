@@ -209,8 +209,13 @@ button{cursor:pointer}
 .map-shell{height:100%;position:relative}
 #map{width:100%;height:100%;background:#eef1f4}
 .map-list{position:absolute;left:18px;top:18px;bottom:18px;width:350px;background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.13);z-index:20;overflow:auto}
-.map-list-head{padding:15px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2}
+.map-list-head{padding:13px 14px 11px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2}
 .map-list-head strong{color:var(--navy)}
+.map-filter-box{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.map-filter-box input,.map-filter-box select{width:100%;min-width:0;border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 8px;outline:none;color:#4f596a;font-size:11px;font-weight:700}
+.map-filter-box input:focus,.map-filter-box select:focus{border-color:var(--navy)}
+.map-filter-box input{grid-column:1/-1}
+
 .map-card{display:flex;gap:10px;padding:12px;border-bottom:1px solid #f0f1f3;cursor:pointer}
 .map-card:hover{background:#fafafa}
 .map-card .photo{width:82px;height:62px;min-width:82px;flex:0 0 82px;border-radius:7px;background:#eee;overflow:hidden;display:block}
@@ -399,7 +404,16 @@ button{cursor:pointer}
   <div class="map-shell">
     <div id="map"><div class="map-loading" id="mapLoading">지도를 준비하고 있습니다…</div></div>
     <aside class="map-list">
-      <div class="map-list-head">현재 <strong id="mapCount">0</strong>건 <button type="button" id="mapDoneToggle" class="map-done-toggle active" aria-pressed="true">완료표시</button></div>
+      <div class="map-list-head">
+        <div>현재 <strong id="mapCount">0</strong>건 <button type="button" id="mapDoneToggle" class="map-done-toggle active" aria-pressed="true">완료표시</button></div>
+        <div class="map-filter-box">
+          <input id="mapSearch" type="search" placeholder="지역·매물명·주소 검색" autocomplete="off">
+          <select id="mapTypeFilter"><option value="all">유형 전체</option></select>
+          <select id="mapDealFilter"><option value="all">거래 전체</option></select>
+          <select id="mapRegionFilter"><option value="all">지역 전체</option></select>
+          <select id="mapPriceFilter"><option value="all">가격 전체</option></select>
+        </div>
+      </div>
       <div id="mapList"></div>
     </aside>
   </div>
@@ -899,6 +913,20 @@ function regionOf(x){
  if(a.length>=2)return a.slice(0,2).join(" ");
  return x.addr||"기타";
 }
+function sortRegions(regions){
+ return [...new Set(regions.filter(Boolean))].sort((a,b)=>{
+  const aText=String(a||"").trim();
+  const bText=String(b||"").trim();
+  const priority=region=>{
+   if(/^서울(?:특별시)?(?:\s|$)/.test(region))return 0;
+   if(/^경기(?:도)?(?:\s|$)/.test(region))return 1;
+   return 2;
+  };
+  const pa=priority(aText),pb=priority(bText);
+  if(pa!==pb)return pa-pb;
+  return aText.localeCompare(bText,"ko-KR",{numeric:true,sensitivity:"base"});
+ });
+}
 const PRICE_BANDS=[["under5","5억 미만",0,5],["5to10","5억~10억",5,10],["10to30","10억~30억",10,30],["30to100","30억~100억",30,100],["over100","100억 이상",100,Infinity]];
 function numericPrice(s){
  const t=String(s||"").replace(/,/g,"");
@@ -953,7 +981,7 @@ function buildFilters(){
  const type=document.getElementById("typeFilter"),deal=document.getElementById("dealFilter"),region=document.getElementById("regionFilter"),price=document.getElementById("priceFilter"),sort=document.getElementById("sortFilter");
  const types=[...new Set(LISTINGS.map(x=>x.type).filter(Boolean))];
  const deals=[...new Set(LISTINGS.map(x=>x.deal).filter(Boolean))];
- const regions=[...new Set(LISTINGS.map(regionOf).filter(Boolean))];
+ const regions=sortRegions(LISTINGS.map(regionOf));
  type.innerHTML='<option value="all">유형 전체</option>'+types.map(x=>`<option>${escapeHtml(x)}</option>`).join("");
  deal.innerHTML='<option value="all">거래 전체</option>'+deals.map(x=>`<option>${escapeHtml(x)}</option>`).join("");
  region.innerHTML='<option value="all">지역 전체</option>'+regions.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
@@ -1278,12 +1306,62 @@ function geocodeMissing(done){
   }
 }
 
+function buildMapFilters(){
+ const type=document.getElementById("mapTypeFilter");
+ const deal=document.getElementById("mapDealFilter");
+ const region=document.getElementById("mapRegionFilter");
+ const price=document.getElementById("mapPriceFilter");
+ if(!type||!deal||!region||!price)return;
+
+ const types=[...new Set(LISTINGS.map(x=>x.type).filter(Boolean))];
+ const deals=[...new Set(LISTINGS.map(x=>x.deal).filter(Boolean))];
+ const regions=sortRegions(LISTINGS.map(regionOf));
+
+ type.innerHTML='<option value="all">유형 전체</option>'+types.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
+ deal.innerHTML='<option value="all">거래 전체</option>'+deals.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
+ region.innerHTML='<option value="all">지역 전체</option>'+regions.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
+ price.innerHTML='<option value="all">가격 전체</option>'+PRICE_BANDS.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join("");
+
+ type.value=current.type;
+ deal.value=current.deal;
+ region.value=current.region;
+ price.value=current.price;
+ const search=document.getElementById("mapSearch");
+ if(search)search.value=current.q||"";
+}
+
+function bindMapFilters(){
+ const search=document.getElementById("mapSearch");
+ let searchTimer=null;
+ const type=document.getElementById("mapTypeFilter");
+ const deal=document.getElementById("mapDealFilter");
+ const region=document.getElementById("mapRegionFilter");
+ const price=document.getElementById("mapPriceFilter");
+
+ const apply=()=>openMap();
+ if(search){
+  search.oninput=e=>{
+   current.q=e.target.value.trim();
+   clearTimeout(searchTimer);
+   searchTimer=setTimeout(apply,250);
+  };
+  search.onkeydown=e=>{if(e.key==="Enter"){clearTimeout(searchTimer);apply()}};
+ }
+ if(type)type.onchange=e=>{current.type=e.target.value;apply()};
+ if(deal)deal.onchange=e=>{current.deal=e.target.value;apply()};
+ if(region)region.onchange=e=>{current.region=e.target.value;apply()};
+ if(price)price.onchange=e=>{current.price=e.target.value;apply()};
+}
+
 async function openMap(){
  const countEl=document.getElementById("mapCount");
  const mapList=document.getElementById("mapList");
  const loading=document.getElementById("mapLoading");
 
  try{
+  buildMapFilters();
+  bindMapFilters();
+
   /* 지도 자체를 먼저 준비합니다. 주소 지오코딩은 절대로 지도 표시를 막지 않습니다. */
   await loadNaver();
 
