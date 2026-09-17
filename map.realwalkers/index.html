@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>리얼워커스 마포부동산 | 서울·마포 부동산 매물</title>
 <meta name="description" content="리얼워커스 마포부동산. 서울 마포·서대문·은평, 김포·고양 아파트·상가·건물·토지 매물과 부동산 상담.">
+<link rel="preconnect" href="https://ggnpjqqjwkxptbvkvgpc.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="//ggnpjqqjwkxptbvkvgpc.supabase.co">
+<link rel="preconnect" href="https://drive.google.com" crossorigin>
+<link rel="dns-prefetch" href="//drive.google.com">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -402,7 +406,7 @@ const CONFIG={
 };
 const INQUIRY_ENDPOINT="https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
 /* 이전 버전 캐시 제거: 완료/보류 상태가 누락된 캐시를 재사용하지 않습니다. */
-try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v3");sessionStorage.removeItem("rw_listings_cache_v6");sessionStorage.removeItem("rw_listings_cache_v6");sessionStorage.removeItem("rw_listings_cache_v6")}catch(e){}
+try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v3")}catch(e){}
 const INQUIRY_FORM={
   ACTION:"https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
@@ -420,11 +424,66 @@ let mapApi=null;
 let current={type:"all",deal:"all",region:"all",price:"all",sort:"latest",q:"",fav:false,done:false};
 let favorites=new Set();
 try{favorites=new Set(JSON.parse(localStorage.getItem("rw_favorites")||"[]"))}catch(e){}
-function favKey(x){return x.id?`id:${x.id}`:(x.no?`no:${x.no}`:`na:${x.name}|${x.addr||""}`)}
+function favKey(x){return x.no?`no:${x.no}`:`na:${x.name}|${x.addr||""}`}
 function isFav(x){return favorites.has(favKey(x))}
 function saveFav(){try{localStorage.setItem("rw_favorites",JSON.stringify([...favorites]))}catch(e){}}
-function toggleFav(x,e){if(e)e.stopPropagation();const k=favKey(x);favorites.has(k)?favorites.delete(k):favorites.add(k);saveFav();renderList();if(getView()==="detail")renderDetail(x)}
+function toggleFav(x,e){if(e)e.stopPropagation();const k=favKey(x);favorites.has(k)?favorites.delete(k):favorites.add(k);saveFav();renderList();if(getView()==="detail")renderDetail(x.no)}
 
+function parseCSV(text){
+ const rows=[];let row=[],cell="",q=false;
+ for(let i=0;i<text.length;i++){const c=text[i];
+  if(q){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')q=false;else cell+=c}
+  else{if(c==='"')q=true;else if(c===','){row.push(cell);cell=""}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=""}else if(c!=='\r')cell+=c}
+ }
+ if(cell!==""||row.length){row.push(cell);rows.push(row)} return rows
+}
+function toImageUrl(url,size=640){
+ if(!url)return "";
+ const m=url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
+ return m?`https://drive.google.com/thumbnail?id=${m[1]}&sz=w${size}`:url
+}
+function headerIndex(head,names){for(const n of names){const i=head.indexOf(n);if(i>=0)return i}return -1}
+function rowsToListings(rows){
+ if(!rows.length)return[];
+ const head=rows[0].map(x=>String(x||"").trim());
+ const idx=(...names)=>headerIndex(head,names);
+ const iNo=idx("매물번호","번호"),iT=idx("유형","매물유형"),iD=idx("거래","거래유형"),iN=idx("매물명","제목","물건명");
+ const iP=idx("가격","매매가","거래가"),iM=idx("설명","상세설명","매물설명"),iAddr=idx("주소","소재지");
+ const iLat=idx("위도","lat","LAT"),iLng=idx("경도","lng","LNG"),iShow=idx("노출","공개","상태");
+ const iBlog=idx("블로그","블로그링크","blog","Blog");
+ const photoIdxs=["사진1","사진2","사진3","사진4","사진5"].map(idx).filter(i=>i>=0);
+ const legacy=idx("사진","대표사진","이미지");
+ const out=[];
+ for(let r=1;r<rows.length;r++){
+  const x=rows[r]; if(iN<0||!x[iN]||!String(x[iN]).trim())continue;
+  const statusRaw=iShow>=0?String(x[iShow]||"").trim():"";
+  const status=statusRaw.toUpperCase();
+  // N 계열만 완전히 숨깁니다. Y/보류/완료/빈칸은 모두 노출합니다.
+  if(["N","NO","비공개","숨김","미노출","FALSE"].includes(status))continue;
+  const done=/^(완료|C|거래완료)$/i.test(statusRaw);
+  const hold=/^(보류|HOLD)$/i.test(statusRaw);
+  let raw=photoIdxs.map(i=>String(x[i]||"").trim()).filter(Boolean);
+  if(!raw.length&&legacy>=0&&x[legacy])raw=[String(x[legacy]).trim()];
+  const lat=parseFloat(x[iLat]),lng=parseFloat(x[iLng]);
+  out.push({
+   no:iNo>=0?String(x[iNo]||"").trim():"",
+   type:iT>=0?String(x[iT]||"").trim()||"기타":"기타",
+   deal:iD>=0?String(x[iD]||"").trim():"",
+   name:String(x[iN]).trim(),
+   price:iP>=0?String(x[iP]||"").trim():"",
+   meta:iM>=0?String(x[iM]||"").trim():"",
+   addr:iAddr>=0?String(x[iAddr]||"").trim():"",
+   lat:Number.isFinite(lat)?lat:null,lng:Number.isFinite(lng)?lng:null,
+   photos:raw.map(u=>toImageUrl(u,1200)).filter(Boolean),
+   photo:raw[0]?toImageUrl(raw[0],640):"",
+   blog:iBlog>=0?String(x[iBlog]||"").trim():"",
+   status:statusRaw,
+   hold,
+   done
+  });
+ }
+ return out;
+}
 function sample(){return[
  {no:"SAMPLE-1",type:"아파트",deal:"전세",name:"마포래미안푸르지오 34평",price:"9억",meta:"전용 84㎡ · 중층 · 남향 · 즉시 입주 가능",addr:"서울 마포구 아현동",photos:[],photo:"",lat:37.553,lng:126.956,done:false},
  {no:"SAMPLE-2",type:"아파트",deal:"매매",name:"공덕자이 25평",price:"15억 5,000만원",meta:"전용 59㎡ · 고층 · 역세권 · 올수리",addr:"서울 마포구 공덕동",photos:[],photo:"",lat:37.544,lng:126.951,done:false},
@@ -448,49 +507,91 @@ async function supabaseFetch(path, options={}){
 }
 
 async function fetchSupabaseListings(){
- const fields=["id","listing_no","type","deal","name","price","description","address","latitude","longitude","exposure","status","urgent","deposit","rent","blog_url","folder_url","created_at"].join(",");
+ /*
+  * exposure=true인 매물만 홈페이지에 공개합니다.
+  * 현재 Sheet 기준으로 공개 362건이며,
+  * 완료 매물은 exposure=true인 경우 기존 홈페이지처럼 표시합니다.
+  */
+ const fields=[
+  "id","listing_no","type","deal","name","price","description","address",
+  "latitude","longitude","exposure","status","urgent","deposit","rent",
+  "blog_url","folder_url","created_at"
+ ].join(",");
+
  const params=new URLSearchParams();
- params.set("select",fields); params.set("exposure","eq.true");
- params.set("order","created_at.desc.nullslast,id.desc"); params.set("limit",String(CONFIG.SUPABASE_PAGE_SIZE||1000));
+ params.set("select",fields);
+ params.set("exposure","eq.true");
+ params.set("order","created_at.desc.nullslast,id.desc");
+ params.set("limit",String(CONFIG.SUPABASE_PAGE_SIZE||1000));
 
- const imageParams=new URLSearchParams();
- imageParams.set("select","id,listing_id,image_url"); imageParams.set("order","id.asc"); imageParams.set("limit","5000");
-
- /* 매물과 사진을 병렬 요청해 대기시간을 줄입니다. */
- const [rows,imageJson]=await Promise.all([
-   supabaseFetch("listings?"+params.toString()).then(r=>r.json()),
-   supabaseFetch("listing_images?"+imageParams.toString()).then(r=>r.json()).catch(e=>{console.warn("Supabase 사진 조회 실패:",e);return[]})
- ]);
+ const res=await supabaseFetch("listings?"+params.toString());
+ const rows=await res.json();
  if(!Array.isArray(rows))throw new Error("Supabase listings 응답 형식이 올바르지 않습니다.");
- const imageRows=Array.isArray(imageJson)?imageJson:[];
+
+ /*
+  * 사진은 listing_images에서 한 번에 가져옵니다.
+  * 현재 약 653장이므로 매물마다 별도 요청하지 않아도 됩니다.
+  */
+ const imageParams=new URLSearchParams();
+ imageParams.set("select","id,listing_id,image_url");
+ imageParams.set("order","id.asc");
+ imageParams.set("limit","5000");
+
+ let imageRows=[];
+ try{
+  const imageRes=await supabaseFetch("listing_images?"+imageParams.toString());
+  const json=await imageRes.json();
+  if(Array.isArray(json))imageRows=json;
+ }catch(e){
+  console.warn("Supabase 사진 조회 실패:",e);
+  // 사진 조회만 실패해도 매물 자체는 표시합니다.
+ }
+
  const imageMap=new Map();
- for(const row of imageRows){
-  const listingId=String(row?.listing_id||"").trim(),url=String(row?.image_url||"").trim();
-  if(!listingId||!url)continue;
+ imageRows.forEach(row=>{
+  const listingId=String(row?.listing_id||"").trim();
+  const url=String(row?.image_url||"").trim();
+  if(!listingId||!url)return;
   if(!imageMap.has(listingId))imageMap.set(listingId,[]);
   imageMap.get(listingId).push(url);
- }
- return rows.map((row,i)=>normalizeListingObject({
-  id:String(row.id||"").trim(),no:String(row.listing_no??"").trim(),
-  type:String(row.type??"기타").trim()||"기타",deal:String(row.deal??"").trim(),
-  name:String(row.name??"").trim(),price:String(row.price??"").trim(),
-  meta:String(row.description??"").trim(),addr:String(row.address??"").trim(),
-  lat:parseFloat(row.latitude),lng:parseFloat(row.longitude),
-  photos:(imageMap.get(String(row.id||""))||[]).map(u=>toImageUrl(u,1200)).filter(Boolean),
-  photo:(imageMap.get(String(row.id||""))||[])[0]?toImageUrl((imageMap.get(String(row.id||""))||[])[0],640):"",
-  blog:String(row.blog_url??"").trim(),folder:String(row.folder_url??"").trim(),
-  createdAt:String(row.created_at??"").trim(),status:String(row.status??"").trim(),
-  exposure:row.exposure===true,urgent:row.urgent===true,
-  deposit:String(row.deposit??"").trim(),rent:String(row.rent??"").trim(),_order:i,
-  hold:/^(보류|HOLD)$/i.test(String(row.status??"")),
-  done:/^(완료|C|거래완료|completed)$/i.test(String(row.status??""))
- })).filter(Boolean);
+ });
+
+ const parsed=rows.map((row,i)=>{
+  const photos=imageMap.get(String(row.id||""))||[];
+  const obj={
+   id:String(row.id||"").trim(),
+   no:String(row.listing_no??"").trim(),
+   type:String(row.type??"기타").trim()||"기타",
+   deal:String(row.deal??"").trim(),
+   name:String(row.name??"").trim(),
+   price:String(row.price??"").trim(),
+   meta:String(row.description??"").trim(),
+   addr:String(row.address??"").trim(),
+   lat:parseFloat(row.latitude),
+   lng:parseFloat(row.longitude),
+   photos:photos.map(u=>toImageUrl(u,1200)).filter(Boolean),
+   photo:photos[0]?toImageUrl(photos[0],640):"",
+   blog:String(row.blog_url??"").trim(),
+   createdAt:String(row.created_at??"").trim(),
+   status:String(row.status??"").trim(),
+   exposure:row.exposure===true,
+   urgent:row.urgent===true,
+   deposit:String(row.deposit??"").trim(),
+   rent:String(row.rent??"").trim(),
+   _order:i,
+   hold:/^(보류|HOLD)$/i.test(String(row.status??"")),
+   done:/^(완료|C|거래완료)$/i.test(String(row.status??""))
+  };
+  return normalizeListingObject(obj);
+ }).filter(Boolean);
+
+ return parsed;
 }
 
 function saveListingsCache(items){
  try{
   sessionStorage.setItem(
-   "rw_listings_cache_v6",
+   "rw_listings_cache_v4",
    JSON.stringify({time:Date.now(),items})
   );
  }catch(e){}
@@ -498,7 +599,7 @@ function saveListingsCache(items){
 
 function readListingsCache(){
  try{
-  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v6")||"null");
+  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v4")||"null");
   if(cached && Array.isArray(cached.items)){
    return cached.items.map(normalizeListingObject).filter(Boolean);
   }
@@ -506,20 +607,73 @@ function readListingsCache(){
  return null;
 }
 
+async function fetchLegacyListings(){
+ if(!CONFIG.SHEET_API_URL || CONFIG.SHEET_API_URL.includes("여기에_"))throw new Error("백업 API 미설정");
+ const res=await fetch(CONFIG.SHEET_API_URL,{cache:"no-store"});
+ const raw=await res.text();
+ if(!res.ok)throw new Error("백업 API HTTP "+res.status);
+
+ let data;
+ try{data=JSON.parse(raw)}catch(e){throw new Error("백업 API가 JSON을 반환하지 않았습니다.");}
+
+ let parsed=[];
+ if(Array.isArray(data)){
+  if(data.length&&Array.isArray(data[0]))parsed=rowsToListings(data);
+  else if(data.length&&typeof data[0]==="object")parsed=data.map(normalizeListingObject).filter(Boolean);
+ }else if(Array.isArray(data.items)){
+  parsed=data.items.map(normalizeListingObject).filter(Boolean);
+ }else if(Array.isArray(data.listings)){
+  parsed=data.listings.map(normalizeListingObject).filter(Boolean);
+ }else if(Array.isArray(data.rows)){
+  parsed=rowsToListings(data.rows);
+ }else if(Array.isArray(data.data)){
+  parsed=Array.isArray(data.data[0])?rowsToListings(data.data):data.data.map(normalizeListingObject).filter(Boolean);
+ }
+ if(data&&data.ok===false)throw new Error(String(data.error||"백업 API 오류"));
+ parsed.forEach((x,i)=>{if(x._order==null)x._order=i;});
+ return parsed;
+}
+
 async function loadData(){
  if(dataPromise)return dataPromise;
+
  dataPromise=(async()=>{
+  // 1) 캐시가 있으면 즉시 표시
   const cached=readListingsCache();
-  if(cached){setTimeout(()=>refreshDataInBackground(),0);return cached;}
+  if(cached){
+   setTimeout(()=>refreshDataInBackground(),0);
+   return cached;
+  }
+
+  // 2) 최초 진입은 Supabase에서 직접 조회
   try{
    const parsed=await fetchSupabaseListings();
    if(parsed.length){
     parsed.forEach((x,i)=>{if(x._order==null)x._order=i;});
-    saveListingsCache(parsed); return parsed;
+    saveListingsCache(parsed);
+    return parsed;
    }
    throw new Error("공개 매물이 0건입니다.");
-  }catch(e){console.error("Supabase 매물 조회 오류:",e);showApiError(e);return[];}
+  }catch(e){
+   console.error("Supabase 매물 조회 오류:",e);
+
+   // 3) Supabase가 일시적으로 실패할 때만 기존 Apps Script를 백업으로 사용
+   try{
+    const fallback=await fetchLegacyListings();
+    if(fallback.length){
+     saveListingsCache(fallback);
+     console.warn("Supabase 실패로 기존 Apps Script API를 임시 사용합니다.");
+     return fallback;
+    }
+   }catch(fallbackErr){
+    console.error("기존 API 백업 조회도 실패:",fallbackErr);
+   }
+
+   showApiError(e);
+   return [];
+  }
  })();
+
  return dataPromise;
 }
 
@@ -603,7 +757,7 @@ function normalizeListingObject(o){
   rent:String(o.rent??"").trim(),
   _order:Number.isFinite(Number(o._order))?Number(o._order):null,
   hold:!!(o.hold===true || /^(보류|HOLD)$/i.test(statusRaw)),
-  done:!!(o.done===true || /^(완료|C|거래완료|completed)$/i.test(statusRaw))
+  done:!!(o.done===true || /^(완료|C|거래완료)$/i.test(statusRaw))
  };
 }
 function showApiError(err){
@@ -677,15 +831,15 @@ function priceOf(x){
  return "etc";
 }
 function cardHtml(x){
- return `<article class="card ${isUrgent(x)?"is-urgent":""}" data-id="${escapeHtml(x.id||"")}" data-no="${escapeHtml(x.no)}">
-  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.no||''))}',event,'${escapeHtml(String(x.id||''))}')">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${(x.hold||x.done)?'<div class="card-done-overlay"><span>보류</span></div>':''}</div>
+ return `<article class="card ${isUrgent(x)?"is-urgent":""}" data-no="${escapeHtml(x.no)}">
+  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.no||''))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${(x.hold||x.done)?'<div class="card-done-overlay"><span>보류</span></div>':''}</div>
   <div class="card-body"><div class="top"><span class="badge" style="background:${typeColor(x.type)}">${escapeHtml(x.type)}</span><span class="deal">${escapeHtml(x.deal)}</span>${x.no?`<span class="no">No.${escapeHtml(x.no)}</span>`:""}</div>
   <h3>${escapeHtml(x.name)}</h3><div class="price">${escapeHtml(x.deal)} ${escapeHtml(x.price)}</div><div class="meta">${escapeHtml(x.meta||publicAddress(x.addr,x.type))}</div></div>
  </article>`;
 }
-function cardToggleFav(no,e,id){
+function cardToggleFav(no,e){
  if(e)e.stopPropagation();
- const x=LISTINGS.find(it=>(id&&String(it.id)===String(id)) || (!id&&String(it.no)===String(no)));
+ const x=LISTINGS.find(it=>String(it.no)===String(no));
  if(x)toggleFav(x,e);
 }
 function renderHome(){
@@ -703,16 +857,7 @@ function renderHome(){
  }
  document.getElementById("totalCount").textContent=LISTINGS.length;
  if(!arr.length){grid.innerHTML=`<div class="empty">등록된 매물이 없습니다.</div>`;return}
- grid.innerHTML="";
- let i=0;
- const paint=()=>{
-  const end=Math.min(i+3,arr.length);
-  let html="";
-  for(;i<end;i++)html+=cardHtml(arr[i]);
-  grid.insertAdjacentHTML("beforeend",html);
-  if(i<arr.length)requestAnimationFrame(paint);
- };
- requestAnimationFrame(paint);
+ grid.innerHTML=arr.map(cardHtml).join("");
 }
 function renderList(){
  const grid=document.getElementById("listGrid"),arr=filtered();
@@ -733,26 +878,11 @@ function buildFilters(){
  type.value=current.type;deal.value=current.deal;region.value=current.region;price.value=current.price;
  if(sort)sort.value=current.sort;
 }
-function findListing(key){
- const k=String(key??"");
- return LISTINGS.find(x=>String(x.id||"")===k)||LISTINGS.find(x=>String(x.no||"")===k);
+function openDetail(no){
+ const x=LISTINGS.find(x=>String(x.no)===String(no));if(!x)return;
+ history.pushState({view:"detail",no:x.no},"",`?m=${encodeURIComponent(x.no)}`);
+ renderDetail(x.no);showView("detail");
 }
-function findListing(id,no){
- if(id){
-  const byId=LISTINGS.find(x=>String(x.id||"")===String(id));
-  if(byId)return byId;
- }
- if(no)return LISTINGS.find(x=>String(x.no||"")===String(no));
- return null;
-}
-function openDetailByIdOrNo(id,no){
- const x=findListing(id,no);if(!x)return;
- history.pushState({view:"detail",id:x.id||"",no:x.no||""},"",
-   `?m=${encodeURIComponent(x.no||"")}${x.id?"&id="+encodeURIComponent(x.id):""}`);
- renderDetail(x);showView("detail");
-}
-function openDetail(no){openDetailByIdOrNo("",no);}
-
 /* ── 방문자에게 보여줄 공개 주소 ── */
 function publicAddress(addr, type){
  const raw=String(addr||"").replace(/\\s+/g," ").trim();
@@ -789,8 +919,8 @@ function mapMarkerIcon(item,picked){
  const html=`<div class="rw-map-marker${picked?" picked":""}" style="background:${cfg.bg}" title="${escapeHtml(cfg.label)}"><span>${escapeHtml(short)}</span></div>`;
  return {content:html,anchor:new naver.maps.Point(picked?21:19,picked?21:19)};
 }
-function renderDetail(key){
- const x=findListing(key);if(!x)return;
+function renderDetail(no){
+ const x=LISTINGS.find(x=>String(x.no)===String(no));if(!x)return;
  const photos=x.photos?.length?x.photos:(x.photo?[x.photo]:[]);
  document.getElementById("detailRoot").innerHTML=`<div class="detail-shell">
   <div class="detail-top">
@@ -812,7 +942,7 @@ function renderDetail(key){
   ${photos.length>1?`<div class="detail-gallery">${photos.slice(0,5).map((p,i)=>`<img src="${escapeHtml(p)}" data-photo="${i}" loading="lazy" decoding="async">`).join("")}</div>`:""}
  </div>`;
  document.getElementById("detailAsk").onclick=()=>openAsk(x);
- document.getElementById("detailFav").onclick=()=>{toggleFav(x);renderDetail(x)};
+ document.getElementById("detailFav").onclick=()=>{toggleFav(x);renderDetail(x.no)};
  const road=document.getElementById("detailRoad");if(road)road.onclick=()=>openRoadview(x);
  document.querySelectorAll("[data-photo]").forEach(el=>el.onclick=()=>document.getElementById("detailMainImg").src=photos[+el.dataset.photo]);
 }
@@ -1040,8 +1170,7 @@ async function openMap(){
      주소가 있는 매물은 네이버 Geocoding으로 좌표를 자동 생성한 뒤
      그 결과를 지도에 사용합니다. */
   await loadNaver();
-  /* 지오코딩은 지도 표시를 막지 않도록 백그라운드에서 실행합니다. */
-  const geoTask=new Promise(resolve=>geocodeMissing(resolve));
+  await new Promise(resolve=>geocodeMissing(resolve));
 
   const arr=filtered().filter(x=>x.lat!=null&&x.lng!=null);
   countEl.textContent=arr.length;
@@ -1073,7 +1202,7 @@ async function openMap(){
     let html="";
     for(;li<end;li++){
      const x=arr[li];
-     html+=`<div class="map-card" data-id="${escapeHtml(x.id||"")}" data-no="${escapeHtml(x.no)}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
+     html+=`<div class="map-card" data-no="${escapeHtml(x.no)}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
     }
     mapList.insertAdjacentHTML("beforeend",html);
     if(li<arr.length) requestAnimationFrame(paintMapList);
@@ -1083,7 +1212,7 @@ async function openMap(){
 
   mapList.onclick=e=>{
    const card=e.target.closest(".map-card");
-   if(card)openDetail(card.dataset.id||card.dataset.no);
+   if(card)openDetail(card.dataset.no);
   };
 
   if(!mapApi){
@@ -1122,7 +1251,7 @@ async function openMap(){
      });
      naver.maps.Event.addListener(marker,"click",()=>{
       try{marker.setIcon(mapMarkerIcon(x,true));}catch(e){}
-      openDetailByIdOrNo(x.id,x.no);
+      openDetail(x.no);
      });
      mapApi.markers.push(marker);
     }catch(markerErr){
@@ -1156,7 +1285,7 @@ async function openMap(){
 document.addEventListener("click",e=>{
  const view=e.target.closest("[data-view]");if(view){e.preventDefault();showView(view.dataset.view);return}
  const type=e.target.closest("[data-type]");if(type){current.type=type.dataset.type;current.q="";showView("list");return}
- const card=e.target.closest(".card");if(card){openDetail(card.dataset.id||card.dataset.no);return}
+ const card=e.target.closest(".card");if(card){openDetail(card.dataset.no);return}
  const about=e.target.closest("[data-open='about']");if(about){document.getElementById("aboutModal").classList.add("open");document.body.classList.add("lock");return}
  const close=e.target.closest("[data-close]");if(close){closeModal(close.dataset.close);return}
 });
@@ -1175,17 +1304,26 @@ document.querySelectorAll(".modal-backdrop").forEach(m=>m.addEventListener("clic
 window.addEventListener("keydown",e=>{if(e.key==="Escape"){["about","ask","road"].forEach(closeModal)}});
 window.addEventListener("popstate",()=>{
  const p=new URLSearchParams(location.search),m=p.get("m"),v=p.get("view");
- if(m){const x=findListing(p.get("id"),m);if(x)renderDetail(x);showView("detail",true)}else showView(v||"home",true);
+ if(m){renderDetail(m);showView("detail",true)}else showView(v||"home",true);
 });
 
 /* 최초 접속에서는 지도 API를 로드하지 않습니다.
    화면을 먼저 그린 뒤 브라우저가 한가할 때 Supabase에서 매물 데이터를 1회 조회합니다.
    Google Sheet는 Apps Script가 5분 주기로 Supabase에 동기화하는 원본 데이터입니다. */
-/* 정적 화면이 그려진 즉시 데이터 요청을 시작합니다. */
+function idle(fn){if("requestIdleCallback" in window)requestIdleCallback(fn,{timeout:1200});else setTimeout(fn,180)}
+/* 속도 개선: 브라우저 idle까지 기다리지 않고 데이터 요청을 즉시 시작합니다.
+   매물 조회/필터/완료 처리 로직은 기존 index(8)과 동일하게 유지합니다. */
 (async()=>{
  LISTINGS=await loadData();
  renderHome();
  if(getView()==="list"){buildFilters();renderList()}
+ // 첫 번째 대표 이미지만 백그라운드에서 미리 준비합니다.
+ const first=LISTINGS.find(x=>!x.done&&x.photo);
+ if(first){
+  const img=new Image();
+  img.decoding="async";
+  img.src=first.photo;
+ }
 })();
 </script>
 </body>
