@@ -382,13 +382,27 @@ button{cursor:pointer}
    ========================= */
 const CONFIG={
   NAVER_CLIENT_ID:"g9mpxzpbwo",
-  // Google Sheet → Apps Script API → 홈페이지
+
+  /*
+   * 데이터 구조
+   * Google Sheet → Apps Script(5분 자동 동기화) → Supabase → 홈페이지
+   *
+   * Publishable Key만 브라우저에 사용합니다.
+   * Secret / service_role 키는 절대 여기에 넣지 않습니다.
+   */
+  SUPABASE_URL:"https://ggnpjqqjwkxptbvkvgpc.supabase.co",
+  SUPABASE_PUBLISHABLE_KEY:"sb_publishable_IfevSekhTOzwlFBzRvd0gw_VHq2A9LO",
+
+  // Supabase 장애 시 기존 API를 임시 백업 경로로 사용합니다.
+  // 정상 상태에서는 Supabase가 1순위입니다.
   SHEET_API_URL:"https://script.google.com/macros/s/AKfycbxWJL4AsYNrwFROJIxTYmB4djVlRoOS8Ga_J5htg2tKCqn2_6BqMazo_s9-JNNtrp1ZTQ/exec",
-  DATA_CACHE_MS:60000
+
+  DATA_CACHE_MS:60000,
+  SUPABASE_PAGE_SIZE:1000
 };
 const INQUIRY_ENDPOINT="https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
 /* 이전 버전 캐시 제거: 완료/보류 상태가 누락된 캐시를 재사용하지 않습니다. */
-try{sessionStorage.removeItem("rw_listings_cache_v2")}catch(e){}
+try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v3")}catch(e){}
 const INQUIRY_FORM={
   ACTION:"https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
@@ -471,93 +485,218 @@ function sample(){return[
  {no:"SAMPLE-2",type:"아파트",deal:"매매",name:"공덕자이 25평",price:"15억 5,000만원",meta:"전용 59㎡ · 고층 · 역세권 · 올수리",addr:"서울 마포구 공덕동",photos:[],photo:"",lat:37.544,lng:126.951,done:false},
  {no:"SAMPLE-3",type:"건물",deal:"매매",name:"신공덕동 9층 빌딩",price:"85억",meta:"대지 231㎡ · 연면적 1,420㎡",addr:"서울 마포구 신공덕동",photos:[],photo:"",lat:37.545,lng:126.958,done:false}
 ]}
+async function supabaseFetch(path, options={}){
+ const base=String(CONFIG.SUPABASE_URL||"").replace(/\/$/,"");
+ if(!base || !CONFIG.SUPABASE_PUBLISHABLE_KEY) throw new Error("Supabase 설정이 없습니다.");
+ const headers=Object.assign({
+   "apikey":CONFIG.SUPABASE_PUBLISHABLE_KEY,
+   "Authorization":"Bearer "+CONFIG.SUPABASE_PUBLISHABLE_KEY,
+   "Accept":"application/json"
+ },options.headers||{});
+ const res=await fetch(base+"/rest/v1/"+path,Object.assign({},options,{headers,cache:options.cache||"default"}));
+ if(!res.ok){
+  let detail="";
+  try{detail=await res.text()}catch(e){}
+  throw new Error("Supabase HTTP "+res.status+(detail?": "+detail.slice(0,220):""));
+ }
+ return res;
+}
+
+async function fetchSupabaseListings(){
+ /*
+  * exposure=true인 매물만 홈페이지에 공개합니다.
+  * 현재 Sheet 기준으로 공개 362건이며,
+  * 완료 매물은 exposure=true인 경우 기존 홈페이지처럼 표시합니다.
+  */
+ const fields=[
+  "id","listing_no","type","deal","name","price","description","address",
+  "latitude","longitude","exposure","status","urgent","deposit","rent",
+  "blog_url","folder_url","created_at"
+ ].join(",");
+
+ const params=new URLSearchParams();
+ params.set("select",fields);
+ params.set("exposure","eq.true");
+ params.set("order","created_at.desc.nullslast,id.desc");
+ params.set("limit",String(CONFIG.SUPABASE_PAGE_SIZE||1000));
+
+ const res=await supabaseFetch("listings?"+params.toString());
+ const rows=await res.json();
+ if(!Array.isArray(rows))throw new Error("Supabase listings 응답 형식이 올바르지 않습니다.");
+
+ /*
+  * 사진은 listing_images에서 한 번에 가져옵니다.
+  * 현재 약 653장이므로 매물마다 별도 요청하지 않아도 됩니다.
+  */
+ const imageParams=new URLSearchParams();
+ imageParams.set("select","id,listing_id,image_url");
+ imageParams.set("order","id.asc");
+ imageParams.set("limit","5000");
+
+ let imageRows=[];
+ try{
+  const imageRes=await supabaseFetch("listing_images?"+imageParams.toString());
+  const json=await imageRes.json();
+  if(Array.isArray(json))imageRows=json;
+ }catch(e){
+  console.warn("Supabase 사진 조회 실패:",e);
+  // 사진 조회만 실패해도 매물 자체는 표시합니다.
+ }
+
+ const imageMap=new Map();
+ imageRows.forEach(row=>{
+  const listingId=String(row?.listing_id||"").trim();
+  const url=String(row?.image_url||"").trim();
+  if(!listingId||!url)return;
+  if(!imageMap.has(listingId))imageMap.set(listingId,[]);
+  imageMap.get(listingId).push(url);
+ });
+
+ const parsed=rows.map((row,i)=>{
+  const photos=imageMap.get(String(row.id||""))||[];
+  const obj={
+   id:String(row.id||"").trim(),
+   no:String(row.listing_no??"").trim(),
+   type:String(row.type??"기타").trim()||"기타",
+   deal:String(row.deal??"").trim(),
+   name:String(row.name??"").trim(),
+   price:String(row.price??"").trim(),
+   meta:String(row.description??"").trim(),
+   addr:String(row.address??"").trim(),
+   lat:parseFloat(row.latitude),
+   lng:parseFloat(row.longitude),
+   photos:photos.map(u=>toImageUrl(u,1200)).filter(Boolean),
+   photo:photos[0]?toImageUrl(photos[0],640):"",
+   blog:String(row.blog_url??"").trim(),
+   createdAt:String(row.created_at??"").trim(),
+   status:String(row.status??"").trim(),
+   exposure:row.exposure===true,
+   urgent:row.urgent===true,
+   deposit:String(row.deposit??"").trim(),
+   rent:String(row.rent??"").trim(),
+   _order:i,
+   hold:/^(보류|HOLD)$/i.test(String(row.status??"")),
+   done:/^(완료|C|거래완료)$/i.test(String(row.status??""))
+  };
+  return normalizeListingObject(obj);
+ }).filter(Boolean);
+
+ return parsed;
+}
+
+function saveListingsCache(items){
+ try{
+  sessionStorage.setItem(
+   "rw_listings_cache_v4",
+   JSON.stringify({time:Date.now(),items})
+  );
+ }catch(e){}
+}
+
+function readListingsCache(){
+ try{
+  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v4")||"null");
+  if(cached && Array.isArray(cached.items)){
+   return cached.items.map(normalizeListingObject).filter(Boolean);
+  }
+ }catch(e){}
+ return null;
+}
+
+async function fetchLegacyListings(){
+ if(!CONFIG.SHEET_API_URL || CONFIG.SHEET_API_URL.includes("여기에_"))throw new Error("백업 API 미설정");
+ const res=await fetch(CONFIG.SHEET_API_URL,{cache:"no-store"});
+ const raw=await res.text();
+ if(!res.ok)throw new Error("백업 API HTTP "+res.status);
+
+ let data;
+ try{data=JSON.parse(raw)}catch(e){throw new Error("백업 API가 JSON을 반환하지 않았습니다.");}
+
+ let parsed=[];
+ if(Array.isArray(data)){
+  if(data.length&&Array.isArray(data[0]))parsed=rowsToListings(data);
+  else if(data.length&&typeof data[0]==="object")parsed=data.map(normalizeListingObject).filter(Boolean);
+ }else if(Array.isArray(data.items)){
+  parsed=data.items.map(normalizeListingObject).filter(Boolean);
+ }else if(Array.isArray(data.listings)){
+  parsed=data.listings.map(normalizeListingObject).filter(Boolean);
+ }else if(Array.isArray(data.rows)){
+  parsed=rowsToListings(data.rows);
+ }else if(Array.isArray(data.data)){
+  parsed=Array.isArray(data.data[0])?rowsToListings(data.data):data.data.map(normalizeListingObject).filter(Boolean);
+ }
+ if(data&&data.ok===false)throw new Error(String(data.error||"백업 API 오류"));
+ parsed.forEach((x,i)=>{if(x._order==null)x._order=i;});
+ return parsed;
+}
+
 async function loadData(){
  if(dataPromise)return dataPromise;
+
  dataPromise=(async()=>{
-  const cacheKey="rw_listings_cache_v3";
+  // 1) 캐시가 있으면 즉시 표시
+  const cached=readListingsCache();
+  if(cached){
+   setTimeout(()=>refreshDataInBackground(),0);
+   return cached;
+  }
+
+  // 2) 최초 진입은 Supabase에서 직접 조회
   try{
-   const cached=JSON.parse(sessionStorage.getItem(cacheKey)||"null");
-   if(cached && Array.isArray(cached.items)){
-    const cachedItems=cached.items.map(normalizeListingObject).filter(Boolean);
-    cachedItems.forEach((x,i)=>{if(x._order==null)x._order=i;});
-    /* 캐시가 있으면 유효기간과 관계없이 먼저 즉시 표시합니다.
-       최신 시트 데이터는 뒤에서 조용히 갱신합니다. */
-    setTimeout(()=>refreshDataInBackground(),0);
-    return cachedItems;
+   const parsed=await fetchSupabaseListings();
+   if(parsed.length){
+    parsed.forEach((x,i)=>{if(x._order==null)x._order=i;});
+    saveListingsCache(parsed);
+    return parsed;
    }
-  }catch(e){}
-
-  try{
-   if(!CONFIG.SHEET_API_URL || CONFIG.SHEET_API_URL.includes("여기에_")) throw new Error("SHEET_API_URL 미설정");
-   const res=await fetch(CONFIG.SHEET_API_URL,{cache:"default"});
-   const raw=await res.text();
-   if(!res.ok)throw new Error("API HTTP "+res.status);
-
-   let data;
-   try{data=JSON.parse(raw)}catch(e){throw new Error("API가 JSON을 반환하지 않았습니다.");}
-
-   let parsed=[];
-   if(Array.isArray(data)){
-    if(data.length && Array.isArray(data[0])) parsed=rowsToListings(data);
-    else if(data.length && typeof data[0]==="object") parsed=data.map(normalizeListingObject).filter(Boolean);
-   }else if(Array.isArray(data.items)){
-    parsed=data.items.map(normalizeListingObject).filter(Boolean);
-   }else if(Array.isArray(data.listings)){
-    parsed=data.listings.map(normalizeListingObject).filter(Boolean);
-   }else if(Array.isArray(data.rows)){
-    parsed=rowsToListings(data.rows);
-   }else if(Array.isArray(data.data)){
-    parsed=Array.isArray(data.data[0])?rowsToListings(data.data):data.data.map(normalizeListingObject).filter(Boolean);
-   }
-
-   if(data && data.ok===false) throw new Error(String(data.error||"API 오류"));
-   parsed.forEach((x,i)=>{if(x._order==null)x._order=i;});
-   if(!parsed.length && data && data.count>0) throw new Error("API는 "+data.count+"건을 반환했지만 홈페이지 데이터 변환에 실패했습니다.");
-
-   try{
-    sessionStorage.setItem(cacheKey,JSON.stringify({time:Date.now(),items:parsed}));
-   }catch(e){}
-   return parsed;
+   throw new Error("공개 매물이 0건입니다.");
   }catch(e){
-   console.error("REAL WALKERS API 오류:",e);
+   console.error("Supabase 매물 조회 오류:",e);
+
+   // 3) Supabase가 일시적으로 실패할 때만 기존 Apps Script를 백업으로 사용
+   try{
+    const fallback=await fetchLegacyListings();
+    if(fallback.length){
+     saveListingsCache(fallback);
+     console.warn("Supabase 실패로 기존 Apps Script API를 임시 사용합니다.");
+     return fallback;
+    }
+   }catch(fallbackErr){
+    console.error("기존 API 백업 조회도 실패:",fallbackErr);
+   }
+
    showApiError(e);
    return [];
   }
  })();
+
  return dataPromise;
 }
+
 async function refreshDataInBackground(){
  try{
-  if(!CONFIG.SHEET_API_URL || CONFIG.SHEET_API_URL.includes("여기에_"))return;
-  const res=await fetch(CONFIG.SHEET_API_URL,{cache:"no-store"});
-  if(!res.ok)return;
-  const raw=await res.text();
-  let data; try{data=JSON.parse(raw)}catch(e){return;}
-  let parsed=[];
-  if(Array.isArray(data)){
-   if(data.length&&Array.isArray(data[0]))parsed=rowsToListings(data);
-   else if(data.length&&typeof data[0]==="object")parsed=data.map(normalizeListingObject).filter(Boolean);
-  }else if(Array.isArray(data.items)){
-   parsed=data.items.map(normalizeListingObject).filter(Boolean);
-  }else if(Array.isArray(data.listings)){
-   parsed=data.listings.map(normalizeListingObject).filter(Boolean);
-  }else if(Array.isArray(data.rows)){
-   parsed=rowsToListings(data.rows);
-  }else if(Array.isArray(data.data)){
-   parsed=Array.isArray(data.data[0])?rowsToListings(data.data):data.data.map(normalizeListingObject).filter(Boolean);
-  }
-  if(!parsed.length)return;
-  parsed.forEach((x,i)=>{if(x._order==null)x._order=i;});
-  try{sessionStorage.setItem("rw_listings_cache_v3",JSON.stringify({time:Date.now(),items:parsed}));}catch(e){}
-  const fresh=parsed.map(normalizeListingObject).filter(Boolean);
-  const before=JSON.stringify(LISTINGS.map(x=>({no:x.no,type:x.type,deal:x.deal,name:x.name,price:x.price,meta:x.meta,addr:x.addr,photo:x.photo,photos:x.photos,blog:x.blog,status:x.status,hold:x.hold,done:x.done,lat:x.lat,lng:x.lng})));
-  const after=JSON.stringify(fresh.map(x=>({no:x.no,type:x.type,deal:x.deal,name:x.name,price:x.price,meta:x.meta,addr:x.addr,photo:x.photo,photos:x.photos,blog:x.blog,status:x.status,hold:x.hold,done:x.done,lat:x.lat,lng:x.lng})));
+  const fresh=await fetchSupabaseListings();
+  if(!fresh.length)return;
+
+  fresh.forEach((x,i)=>{if(x._order==null)x._order=i;});
+  saveListingsCache(fresh);
+
+  const signature=x=>({
+   id:x.id,no:x.no,type:x.type,deal:x.deal,name:x.name,price:x.price,
+   meta:x.meta,addr:x.addr,photo:x.photo,photos:x.photos,blog:x.blog,
+   status:x.status,hold:x.hold,done:x.done,lat:x.lat,lng:x.lng,
+   urgent:x.urgent,deposit:x.deposit,rent:x.rent
+  });
+
+  const before=JSON.stringify(LISTINGS.map(signature));
+  const after=JSON.stringify(fresh.map(signature));
+
   if(before!==after){
    LISTINGS=fresh;
    try{
     const v=getView();
     if(v==="home")renderHome();
-    else if(v==="list")renderList();
+    else if(v==="list"){buildFilters();renderList();}
     else if(v==="map")openMap();
     else if(v==="detail"){
      const params=new URLSearchParams(location.search);
@@ -567,7 +706,7 @@ async function refreshDataInBackground(){
    }catch(e){}
   }
  }catch(e){
-  console.debug("백그라운드 매물 갱신 건너뜀:",e);
+  console.debug("Supabase 백그라운드 갱신 건너뜀:",e);
  }
 }
 
@@ -600,12 +739,18 @@ function normalizeListingObject(o){
  const single=String(o.photo??o["대표사진"]??"").trim();
  if(!photos.length&&single)photos=[single];
  return {
+  id:String(o.id??o.uuid??"").trim(),
   no,type,deal,name,price,meta,addr,
   lat:Number.isFinite(lat)?lat:null,lng:Number.isFinite(lng)?lng:null,
   photos:photos.map(u=>toImageUrl(String(u).trim(),1200)).filter(Boolean),
   photo:photos[0]?toImageUrl(String(photos[0]).trim(),640):"",
-  blog:String(o.blog??o.link??o["블로그링크"]??o["블로그"]??"").trim(),
+  blog:String(o.blog??o.blog_url??o.link??o["블로그링크"]??o["블로그"]??"").trim(),
+  folder:String(o.folder??o.folder_url??o["폴더링크"]??"").trim(),
   createdAt:String(o.createdAt??o.created_at??o["등록일"]??o["등록일자"]??o["작성일"]??o["등록시간"]??"").trim(),
+  exposure:o.exposure===true || String(o.exposure??"").toLowerCase()==="true",
+  urgent:o.urgent===true || /급매/i.test([name,meta,price,deal].filter(Boolean).join(" ")),
+  deposit:String(o.deposit??"").trim(),
+  rent:String(o.rent??"").trim(),
   _order:Number.isFinite(Number(o._order))?Number(o._order):null,
   hold:!!(o.hold===true || /^(보류|HOLD)$/i.test(statusRaw)),
   done:!!(o.done===true || /^(완료|C|거래완료)$/i.test(statusRaw))
@@ -620,6 +765,7 @@ function showApiError(err){
 }
 function escapeHtml(s){return String(s??"").replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function isUrgent(x){
+ if(x && x.urgent===true)return true;
  const t=[x.name,x.meta,x.price,x.deal].filter(Boolean).join(" ");
  return /급매|급매물|급매가|급매조건/i.test(t);
 }
@@ -1166,9 +1312,9 @@ window.addEventListener("popstate",()=>{
  if(m){renderDetail(m);showView("detail",true)}else showView(v||"home",true);
 });
 
-/* 최초 접속에서는 지도/API를 절대 로드하지 않음.
-   화면을 먼저 그린 뒤 브라우저가 한가할 때 Apps Script API를 1회 호출합니다.
-   Google Sheet 주소를 브라우저가 직접 호출하지 않으므로 기존 네트워크 허용 팝업을 피할 수 있습니다. */
+/* 최초 접속에서는 지도 API를 로드하지 않습니다.
+   화면을 먼저 그린 뒤 브라우저가 한가할 때 Supabase에서 매물 데이터를 1회 조회합니다.
+   Google Sheet는 Apps Script가 5분 주기로 Supabase에 동기화하는 원본 데이터입니다. */
 function idle(fn){if("requestIdleCallback" in window)requestIdleCallback(fn,{timeout:1200});else setTimeout(fn,180)}
 idle(async()=>{
  LISTINGS=await loadData();
