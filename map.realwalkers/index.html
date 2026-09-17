@@ -413,7 +413,7 @@ const CONFIG={
 };
 const INQUIRY_ENDPOINT="https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
 /* 이전 버전 캐시 제거: 완료/보류 상태가 누락된 캐시를 재사용하지 않습니다. */
-try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v5")}catch(e){}
+try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v5");sessionStorage.removeItem("rw_listings_cache_v5");sessionStorage.removeItem("rw_listings_cache_v5")}catch(e){}
 const INQUIRY_FORM={
   ACTION:"https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
@@ -1219,7 +1219,7 @@ async function openMap(){
     addr:x.addr, lat:x.lat, lng:x.lng, photos:x.photos, photo:x.photo,
     blog:x.blog, status:x.status, hold:x.hold, done:x.done
    }));
-   sessionStorage.setItem("rw_listings_cache_v4",JSON.stringify({time:Date.now(),items:cacheItems}));
+   sessionStorage.setItem("rw_listings_cache_v5",JSON.stringify({time:Date.now(),items:cacheItems}));
   }catch(e){}
 
   /* 이전 지도 마커 정리 */
@@ -1233,27 +1233,37 @@ async function openMap(){
    const visibleItems=showCompletedOnMap
     ? arr
     : arr.filter(x=>String(x.status||"").trim().toLowerCase()!=="completed");
+
    countEl.textContent=visibleItems.length;
+   mapList.innerHTML="";
 
    if(!visibleItems.length){
     mapList.innerHTML='<div class="empty" style="margin:12px">표시할 매물이 없습니다.</div>';
     return;
    }
 
-   mapList.innerHTML="";
+   // 지도 진입 후 목록을 10개씩 나눠 렌더링해 첫 화면을 최대한 빨리 보여줍니다.
    let li=0;
-   const paintMapList=()=>{
-    const end=Math.min(li+40,visibleItems.length);
-    let html="";
-    for(;li<end;li++){
+   const CHUNK=10;
+
+   const paintChunk=()=>{
+    const endIndex=Math.min(li+CHUNK,visibleItems.length);
+    let chunkHtml="";
+
+    for(;li<endIndex;li++){
      const x=visibleItems[li];
      const isDone=String(x.status||"").trim().toLowerCase()==="completed";
-     html+=`<div class="map-card" data-id="${escapeHtml(String(x.id||""))}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b>${showCompletedOnMap&&isDone?'<span class="map-done-badge">완료</span>':""}<span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
+     chunkHtml+=`<div class="map-card" data-id="${escapeHtml(String(x.id||""))}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b>${showCompletedOnMap&&isDone?'<span class="map-done-badge">완료</span>':""}<span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
     }
-    mapList.insertAdjacentHTML("beforeend",html);
-    if(li<visibleItems.length) requestAnimationFrame(paintMapList);
+
+    mapList.insertAdjacentHTML("beforeend",chunkHtml);
+
+    if(li<visibleItems.length){
+     requestAnimationFrame(paintChunk);
+    }
    };
-   requestAnimationFrame(paintMapList);
+
+   requestAnimationFrame(paintChunk);
   };
 
   renderMapList();
