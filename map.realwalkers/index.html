@@ -310,7 +310,6 @@ button{cursor:pointer}
       <select id="priceFilter"><option value="all">가격 전체</option></select>
       <select id="sortFilter" title="정렬"><option value="latest">최신순</option><option value="oldest">오래된순</option><option value="high">고가순</option><option value="low">저가순</option><option value="urgent">급매보기</option></select>
       <button class="tool-btn" id="favFilter">♡ 찜</button>
-      <button class="tool-btn" id="doneFilter">완료매물</button>
       <button class="tool-btn" id="resetFilter">초기화</button>
     </div>
     <div id="listGrid" class="listings"><div class="loading">매물 정보를 불러오는 중입니다…</div></div>
@@ -403,7 +402,7 @@ const CONFIG={
 };
 const INQUIRY_ENDPOINT="https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
 /* 이전 버전 캐시 제거: 완료/보류 상태가 누락된 캐시를 재사용하지 않습니다. */
-try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v3")}catch(e){}
+try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v3");sessionStorage.removeItem("rw_listings_cache_v4")}catch(e){}
 const INQUIRY_FORM={
   ACTION:"https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
@@ -421,22 +420,10 @@ let mapApi=null;
 let current={type:"all",deal:"all",region:"all",price:"all",sort:"latest",q:"",fav:false,done:false};
 let favorites=new Set();
 try{favorites=new Set(JSON.parse(localStorage.getItem("rw_favorites")||"[]"))}catch(e){}
-function itemKey(x){
-  if(x?.id)return `id:${x.id}`;
-  if(x?.no)return `no:${x.no}`;
-  return `na:${x?.name||""}|${x?.addr||""}`;
-}
-function favKey(x){return itemKey(x)}
+function favKey(x){return x.id?`id:${x.id}`:(x.no?`no:${x.no}`:`na:${x.name}|${x.addr||""}`)}
 function isFav(x){return favorites.has(favKey(x))}
 function saveFav(){try{localStorage.setItem("rw_favorites",JSON.stringify([...favorites]))}catch(e){}}
-function toggleFav(x,e){
-  if(e)e.stopPropagation();
-  const k=favKey(x);
-  favorites.has(k)?favorites.delete(k):favorites.add(k);
-  saveFav();
-  renderList();
-  if(getView()==="detail")renderDetail(x);
-}
+function toggleFav(x,e){if(e)e.stopPropagation();const k=favKey(x);favorites.has(k)?favorites.delete(k):favorites.add(k);saveFav();renderList();if(getView()==="detail")renderDetail(x.no)}
 
 function parseCSV(text){
  const rows=[];let row=[],cell="",q=false;
@@ -469,7 +456,7 @@ function rowsToListings(rows){
   const status=statusRaw.toUpperCase();
   // N 계열만 완전히 숨깁니다. Y/보류/완료/빈칸은 모두 노출합니다.
   if(["N","NO","비공개","숨김","미노출","FALSE"].includes(status))continue;
-  const done=/^(완료|C|거래완료)$/i.test(statusRaw);
+  const done=/^(완료|C|거래완료|completed)$/i.test(statusRaw);
   const hold=/^(보류|HOLD)$/i.test(statusRaw);
   let raw=photoIdxs.map(i=>String(x[i]||"").trim()).filter(Boolean);
   if(!raw.length&&legacy>=0&&x[legacy])raw=[String(x[legacy]).trim()];
@@ -516,96 +503,55 @@ async function supabaseFetch(path, options={}){
 }
 
 async function fetchSupabaseListings(){
- /*
-  * 일반 공개 매물은 exposure=true,
-  * 완료 매물은 status가 완료/C/거래완료이면 exposure 값과 관계없이 가져옵니다.
-  * 비공개 상태는 아래 normalize 단계에서 제외합니다.
-  */
- const fields=[
-  "id","listing_no","type","deal","name","price","description","address",
-  "latitude","longitude","exposure","status","urgent","deposit","rent",
-  "blog_url","folder_url","created_at"
- ].join(",");
-
+ const fields=["id","listing_no","type","deal","name","price","description","address","latitude","longitude","exposure","status","urgent","deposit","rent","blog_url","folder_url","created_at"].join(",");
  const params=new URLSearchParams();
  params.set("select",fields);
- /*
-  * 일반 공개 매물은 exposure=true,
-  * 완료 매물은 status가 완료/C/거래완료이면 exposure 값과 관계없이 가져옵니다.
-  * 비공개 상태는 normalize 단계에서 최종 제외합니다.
-  */
- params.set("or","(exposure.eq.true,status.eq.완료,status.eq.C,status.eq.거래완료)");
+ // Sheet 기준 exposure=true = 일반 311건 + 완료 51건 = 362건
+ params.set("exposure","eq.true");
  params.set("order","created_at.desc.nullslast,id.desc");
  params.set("limit",String(CONFIG.SUPABASE_PAGE_SIZE||1000));
-
  const res=await supabaseFetch("listings?"+params.toString());
  const rows=await res.json();
  if(!Array.isArray(rows))throw new Error("Supabase listings 응답 형식이 올바르지 않습니다.");
 
- /*
-  * 사진은 listing_images에서 한 번에 가져옵니다.
-  * 현재 약 653장이므로 매물마다 별도 요청하지 않아도 됩니다.
-  */
  const imageParams=new URLSearchParams();
  imageParams.set("select","id,listing_id,image_url");
  imageParams.set("order","id.asc");
  imageParams.set("limit","5000");
-
  let imageRows=[];
  try{
   const imageRes=await supabaseFetch("listing_images?"+imageParams.toString());
   const json=await imageRes.json();
   if(Array.isArray(json))imageRows=json;
- }catch(e){
-  console.warn("Supabase 사진 조회 실패:",e);
-  // 사진 조회만 실패해도 매물 자체는 표시합니다.
- }
+ }catch(e){console.warn("Supabase 사진 조회 실패:",e)}
 
  const imageMap=new Map();
  imageRows.forEach(row=>{
-  const listingId=String(row?.listing_id||"").trim();
-  const url=String(row?.image_url||"").trim();
+  const listingId=String(row?.listing_id||"").trim(),url=String(row?.image_url||"").trim();
   if(!listingId||!url)return;
   if(!imageMap.has(listingId))imageMap.set(listingId,[]);
   imageMap.get(listingId).push(url);
  });
 
- const parsed=rows.map((row,i)=>{
-  const photos=imageMap.get(String(row.id||""))||[];
-  const obj={
-   id:String(row.id||"").trim(),
-   no:String(row.listing_no??"").trim(),
-   type:String(row.type??"기타").trim()||"기타",
-   deal:String(row.deal??"").trim(),
-   name:String(row.name??"").trim(),
-   price:String(row.price??"").trim(),
-   meta:String(row.description??"").trim(),
-   addr:String(row.address??"").trim(),
-   lat:parseFloat(row.latitude),
-   lng:parseFloat(row.longitude),
-   photos:photos.map(u=>toImageUrl(u,1200)).filter(Boolean),
-   photo:photos[0]?toImageUrl(photos[0],640):"",
-   blog:String(row.blog_url??"").trim(),
-   createdAt:String(row.created_at??"").trim(),
-   status:String(row.status??"").trim(),
-   exposure:row.exposure===true,
-   urgent:row.urgent===true,
-   deposit:String(row.deposit??"").trim(),
-   rent:String(row.rent??"").trim(),
-   _order:i,
-   hold:/^(보류|HOLD)$/i.test(String(row.status??"")),
-   done:/^(완료|C|거래완료)$/i.test(String(row.status??""))
-  };
-  return normalizeListingObject(obj);
- }).filter(Boolean);
-
- return parsed;
+ return rows.map((row,i)=>normalizeListingObject({
+  id:String(row.id||"").trim(),no:String(row.listing_no??"").trim(),
+  type:String(row.type??"기타").trim()||"기타",deal:String(row.deal??"").trim(),
+  name:String(row.name??"").trim(),price:String(row.price??"").trim(),
+  meta:String(row.description??"").trim(),addr:String(row.address??"").trim(),
+  lat:parseFloat(row.latitude),lng:parseFloat(row.longitude),
+  photos:(imageMap.get(String(row.id||""))||[]).map(u=>toImageUrl(u,1200)).filter(Boolean),
+  photo:(imageMap.get(String(row.id||""))||[])[0]?toImageUrl((imageMap.get(String(row.id||""))||[])[0],640):"",
+  blog:String(row.blog_url??"").trim(),folder:String(row.folder_url??"").trim(),
+  createdAt:String(row.created_at??"").trim(),status:String(row.status??"").trim(),
+  exposure:row.exposure===true,urgent:row.urgent===true,
+  deposit:String(row.deposit??"").trim(),rent:String(row.rent??"").trim(),_order:i
+ })).filter(Boolean);
 }
 
 function saveListingsCache(items){
  try{
   sessionStorage.setItem(
-   "rw_listings_cache_v4",
+   "rw_listings_cache_v5",
    JSON.stringify({time:Date.now(),items})
   );
  }catch(e){}
@@ -613,12 +559,39 @@ function saveListingsCache(items){
 
 function readListingsCache(){
  try{
-  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v4")||"null");
+  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v5")||"null");
   if(cached && Array.isArray(cached.items)){
    return cached.items.map(normalizeListingObject).filter(Boolean);
   }
  }catch(e){}
  return null;
+}
+
+async function fetchLegacyListings(){
+ if(!CONFIG.SHEET_API_URL || CONFIG.SHEET_API_URL.includes("여기에_"))throw new Error("백업 API 미설정");
+ const res=await fetch(CONFIG.SHEET_API_URL,{cache:"no-store"});
+ const raw=await res.text();
+ if(!res.ok)throw new Error("백업 API HTTP "+res.status);
+
+ let data;
+ try{data=JSON.parse(raw)}catch(e){throw new Error("백업 API가 JSON을 반환하지 않았습니다.");}
+
+ let parsed=[];
+ if(Array.isArray(data)){
+  if(data.length&&Array.isArray(data[0]))parsed=rowsToListings(data);
+  else if(data.length&&typeof data[0]==="object")parsed=data.map(normalizeListingObject).filter(Boolean);
+ }else if(Array.isArray(data.items)){
+  parsed=data.items.map(normalizeListingObject).filter(Boolean);
+ }else if(Array.isArray(data.listings)){
+  parsed=data.listings.map(normalizeListingObject).filter(Boolean);
+ }else if(Array.isArray(data.rows)){
+  parsed=rowsToListings(data.rows);
+ }else if(Array.isArray(data.data)){
+  parsed=Array.isArray(data.data[0])?rowsToListings(data.data):data.data.map(normalizeListingObject).filter(Boolean);
+ }
+ if(data&&data.ok===false)throw new Error(String(data.error||"백업 API 오류"));
+ parsed.forEach((x,i)=>{if(x._order==null)x._order=i;});
+ return parsed;
 }
 
 async function loadData(){
@@ -632,8 +605,7 @@ async function loadData(){
    return cached;
   }
 
-  // 2) 최초 진입은 Supabase에서 직접 조회합니다.
-  // 홈페이지에서는 Apps Script 매물 API를 더 이상 호출하지 않습니다.
+  // 2) 최초 진입은 Supabase에서 직접 조회
   try{
    const parsed=await fetchSupabaseListings();
    if(parsed.length){
@@ -641,9 +613,22 @@ async function loadData(){
     saveListingsCache(parsed);
     return parsed;
    }
-   throw new Error("Supabase에서 공개/완료 매물이 0건으로 반환되었습니다.");
+   throw new Error("공개 매물이 0건입니다.");
   }catch(e){
    console.error("Supabase 매물 조회 오류:",e);
+
+   // 3) Supabase가 일시적으로 실패할 때만 기존 Apps Script를 백업으로 사용
+   try{
+    const fallback=await fetchLegacyListings();
+    if(fallback.length){
+     saveListingsCache(fallback);
+     console.warn("Supabase 실패로 기존 Apps Script API를 임시 사용합니다.");
+     return fallback;
+    }
+   }catch(fallbackErr){
+    console.error("기존 API 백업 조회도 실패:",fallbackErr);
+   }
+
    showApiError(e);
    return [];
   }
@@ -732,7 +717,7 @@ function normalizeListingObject(o){
   rent:String(o.rent??"").trim(),
   _order:Number.isFinite(Number(o._order))?Number(o._order):null,
   hold:!!(o.hold===true || /^(보류|HOLD)$/i.test(statusRaw)),
-  done:!!(o.done===true || /^(완료|C|거래완료)$/i.test(statusRaw))
+  done:!!(o.done===true || /^(완료|C|거래완료|completed)$/i.test(statusRaw))
  };
 }
 function showApiError(err){
@@ -782,7 +767,6 @@ function filtered(){
   .filter(x=>current.region==="all"||regionOf(x)===current.region)
   .filter(x=>current.price==="all"||priceOf(x)===current.price)
   .filter(x=>!current.fav||isFav(x))
-  .filter(x=>!current.done||x.done)
   .filter(x=>!q||[x.name,x.addr,x.meta,x.type,x.deal,x.no].join(" ").toLowerCase().includes(q));
  if(current.sort==="urgent")return sortListings(arr.filter(isUrgent));
  const sorted=sortListings(arr);
@@ -807,15 +791,15 @@ function priceOf(x){
  return "etc";
 }
 function cardHtml(x){
- return `<article class="card ${isUrgent(x)?"is-urgent":""}" data-key="${escapeHtml(itemKey(x))}">
-  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(itemKey(x))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${x.done?'<div class="card-done-overlay"><span>거래완료</span></div>':(x.hold?'<div class="card-done-overlay"><span>보류</span></div>':'' )}</div>
+ return `<article class="card ${isUrgent(x)?"is-urgent":""}" data-id="${escapeHtml(x.id||"")}" data-no="${escapeHtml(x.no)}">
+  <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.no||''))}',event,'${escapeHtml(String(x.id||''))}')">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}${(x.hold||x.done)?'<div class="card-done-overlay"><span>보류</span></div>':''}</div>
   <div class="card-body"><div class="top"><span class="badge" style="background:${typeColor(x.type)}">${escapeHtml(x.type)}</span><span class="deal">${escapeHtml(x.deal)}</span>${x.no?`<span class="no">No.${escapeHtml(x.no)}</span>`:""}</div>
   <h3>${escapeHtml(x.name)}</h3><div class="price">${escapeHtml(x.deal)} ${escapeHtml(x.price)}</div><div class="meta">${escapeHtml(x.meta||publicAddress(x.addr,x.type))}</div></div>
  </article>`;
 }
-function cardToggleFav(key,e){
+function cardToggleFav(no,e,id){
  if(e)e.stopPropagation();
- const x=LISTINGS.find(it=>itemKey(it)===String(key));
+ const x=LISTINGS.find(it=>(id&&String(it.id)===String(id)) || (!id&&String(it.no)===String(no)));
  if(x)toggleFav(x,e);
 }
 function renderHome(){
@@ -847,11 +831,9 @@ function renderHome(){
 function renderList(){
  const grid=document.getElementById("listGrid"),arr=filtered();
  document.getElementById("listSub").textContent=`현재 ${arr.length}건의 매물이 표시되고 있습니다.`;
- document.getElementById("listTitle").textContent=
-  current.done ? "완료 매물" : (current.type==="all"?"전체 매물":`${current.type} 매물`);
+ document.getElementById("listTitle").textContent=current.type==="all"?"전체 매물":`${current.type} 매물`;
  grid.innerHTML=arr.length?arr.map(cardHtml).join(""):`<div class="empty">${current.fav?"아직 찜한 매물이 없습니다.":"검색 조건에 맞는 매물이 없습니다."}</div>`;
  document.getElementById("favFilter").classList.toggle("active",current.fav);
- document.getElementById("doneFilter").classList.toggle("active",current.done);
 }
 function buildFilters(){
  const type=document.getElementById("typeFilter"),deal=document.getElementById("dealFilter"),region=document.getElementById("regionFilter"),price=document.getElementById("priceFilter"),sort=document.getElementById("sortFilter");
@@ -865,14 +847,15 @@ function buildFilters(){
  type.value=current.type;deal.value=current.deal;region.value=current.region;price.value=current.price;
  if(sort)sort.value=current.sort;
 }
-function openDetail(ref){
- const key=String(ref||"");
- const x=LISTINGS.find(it=>itemKey(it)===key) ||
-         LISTINGS.find(it=>String(it.no||"")===key);
- if(!x)return;
- const urlKey=x.id||x.no||itemKey(x);
- history.pushState({view:"detail",key:itemKey(x)},"",`?m=${encodeURIComponent(urlKey)}`);
- renderDetail(x);showView("detail");
+function findListing(key){
+ const k=String(key??"");
+ return LISTINGS.find(x=>String(x.id||"")===k)||LISTINGS.find(x=>String(x.no||"")===k);
+}
+function openDetail(key){
+ const x=findListing(key);if(!x)return;
+ const routeKey=x.id||x.no;
+ history.pushState({view:"detail",id:x.id||"",no:x.no},"",`?m=${encodeURIComponent(routeKey)}`);
+ renderDetail(routeKey);showView("detail");
 }
 /* ── 방문자에게 보여줄 공개 주소 ── */
 function publicAddress(addr, type){
@@ -910,12 +893,8 @@ function mapMarkerIcon(item,picked){
  const html=`<div class="rw-map-marker${picked?" picked":""}" style="background:${cfg.bg}" title="${escapeHtml(cfg.label)}"><span>${escapeHtml(short)}</span></div>`;
  return {content:html,anchor:new naver.maps.Point(picked?21:19,picked?21:19)};
 }
-function renderDetail(ref){
- const key=String(ref||"");
- const x=typeof ref==="object" ? ref :
-   LISTINGS.find(it=>itemKey(it)===key) ||
-   LISTINGS.find(it=>String(it.no||"")===key);
- if(!x)return;
+function renderDetail(key){
+ const x=findListing(key);if(!x)return;
  const photos=x.photos?.length?x.photos:(x.photo?[x.photo]:[]);
  document.getElementById("detailRoot").innerHTML=`<div class="detail-shell">
   <div class="detail-top">
@@ -937,7 +916,7 @@ function renderDetail(ref){
   ${photos.length>1?`<div class="detail-gallery">${photos.slice(0,5).map((p,i)=>`<img src="${escapeHtml(p)}" data-photo="${i}" loading="lazy" decoding="async">`).join("")}</div>`:""}
  </div>`;
  document.getElementById("detailAsk").onclick=()=>openAsk(x);
- document.getElementById("detailFav").onclick=()=>{toggleFav(x);renderDetail(x)};
+ document.getElementById("detailFav").onclick=()=>{toggleFav(x);renderDetail(x.no)};
  const road=document.getElementById("detailRoad");if(road)road.onclick=()=>openRoadview(x);
  document.querySelectorAll("[data-photo]").forEach(el=>el.onclick=()=>document.getElementById("detailMainImg").src=photos[+el.dataset.photo]);
 }
@@ -1170,7 +1149,15 @@ async function openMap(){
   const arr=filtered().filter(x=>x.lat!=null&&x.lng!=null);
   countEl.textContent=arr.length;
 
-
+  /* 지오코딩 후 최신 좌표를 캐시에 반영 */
+  try{
+   const cacheItems=LISTINGS.filter(x=>x.lat!=null&&x.lng!=null).map(x=>({
+    no:x.no, type:x.type, deal:x.deal, name:x.name, price:x.price, meta:x.meta,
+    addr:x.addr, lat:x.lat, lng:x.lng, photos:x.photos, photo:x.photo,
+    blog:x.blog, status:x.status, hold:x.hold, done:x.done
+   }));
+   sessionStorage.setItem("rw_listings_cache_v3",JSON.stringify({time:Date.now(),items:cacheItems}));
+  }catch(e){}
 
   /* 이전 지도 마커 정리 */
   if(mapApi && Array.isArray(mapApi.markers)){
@@ -1189,7 +1176,7 @@ async function openMap(){
     let html="";
     for(;li<end;li++){
      const x=arr[li];
-     html+=`<div class="map-card" data-key="${escapeHtml(itemKey(x))}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
+     html+=`<div class="map-card" data-id="${escapeHtml(x.id||"")}" data-no="${escapeHtml(x.no)}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
     }
     mapList.insertAdjacentHTML("beforeend",html);
     if(li<arr.length) requestAnimationFrame(paintMapList);
@@ -1199,7 +1186,7 @@ async function openMap(){
 
   mapList.onclick=e=>{
    const card=e.target.closest(".map-card");
-   if(card)openDetail(card.dataset.key);
+   if(card)openDetail(card.dataset.id||card.dataset.no);
   };
 
   if(!mapApi){
@@ -1238,7 +1225,7 @@ async function openMap(){
      });
      naver.maps.Event.addListener(marker,"click",()=>{
       try{marker.setIcon(mapMarkerIcon(x,true));}catch(e){}
-      openDetail(x);
+      openDetail(x.no);
      });
      mapApi.markers.push(marker);
     }catch(markerErr){
@@ -1272,7 +1259,7 @@ async function openMap(){
 document.addEventListener("click",e=>{
  const view=e.target.closest("[data-view]");if(view){e.preventDefault();showView(view.dataset.view);return}
  const type=e.target.closest("[data-type]");if(type){current.type=type.dataset.type;current.q="";showView("list");return}
- const card=e.target.closest(".card");if(card){openDetail(card.dataset.key);return}
+ const card=e.target.closest(".card");if(card){openDetail(card.dataset.id||card.dataset.no);return}
  const about=e.target.closest("[data-open='about']");if(about){document.getElementById("aboutModal").classList.add("open");document.body.classList.add("lock");return}
  const close=e.target.closest("[data-close]");if(close){closeModal(close.dataset.close);return}
 });
@@ -1285,7 +1272,6 @@ document.getElementById("regionFilter").onchange=e=>{current.region=e.target.val
 document.getElementById("priceFilter").onchange=e=>{current.price=e.target.value;renderList()};
 document.getElementById("sortFilter").onchange=e=>{current.sort=e.target.value;renderList()};
 document.getElementById("favFilter").onclick=()=>{current.fav=!current.fav;renderList()};
-document.getElementById("doneFilter").onclick=()=>{current.done=!current.done;renderList()};
 document.getElementById("resetFilter").onclick=()=>{current={type:"all",deal:"all",region:"all",price:"all",sort:"latest",q:"",fav:false,done:false};document.getElementById("listSearch").value="";renderList()};
 document.getElementById("askForm").addEventListener("submit",submitInquiry);
 document.querySelectorAll(".modal-backdrop").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closeModal(m.id==="aboutModal"?"about":m.id==="askModal"?"ask":"road")}));
