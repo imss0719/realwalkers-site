@@ -62,7 +62,57 @@ button{cursor:pointer}
 .section-head p{color:var(--muted);font-size:14px}
 .more{font-size:13px;font-weight:900;color:var(--navy);white-space:nowrap;border:0;background:none}
 .category-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.category{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;transition:.16s}
+/* 메인 유형 카드: 기존 크기/4열 구조는 유지하고 배경 이미지만 추가 */
+.category{
+ background:#fff;
+ border:1px solid var(--line);
+ border-radius:14px;
+ padding:22px;
+ transition:.16s;
+ position:relative;
+ overflow:hidden;
+ isolation:isolate;
+ text-align:left;
+}
+.category::before{
+ content:"";
+ position:absolute;
+ inset:0;
+ background:linear-gradient(180deg,rgba(10,18,34,.10) 0%,rgba(10,18,34,.26) 48%,rgba(10,18,34,.76) 100%);
+ z-index:-1;
+}
+.category::after{
+ content:"";
+ position:absolute;
+ inset:0;
+ background-size:cover;
+ background-position:center;
+ z-index:-2;
+ transform:scale(1.01);
+ transition:transform .25s ease;
+}
+.category[data-type="아파트"]::after{
+ background-image:url("https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=82");
+}
+.category[data-type="상가"]::after{
+ background-image:url("https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=82");
+}
+.category[data-type="건물"]::after{
+ background-image:url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=82");
+}
+.category[data-type="토지"]::after{
+ background-image:url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=900&q=82");
+}
+.category > *{position:relative;z-index:1}
+.category .cat-icon{
+ background:rgba(255,255,255,.90);
+ color:var(--navy);
+ box-shadow:0 3px 10px rgba(0,0,0,.10);
+}
+.category h3{color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.28)}
+.category p{color:rgba(255,255,255,.90);text-shadow:0 1px 5px rgba(0,0,0,.28)}
+.category:hover::after{transform:scale(1.045)}
+.category:hover{border-color:#fff;box-shadow:0 10px 28px rgba(27,42,74,.16)}
 .category:hover{transform:translateY(-2px);border-color:var(--navy);box-shadow:0 8px 22px rgba(27,42,74,.08)}
 .cat-icon{width:40px;height:40px;border-radius:11px;background:#f0f2f5;color:var(--navy);display:grid;place-items:center;font-weight:900;margin-bottom:14px}
 .category h3{font-size:17px;color:var(--navy);margin-bottom:3px}
@@ -202,7 +252,7 @@ button{cursor:pointer}
  .quick-grid{grid-template-columns:repeat(2,1fr)}.quick-item{padding:15px 8px;border-bottom:1px solid var(--line)}
  .quick-item:nth-child(2){border-right:0}.quick-item strong{font-size:18px}
  .section{padding:42px 0}.section-head h2{font-size:23px}.category-grid{grid-template-columns:repeat(2,1fr)}
- .category{padding:17px}.listings{grid-template-columns:1fr 1fr;gap:10px}.photo{height:145px}.card-body{padding:12px}
+ .category{padding:17px}.category::before{background:linear-gradient(180deg,rgba(10,18,34,.08) 0%,rgba(10,18,34,.30) 45%,rgba(10,18,34,.78) 100%)}.listings{grid-template-columns:1fr 1fr;gap:10px}.photo{height:145px}.card-body{padding:12px}
  .card h3{font-size:14px}.price{font-size:15px}.meta{font-size:11px}
  .info-grid{grid-template-columns:1fr;gap:25px}.info h2{font-size:25px}.cta-box{display:block;padding:26px}.cta-actions{margin-top:18px}
  .footer-row{display:block}.footer-row div+div{margin-top:7px}
@@ -270,7 +320,7 @@ button{cursor:pointer}
       </div>
       <div class="category-grid">
         <button class="category" data-type="아파트"><div class="cat-icon">APT</div><h3>아파트</h3><p>실거주·투자·전세·월세</p></button>
-        <button class="category" data-type="상가"><div class="cat-icon">SHOP</div><h3>상가</h3><p>1층 상가·임대·매매</p></button>
+        <button class="category" data-type="상가"><div class="cat-icon">SHOP</div><h3>상가</h3><p>상가·임대·매매</p></button>
         <button class="category" data-type="건물"><div class="cat-icon">BLD</div><h3>건물</h3><p>꼬마빌딩·통건물·수익형</p></button>
         <button class="category" data-type="토지"><div class="cat-icon">LAND</div><h3>토지</h3><p>서울·수도권 토지 매물</p></button>
       </div>
