@@ -122,8 +122,12 @@ button{cursor:pointer}
 .category:hover{transform:translateY(-2px);border-color:var(--navy);box-shadow:0 8px 22px rgba(27,42,74,.08)}
 .cat-icon{width:40px;height:40px;border-radius:11px;background:#f0f2f5;color:var(--navy);display:grid;place-items:center;font-weight:900;margin-bottom:14px}
 .category h3{font-size:17px;color:var(--navy);margin-bottom:3px}
-.category p{font-size:13px;color:#fff}
-.category{min-width:0;box-sizing:border-box}
+.category p{
+  color:#fff;
+  font-size:13px;
+  white-space:nowrap;
+  letter-spacing:-.3px;
+}.category{min-width:0;box-sizing:border-box}
 .listings{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:.16s}
 .card{position:relative}
