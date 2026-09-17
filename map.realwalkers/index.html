@@ -164,7 +164,7 @@ button{cursor:pointer}
 .rw-map-marker.completed span{font-size:10px}
 .detail-done-badge{display:inline-flex;align-items:center;justify-content:center;margin-left:7px;padding:4px 8px;border-radius:6px;background:#B42318;color:#fff;font-size:11px;font-weight:900;vertical-align:middle}
 .map-card{position:relative}
-.map-done-badge{display:inline-flex;align-items:center;justify-content:center;margin-top:5px;padding:3px 7px;border-radius:5px;background:#B42318;color:#fff;font-size:10px;font-weight:900}
+.map-done-badge{display:inline-flex;align-items:center;justify-content:center;margin-top:5px;padding:3px 7px;border-radius:5px;background:#d92d20;color:#fff;font-size:10px;font-weight:900}
 .map-done-toggle{margin-left:8px;border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:7px;padding:5px 9px;font-size:11px;font-weight:900;cursor:pointer;vertical-align:middle}
 .map-done-toggle.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 
@@ -413,7 +413,7 @@ const CONFIG={
 };
 const INQUIRY_ENDPOINT="https://script.google.com/macros/s/AKfycbynL4aqcVdyo_zUgPrKSeBv_D45wYUqz1z9Yry8zL19oUjz9TgzaTuAbPdKTii3gkVJJA/exec";
 /* 이전 버전 캐시 제거: 완료/보류 상태가 누락된 캐시를 재사용하지 않습니다. */
-try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v3");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v5")}catch(e){}
+try{sessionStorage.removeItem("rw_listings_cache_v2");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v4");sessionStorage.removeItem("rw_listings_cache_v5")}catch(e){}
 const INQUIRY_FORM={
   ACTION:"https://docs.google.com/forms/d/e/1FAIpQLSdtNug4PjcYv_JVbr8u9gu5UMpxmZSCspAeAWUr3ETRlbAfDw/viewform",
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
@@ -1219,7 +1219,7 @@ async function openMap(){
     addr:x.addr, lat:x.lat, lng:x.lng, photos:x.photos, photo:x.photo,
     blog:x.blog, status:x.status, hold:x.hold, done:x.done
    }));
-   sessionStorage.setItem("rw_listings_cache_v3",JSON.stringify({time:Date.now(),items:cacheItems}));
+   sessionStorage.setItem("rw_listings_cache_v4",JSON.stringify({time:Date.now(),items:cacheItems}));
   }catch(e){}
 
   /* 이전 지도 마커 정리 */
@@ -1229,23 +1229,34 @@ async function openMap(){
   }
 
   /* 지도 왼쪽 목록 */
-  if(!arr.length){
-   mapList.innerHTML='<div class="empty" style="margin:12px">주소를 좌표로 변환할 수 있는 매물이 없습니다.</div>';
-  }else{
+  const renderMapList=()=>{
+   const visibleItems=showCompletedOnMap
+    ? arr
+    : arr.filter(x=>String(x.status||"").trim().toLowerCase()!=="completed");
+   countEl.textContent=visibleItems.length;
+
+   if(!visibleItems.length){
+    mapList.innerHTML='<div class="empty" style="margin:12px">표시할 매물이 없습니다.</div>';
+    return;
+   }
+
    mapList.innerHTML="";
    let li=0;
    const paintMapList=()=>{
-    const end=Math.min(li+40,arr.length);
+    const end=Math.min(li+40,visibleItems.length);
     let html="";
     for(;li<end;li++){
-     const x=arr[li];
-     html+=`<div class="map-card" data-id="${escapeHtml(String(x.id||""))}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b>${showCompletedOnMap&&String(x.status||"").trim().toLowerCase()==="completed"?'<span class="map-done-badge">완료</span>':""}<span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
+     const x=visibleItems[li];
+     const isDone=String(x.status||"").trim().toLowerCase()==="completed";
+     html+=`<div class="map-card" data-id="${escapeHtml(String(x.id||""))}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b>${showCompletedOnMap&&isDone?'<span class="map-done-badge">완료</span>':""}<span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
     }
     mapList.insertAdjacentHTML("beforeend",html);
-    if(li<arr.length) requestAnimationFrame(paintMapList);
+    if(li<visibleItems.length) requestAnimationFrame(paintMapList);
    };
    requestAnimationFrame(paintMapList);
-  }
+  };
+
+  renderMapList();
 
   const doneToggle=document.getElementById("mapDoneToggle");
   if(doneToggle){
@@ -1254,31 +1265,27 @@ async function openMap(){
    doneToggle.onclick=(e)=>{
     e.preventDefault();
     e.stopPropagation();
+
     showCompletedOnMap=!showCompletedOnMap;
     doneToggle.classList.toggle("active",showCompletedOnMap);
     doneToggle.setAttribute("aria-pressed",String(showCompletedOnMap));
-    // 지도 마커의 완료 표시를 즉시 갱신
+
+    // 완료표시 ON/OFF: 왼쪽 목록과 지도 마커를 동시에 갱신합니다.
+    renderMapList();
+
     if(mapApi && Array.isArray(mapApi.markers)){
      mapApi.markers.forEach(m=>{
       try{
-       if(m.__rwItem)m.setIcon(mapMarkerIcon(m.__rwItem,false));
+       const item=m.__rwItem;
+       if(!item)return;
+       const isCompleted=String(item.status||"").trim().toLowerCase()==="completed";
+       if(isCompleted){
+        m.setMap(showCompletedOnMap ? mapApi.map : null);
+        if(showCompletedOnMap)m.setIcon(mapMarkerIcon(item,false));
+       }
       }catch(err){}
      });
     }
-    // 지도 왼쪽 목록의 완료 표시만 다시 그립니다.
-    const cards=mapList.querySelectorAll(".map-card");
-    cards.forEach(card=>{
-     const item=LISTINGS.find(v=>String(v.id||"")===String(card.dataset.id||""));
-     if(!item)return;
-     const oldBadge=card.querySelector(".map-done-badge");
-     const title=card.querySelector("b");
-     const isDone=String(item.status||"").trim().toLowerCase()==="completed";
-     if(showCompletedOnMap && isDone && !oldBadge){
-      title.insertAdjacentHTML("afterend",'<span class="map-done-badge">완료</span>');
-     }else if((!showCompletedOnMap || !isDone) && oldBadge){
-      oldBadge.remove();
-     }
-    });
    };
   }
 
@@ -1317,7 +1324,7 @@ async function openMap(){
     try{
      const marker=new naver.maps.Marker({
       position:new naver.maps.LatLng(x.lat,x.lng),
-      map:mapApi.map,
+      map:(showCompletedOnMap || String(x.status||"").trim().toLowerCase()!=="completed") ? mapApi.map : null,
       title:`${x.type||"기타"} · ${x.name}`,
       icon:mapMarkerIcon(x,false)
      });
