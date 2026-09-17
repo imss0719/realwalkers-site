@@ -579,8 +579,8 @@ async function fetchSupabaseListings(){
    deposit:String(row.deposit??"").trim(),
    rent:String(row.rent??"").trim(),
    _order:i,
-   hold:/^(보류|HOLD|보류중|대기)$/i.test(String(row.status??"").trim().replace(/\\s+/g,"")),
-   done:/^(완료|C|거래완료|COMPLETED|COMPLETE|SOLD|CLOSED)$/i.test(String(row.status??"").trim().replace(/\\s+/g,""))
+   hold:rwStatusFlags(row.status).hold,
+   done:rwStatusFlags(row.status).done
   };
   return normalizeListingObject(obj);
  }).filter(Boolean);
@@ -591,7 +591,7 @@ async function fetchSupabaseListings(){
 function saveListingsCache(items){
  try{
   sessionStorage.setItem(
-   "rw_listings_cache_v6",
+   "rw_listings_cache_v7",
    JSON.stringify({time:Date.now(),items})
   );
  }catch(e){}
@@ -599,7 +599,7 @@ function saveListingsCache(items){
 
 function readListingsCache(){
  try{
-  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v6")||"null");
+  const cached=JSON.parse(sessionStorage.getItem("rw_listings_cache_v7")||"null");
   if(cached && Array.isArray(cached.items)){
    return cached.items.map(normalizeListingObject).filter(Boolean);
   }
@@ -715,6 +715,16 @@ async function refreshDataInBackground(){
  }
 }
 
+function rwStatusFlags(value){
+ const raw=String(value??"").trim();
+ const compact=raw.toUpperCase().replace(/\s+/g,"");
+ return {
+  raw,
+  done:/^(완료|거래완료|완료매물|C|COMPLETED|COMPLETE|SOLD|CLOSED|DONE|FINISHED)$/.test(compact) ||
+       /거래완료|완료매물/.test(raw),
+  hold:/^(보류|HOLD|보류중|대기)$/.test(compact)
+ };
+}
 function normalizeListingObject(o){
  if(!o||typeof o!=="object")return null;
  const no=String(o.no??o["매물번호"]??o["번호"]??"").trim();
@@ -734,7 +744,8 @@ function normalizeListingObject(o){
   o["상태"] ??
   ""
  ).trim();
- const status=statusRaw.toUpperCase().replace(/\\s+/g,"");
+ const statusInfo=rwStatusFlags(statusRaw);
+ const status=statusInfo.raw.toUpperCase().replace(/\s+/g,"");
  if(["N","NO","비공개","숨김","미노출","FALSE"].includes(status))return null;
  const lat=parseFloat(o.lat??o.latitude??o["위도"]);
  const lng=parseFloat(o.lng??o.longitude??o["경도"]);
@@ -757,8 +768,12 @@ function normalizeListingObject(o){
   deposit:String(o.deposit??"").trim(),
   rent:String(o.rent??"").trim(),
   _order:Number.isFinite(Number(o._order))?Number(o._order):null,
-  hold:!!(o.hold===true || /^(보류|HOLD|보류중|대기)$/i.test(status)),
-  done:!!(o.done===true || /^(완료|C|거래완료|COMPLETED|COMPLETE|SOLD|CLOSED)$/i.test(status))
+  hold:!!(o.hold===true || statusInfo.hold),
+  done:!!(
+    o.done===true ||
+    statusInfo.done ||
+    /거래완료|완료매물/i.test([name,meta,deal,statusRaw].filter(Boolean).join(" "))
+  )
  };
 }
 function showApiError(err){
@@ -811,7 +826,9 @@ function filtered(){
   .filter(x=>!q||[x.name,x.addr,x.meta,x.type,x.deal,x.no].join(" ").toLowerCase().includes(q));
  if(current.sort==="urgent")return sortListings(arr.filter(isUrgent));
  const sorted=sortListings(arr);
- return sorted.sort((a,b)=>{ if(!!a.done!==!!b.done) return a.done?1:-1; return 0; });
+ // 거래완료 매물도 일반 매물과 동일하게 목록에 포함합니다.
+ // 별도 필터나 숨김 처리는 하지 않습니다.
+ return sorted;
 }
 function regionOf(x){
  const a=(x.addr||"").replace(/\s+/g," ").trim().split(" ");
@@ -857,6 +874,7 @@ function renderHome(){
   arr.splice(0,arr.length,...featured.slice(0,6));
  }
  document.getElementById("totalCount").textContent=LISTINGS.length;
+ console.log("[RW STATUS] 전체:",LISTINGS.length,"거래완료:",LISTINGS.filter(x=>x.done).length,"보류:",LISTINGS.filter(x=>x.hold).length);
  if(!arr.length){grid.innerHTML=`<div class="empty">등록된 매물이 없습니다.</div>`;return}
  grid.innerHTML=arr.map(cardHtml).join("");
 }
