@@ -211,6 +211,45 @@ button{cursor:pointer}
  .nav-call::before{content:"☎";font-size:15px}
 }
 </style>
+
+<script>
+/* =========================
+   REAL WALKERS 성능 측정용
+   기존 기능/데이터 로딩은 변경하지 않습니다.
+   ========================= */
+window.RW_PERF = {
+  t0: performance.now(),
+  marks: {},
+  mark(name){
+    const v = +(performance.now() - this.t0).toFixed(1);
+    this.marks[name] = v;
+    console.log("[RW PERF]", name, v + "ms");
+  },
+  report(){
+    console.table(this.marks);
+    console.log("[RW PERF] 전체", +(performance.now()-this.t0).toFixed(1) + "ms");
+  }
+};
+RW_PERF.mark("HTML/JS 시작");
+
+const _rwFetchOriginal = window.fetch;
+window.fetch = async function(...args){
+  const start = performance.now();
+  const url = String(args[0] || "");
+  const result = await _rwFetchOriginal.apply(this, args);
+  const ms = +(performance.now()-start).toFixed(1);
+  let label = url;
+  try { label = new URL(url, location.href).pathname; } catch(e) {}
+  console.log("[RW FETCH]", ms + "ms", label);
+  return result;
+};
+
+window.addEventListener("load", ()=>{
+  RW_PERF.mark("window.load");
+  setTimeout(()=>RW_PERF.report(), 100);
+});
+</script>
+
 </head>
 <body>
 <header class="header">
@@ -507,6 +546,7 @@ async function supabaseFetch(path, options={}){
 }
 
 async function fetchSupabaseListings(){
+ RW_PERF?.mark("Supabase 조회 시작");
  /*
   * exposure=true인 매물만 홈페이지에 공개합니다.
   * 현재 Sheet 기준으로 공개 362건이며,
@@ -526,6 +566,7 @@ async function fetchSupabaseListings(){
 
  const res=await supabaseFetch("listings?"+params.toString());
  const rows=await res.json();
+ RW_PERF?.mark("Supabase 매물 응답 완료");
  if(!Array.isArray(rows))throw new Error("Supabase listings 응답 형식이 올바르지 않습니다.");
 
  /*
@@ -541,6 +582,7 @@ async function fetchSupabaseListings(){
  try{
   const imageRes=await supabaseFetch("listing_images?"+imageParams.toString());
   const json=await imageRes.json();
+  RW_PERF?.mark("Supabase 사진 응답 완료");
   if(Array.isArray(json))imageRows=json;
  }catch(e){
   console.warn("Supabase 사진 조회 실패:",e);
@@ -585,6 +627,7 @@ async function fetchSupabaseListings(){
   return normalizeListingObject(obj);
  }).filter(Boolean);
 
+ RW_PERF?.mark("Supabase 데이터 가공 완료");
  return parsed;
 }
 
@@ -843,6 +886,7 @@ function cardToggleFav(no,e){
  if(x)toggleFav(x,e);
 }
 function renderHome(){
+ RW_PERF?.mark("홈 렌더링 시작");
  const grid=document.getElementById("homeGrid");
  const arr=sortListings(LISTINGS).slice(0,6);
  // 주요 매물은 급매를 우선 배치하고, 급매가 부족하면 최신 매물을 이어서 보여줍니다.
@@ -1326,5 +1370,16 @@ function idle(fn){if("requestIdleCallback" in window)requestIdleCallback(fn,{tim
  }
 })();
 </script>
+
+<script>
+if (new URLSearchParams(location.search).get("perf") === "1") {
+  const b = document.createElement("button");
+  b.textContent = "성능 로그";
+  b.style.cssText = "position:fixed;right:12px;bottom:12px;z-index:9999;border:0;border-radius:9px;padding:9px 12px;background:#1B2A4A;color:#fff;font-weight:900;box-shadow:0 4px 15px rgba(0,0,0,.2)";
+  b.onclick = ()=>RW_PERF.report();
+  document.body.appendChild(b);
+}
+</script>
+
 </body>
 </html>
