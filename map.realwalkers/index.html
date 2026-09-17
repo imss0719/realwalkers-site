@@ -762,6 +762,7 @@ function normalizeListingObject(o){
   blog:String(o.blog??o.blog_url??o.link??o["블로그링크"]??o["블로그"]??"").trim(),
   folder:String(o.folder??o.folder_url??o["폴더링크"]??"").trim(),
   createdAt:String(o.createdAt??o.created_at??o["등록일"]??o["등록일자"]??o["작성일"]??o["등록시간"]??"").trim(),
+  status:status,
   exposure:o.exposure===true || String(o.exposure??"").toLowerCase()==="true",
   urgent:o.urgent===true || /급매/i.test([name,meta,price,deal].filter(Boolean).join(" ")),
   deposit:String(o.deposit??"").trim(),
