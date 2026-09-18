@@ -188,6 +188,9 @@ button{cursor:pointer}
 .list-title p{font-size:13px;color:var(--muted)}
 .back-btn{border:0;background:none;color:var(--navy);font-weight:900;padding:8px 0}
 .detail-view{padding:30px 0 70px}
+.detail-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+.detail-close{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:9px;padding:8px 12px;font-size:12px;font-weight:900;cursor:pointer}
+.detail-close:hover{background:#f5f6f8}
 .detail-shell{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
 .detail-top{display:grid;grid-template-columns:1.08fr .92fr}
 .detail-main-photo{height:500px;background:#e9ebef;position:relative}
@@ -272,7 +275,7 @@ button{cursor:pointer}
  .card h3{font-size:14px}.price{font-size:15px}.meta{font-size:11px}
  .info-grid{grid-template-columns:1fr;gap:25px}.info h2{font-size:25px}.cta-box{display:block;padding:26px}.cta-actions{margin-top:18px}
  .footer-row{display:block}.footer-row div+div{margin-top:7px}
- .detail-top{grid-template-columns:1fr}.detail-main-photo{height:300px}.detail-info{padding:20px}.detail-info h1{font-size:25px}
+ .detail-top{grid-template-columns:1fr}.detail-main-photo{height:300px}.detail-info{padding:20px}.detail-info h1{font-size:25px}.detail-nav{margin-bottom:2px}
  .detail-gallery{grid-template-columns:repeat(4,1fr)}.detail-gallery img{height:72px}
  .map-view{height:calc(100vh - 62px);min-height:600px}.map-list{left:10px;right:10px;bottom:10px;top:auto;width:auto;max-height:38vh}
 }
@@ -395,7 +398,10 @@ button{cursor:pointer}
 
 <section id="detailView" class="view detail-view">
   <div class="container">
-    <button class="back-btn" data-view="list">← 매물 목록으로</button>
+    <div class="detail-nav">
+      <button class="back-btn" data-view="list">← 매물 목록으로</button>
+      <button class="detail-close" type="button" id="detailClose">× 이전 화면</button>
+    </div>
     <div id="detailRoot"></div>
   </div>
 </section>
@@ -1512,6 +1518,10 @@ document.getElementById("sortFilter").onchange=e=>{current.sort=e.target.value;r
 document.getElementById("favFilter").onclick=()=>{current.fav=!current.fav;renderList()};
 document.getElementById("resetFilter").onclick=()=>{current={type:"all",deal:"all",region:"all",price:"all",sort:"latest",q:"",fav:false,done:false};document.getElementById("listSearch").value="";renderList()};
 document.getElementById("askForm").addEventListener("submit",submitInquiry);
+document.getElementById("detailClose").onclick=()=>{
+  if(history.length>1){history.back();}
+  else{showView("list");}
+};
 document.querySelectorAll(".modal-backdrop").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closeModal(m.id==="aboutModal"?"about":m.id==="askModal"?"ask":"road")}));
 window.addEventListener("keydown",e=>{if(e.key==="Escape"){["about","ask","road"].forEach(closeModal)}});
 window.addEventListener("popstate",()=>{
