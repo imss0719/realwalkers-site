@@ -142,6 +142,17 @@ button{cursor:pointer}
 .card-done-overlay span{display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.92);border-radius:6px;padding:6px 10px;background:rgba(25,29,38,.72);color:#fff;font-size:12px;font-weight:900;letter-spacing:-.03em;box-shadow:0 3px 9px rgba(0,0,0,.16)}
 #sortFilter{min-width:105px}
 
+
+/* 주요 매물 슬라이드 */
+.featured-controls{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:18px}
+.featured-arrow{width:34px;height:34px;border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:50%;font-size:17px;font-weight:900;display:grid;place-items:center;transition:.16s}
+.featured-arrow:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.featured-dots{display:flex;align-items:center;justify-content:center;gap:6px}
+.featured-dot{width:7px;height:7px;padding:0;border:0;border-radius:50%;background:#d8dce3;transition:.16s}
+.featured-dot.active{width:20px;border-radius:999px;background:var(--navy)}
+.featured-controls.is-single{display:none}
+@media(max-width:480px){.featured-controls{gap:10px;margin-top:14px}.featured-arrow{width:32px;height:32px}}
+
 .card:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(27,42,74,.09);border-color:#cfd5df}
 .photo{height:190px;background:#e9ebef;overflow:hidden}
 .photo img{width:100%;height:100%;object-fit:cover;display:block}.card[data-status="completed"] .photo::after{content:"거래완료";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;border:1px solid rgba(255,255,255,.92);border-radius:6px;padding:6px 10px;background:rgba(25,29,38,.72);color:#fff;font-size:12px;font-weight:900;letter-spacing:-.03em;box-shadow:0 3px 9px rgba(0,0,0,.16);pointer-events:none}
@@ -352,6 +363,11 @@ button{cursor:pointer}
         <button class="more" data-view="list">전체 매물 보기 →</button>
       </div>
       <div id="homeGrid" class="listings"><div class="loading">매물 정보를 준비하고 있습니다…</div></div>
+      <div id="featuredControls" class="featured-controls is-single" aria-label="주요 매물 이동">
+        <button type="button" class="featured-arrow" id="featuredPrev" aria-label="이전 주요 매물">‹</button>
+        <div id="featuredDots" class="featured-dots"></div>
+        <button type="button" class="featured-arrow" id="featuredNext" aria-label="다음 주요 매물">›</button>
+      </div>
     </div>
   </section>
   <section class="section info" id="about">
@@ -511,6 +527,9 @@ let mapPromise=null;
 let mapApi=null;
 let current={type:"all",deal:"all",region:"all",price:"all",sort:"latest",q:"",fav:false,done:false};
 let favorites=new Set();
+let homeFeaturedPage=0;
+let homeFeaturedTimer=null;
+let homeFeaturedHover=false;
 try{favorites=new Set(JSON.parse(localStorage.getItem("rw_favorites")||"[]"))}catch(e){}
 function favKey(x){return x.id?`id:${x.id}`:(x.no?`no:${x.no}`:`na:${x.name}|${x.addr||""}`)}
 function isFav(x){return favorites.has(favKey(x))}
@@ -958,23 +977,60 @@ function cardToggleFav(id,e){
  const x=LISTINGS.find(it=>String(it.id||"")===String(id||""));
  if(x)toggleFav(x,e);
 }
-function renderHome(){
+function getHomeFeatured(){
+ // 거래완료 매물은 메인 주요 매물에서 제외합니다.
+ const savedSort=current.sort;
+ current.sort="latest";
+ const urgent=LISTINGS.filter(x=>!x.done&&!isDoneStatus(x)&&isUrgent(x));
+ const normal=LISTINGS.filter(x=>!x.done&&!isDoneStatus(x)&&!isUrgent(x));
+ const featured=[...sortListings(urgent),...sortListings(normal)];
+ current.sort=savedSort;
+ return featured;
+}
+function isDoneStatus(x){return String(x?.status||"").trim().toLowerCase()==="completed" || x?.done===true}
+function restartHomeFeaturedTimer(pageCount){
+ clearInterval(homeFeaturedTimer);
+ homeFeaturedTimer=null;
+ if(pageCount<=1)return;
+ homeFeaturedTimer=setInterval(()=>{
+  if(homeFeaturedHover)return;
+  homeFeaturedPage=(homeFeaturedPage+1)%pageCount;
+  renderHomeFeatured();
+ },8000);
+}
+function renderHomeFeatured(){
  const grid=document.getElementById("homeGrid");
- const arr=sortListings(LISTINGS).slice(0,6);
- // 주요 매물은 급매를 우선 배치하고, 급매가 부족하면 최신 매물을 이어서 보여줍니다.
- if(arr.length){
-  const savedSort=current.sort;
-  current.sort="latest";
-  const urgent=LISTINGS.filter(x=>isUrgent(x));
-  const normal=LISTINGS.filter(x=>!isUrgent(x));
-  const featured=[...sortListings(urgent),...sortListings(normal)];
-  current.sort=savedSort;
-  arr.splice(0,arr.length,...featured.slice(0,6));
- }
+ const controls=document.getElementById("featuredControls");
+ const dots=document.getElementById("featuredDots");
+ if(!grid)return;
+ const featured=getHomeFeatured();
+ const pageCount=Math.max(1,Math.ceil(featured.length/6));
+ if(homeFeaturedPage>=pageCount)homeFeaturedPage=0;
  document.getElementById("totalCount").textContent=LISTINGS.length;
+ if(!featured.length){
+  grid.innerHTML=`<div class="empty">등록된 주요 매물이 없습니다.</div>`;
+  if(controls)controls.classList.add("is-single");
+  clearInterval(homeFeaturedTimer);homeFeaturedTimer=null;
+  return;
+ }
+ const start=homeFeaturedPage*6;
+ const pageItems=featured.slice(start,start+6);
+ grid.innerHTML=pageItems.map(cardHtml).join("");
+ if(controls){
+  controls.classList.toggle("is-single",pageCount<=1);
+  dots.innerHTML=Array.from({length:pageCount},(_,i)=>`<button type="button" class="featured-dot ${i===homeFeaturedPage?"active":""}" data-featured-page="${i}" aria-label="주요 매물 ${i+1}페이지"></button>`).join("");
+  const prev=document.getElementById("featuredPrev");
+  const next=document.getElementById("featuredNext");
+  if(prev)prev.onclick=()=>{homeFeaturedPage=(homeFeaturedPage-1+pageCount)%pageCount;renderHomeFeatured();restartHomeFeaturedTimer(pageCount)};
+  if(next)next.onclick=()=>{homeFeaturedPage=(homeFeaturedPage+1)%pageCount;renderHomeFeatured();restartHomeFeaturedTimer(pageCount)};
+  dots.querySelectorAll("[data-featured-page]").forEach(btn=>btn.onclick=()=>{homeFeaturedPage=Number(btn.dataset.featuredPage)||0;renderHomeFeatured();restartHomeFeaturedTimer(pageCount)});
+ }
+ restartHomeFeaturedTimer(pageCount);
+}
+function renderHome(){
+ homeFeaturedPage=0;
+ renderHomeFeatured();
  console.log("[RW STATUS] 전체:",LISTINGS.length,"거래완료:",LISTINGS.filter(x=>x.status==="completed").length,"active:",LISTINGS.filter(x=>x.status==="active").length);
- if(!arr.length){grid.innerHTML=`<div class="empty">등록된 매물이 없습니다.</div>`;return}
- grid.innerHTML=arr.map(cardHtml).join("");
 }
 function renderList(){
  const grid=document.getElementById("listGrid"),arr=filtered();
@@ -1507,6 +1563,14 @@ document.addEventListener("click",e=>{
  const about=e.target.closest("[data-open='about']");if(about){document.getElementById("aboutModal").classList.add("open");document.body.classList.add("lock");return}
  const close=e.target.closest("[data-close]");if(close){closeModal(close.dataset.close);return}
 });
+const featuredArea=document.getElementById("homeGrid");
+const featuredControls=document.getElementById("featuredControls");
+[featuredArea,featuredControls].forEach(el=>{
+ if(!el)return;
+ el.addEventListener("mouseenter",()=>{homeFeaturedHover=true});
+ el.addEventListener("mouseleave",()=>{homeFeaturedHover=false});
+});
+
 document.getElementById("homeSearchBtn").onclick=()=>{current.q=document.getElementById("homeSearch").value.trim();showView("list")};
 document.getElementById("homeSearch").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("homeSearchBtn").click()});
 document.getElementById("listSearch").addEventListener("input",e=>{current.q=e.target.value.trim();renderList()});
