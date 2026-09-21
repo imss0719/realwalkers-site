@@ -19,7 +19,6 @@ export async function onRequest(context) {
   try {
     const params = new URLSearchParams({
       select: "id,address",
-      exposure: "eq.true",
       limit: "1000",
     });
 
