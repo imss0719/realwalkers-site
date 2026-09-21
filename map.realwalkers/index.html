@@ -312,6 +312,7 @@ button{cursor:pointer}
  .nav-call::before{content:"☎";font-size:15px}
 }
 </style>
+<script id="listingJsonLd" type="application/ld+json">{}</script>
 </head>
 <body>
 <header class="header">
@@ -1137,8 +1138,68 @@ function cleanSeoText(value,max=155){
  if(!text)return "";
  return text.length>max ? text.slice(0,max-1).trim()+"…" : text;
 }
+function updateListingJsonLd(x){
+ const site="https://www.realwalkers.com";
+ const stable=String(x?.id||"").trim();
+ const no=String(x?.no||"").trim();
+ const url=site+(stable?`/?id=${encodeURIComponent(stable)}`:(no?`/?m=${encodeURIComponent(no)}`:"/"));
+ const name=String(x?.name||"리얼워커스 매물").trim();
+ const type=String(x?.type||"부동산").trim();
+ const deal=String(x?.deal||"").trim();
+ const priceText=String(x?.price||"").trim();
+ const region=publicAddress(x?.addr,type);
+ const description=cleanSeoText([name,region,deal && `${deal} ${priceText}`,x?.meta].filter(Boolean).join(" · "),300) || "리얼워커스 부동산 매물 정보";
+ const data={
+   "@context":"https://schema.org",
+   "@type":"RealEstateListing",
+   "name":name,
+   "description":description,
+   "url":url,
+   "identifier":no||stable
+ };
+ if(x?.photo) data.image=[x.photo];
+ if(region){
+   data.contentLocation={
+     "@type":"Place",
+     "name":region,
+     "address":{
+       "@type":"PostalAddress",
+       "addressLocality":region,
+       "addressCountry":"KR"
+     }
+   };
+ }
+ const amount=numericPrice(priceText);
+ if(amount!=null && Number.isFinite(amount)){
+   data.offers={
+     "@type":"Offer",
+     "url":url,
+     "priceCurrency":"KRW",
+     "price":String(Math.round(amount*100000000)),
+     "availability":"https://schema.org/InStock"
+   };
+ }
+ if(x?.blog){
+   data.sameAs=[String(x.blog)];
+ }
+ const el=document.getElementById("listingJsonLd");
+ if(el)el.textContent=JSON.stringify(data);
+}
+function resetHomeJsonLd(){
+ const site="https://www.realwalkers.com/";
+ const data={
+   "@context":"https://schema.org",
+   "@type":"WebSite",
+   "name":"리얼워커스 마포부동산",
+   "url":site,
+   "description":"리얼워커스 마포부동산. 서울 마포·서대문·은평, 김포·고양 아파트·상가·건물·토지 매물과 부동산 상담."
+ };
+ const el=document.getElementById("listingJsonLd");
+ if(el)el.textContent=JSON.stringify(data);
+}
 function updateListingSeo(x){
  const site="https://www.realwalkers.com";
+ updateListingJsonLd(x);
  const stable=String(x?.id||"").trim();
  const no=String(x?.no||"").trim();
  const path=stable?`/?id=${encodeURIComponent(stable)}`:(no?`/?m=${encodeURIComponent(no)}`:"/");
@@ -1169,6 +1230,7 @@ function updateListingSeo(x){
 }
 function resetHomeSeo(){
  const site="https://www.realwalkers.com";
+ resetHomeJsonLd();
  const title="리얼워커스 마포부동산 | 서울·마포 부동산 매물";
  const description="리얼워커스 마포부동산. 서울 마포·서대문·은평, 김포·고양 아파트·상가·건물·토지 매물과 부동산 상담.";
  document.title=title;
