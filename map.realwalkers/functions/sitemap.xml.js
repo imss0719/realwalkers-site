@@ -10,7 +10,7 @@
    ══════════════════════════════════════════════════════════════ */
 
 const SUPABASE_URL = "https://ggnpjqqjwkxptbvkvgpc.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_IfevSekhTOwlFBzRvd0gw_VHq2A9LO";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_IfevSekhTOzwlFBzRvd0gw_VHq2A9LO";
 const SITE_URL = "https://www.realwalkers.com";
 
 export async function onRequest(context) {
