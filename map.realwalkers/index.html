@@ -1625,12 +1625,14 @@ async function openMap(){
   if(doneToggle){
    doneToggle.classList.toggle("active",showCompletedOnMap);
    doneToggle.setAttribute("aria-pressed",String(showCompletedOnMap));
+   doneToggle.textContent=showCompletedOnMap?"완료감추기":"완료표시";
    doneToggle.onclick=(e)=>{
     e.preventDefault();
     e.stopPropagation();
     showCompletedOnMap=!showCompletedOnMap;
     doneToggle.classList.toggle("active",showCompletedOnMap);
     doneToggle.setAttribute("aria-pressed",String(showCompletedOnMap));
+    doneToggle.textContent=showCompletedOnMap?"완료감추기":"완료표시";
     openMap();
    };
   }
