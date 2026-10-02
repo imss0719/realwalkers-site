@@ -442,7 +442,7 @@ button{cursor:pointer}
     <div id="map"><div class="map-loading" id="mapLoading">지도를 준비하고 있습니다…</div></div>
     <aside class="map-list">
       <div class="map-list-head">
-        <div>현재 <strong id="mapCount">0</strong>건 <button type="button" id="mapDoneToggle" class="map-done-toggle active" aria-pressed="true">완료표시</button></div>
+        <div>현재 <strong id="mapCount">0</strong>건 <button type="button" id="mapDoneToggle" class="map-done-toggle" aria-pressed="false">완료표시</button></div>
         <div class="map-filter-box">
           <input id="mapSearch" type="search" placeholder="지역·매물명·주소 검색" autocomplete="off">
           <select id="mapTypeFilter"><option value="all">유형 전체</option></select>
@@ -1116,7 +1116,7 @@ const MAP_TYPE_MARKERS={
  "토지":{bg:"#7A4A4A",label:"토지"},"공장":{bg:"#4A6E7A",label:"공장"},
  "창고":{bg:"#3F6060",label:"창고"},"오피스텔":{bg:"#5A6478",label:"오피스텔"}
 };
-let showCompletedOnMap=true;
+let showCompletedOnMap=false;
 function mapMarkerIcon(item,picked){
  const cfg=MAP_TYPE_MARKERS[item.type]||{bg:"#5A6478",label:item.type||"기타"};
  const completed=showCompletedOnMap && String(item.status||"").trim().toLowerCase()==="completed";
