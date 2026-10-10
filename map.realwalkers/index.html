@@ -1139,10 +1139,13 @@ function positionMapPreview(){
  const panel=document.getElementById("mapPreview"), mapEl=document.getElementById("map");
  if(!panel||!panel.classList.contains("open")||!mapApi?.map||!selectedMapMarker||!mapEl)return;
  const projection=mapApi.map.getProjection?.(); if(!projection)return;
- let point; try{point=projection.fromCoordToOffset(selectedMapMarker.getPosition())}catch(e){return}
- if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
+ let offset; try{offset=projection.fromCoordToOffset(selectedMapMarker.getPosition())}catch(e){return}
+ if(!offset||!Number.isFinite(offset.x)||!Number.isFinite(offset.y))return;
  const mw=mapEl.clientWidth,mh=mapEl.clientHeight,pw=panel.offsetWidth,ph=panel.offsetHeight,pad=8,gap=14;
  if(!mw||!mh||!pw||!ph)return;
+ // Naver Maps fromCoordToOffset() returns a pixel offset relative to the map center.
+ // The preview is positioned from the map container's top-left, so convert coordinates.
+ const point={x:offset.x+mw/2,y:offset.y+mh/2};
  // Build valid positions around the selected marker. Never blindly clamp a preferred
  // position onto the marker: that was causing the preview to cover the clicked price pin.
  const candidates=[
