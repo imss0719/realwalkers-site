@@ -1141,34 +1141,31 @@ function positionMapPreview(){
  const projection=mapApi.map.getProjection?.(); if(!projection)return;
  let point; try{point=projection.fromCoordToOffset(selectedMapMarker.getPosition())}catch(e){return}
  if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
- const mw=mapEl.clientWidth,mh=mapEl.clientHeight,pw=panel.offsetWidth,ph=panel.offsetHeight,pad=8;
- const gap=18;
- // Keep the clicked marker/button visible: prefer the side opposite the marker,
- // and if the map edge prevents that, try the other side before using a side offset.
- const below=point.y+gap;
- const above=point.y-ph-gap;
- const belowFits=below+ph<=mh-pad;
- const aboveFits=above>=pad;
- let top;
- if(point.y<mh/2){
-   if(belowFits) top=below;
-   else if(aboveFits) top=above;
-   else top=Math.max(pad,Math.min(below,mh-ph-pad));
+ const mw=mapEl.clientWidth,mh=mapEl.clientHeight,pw=panel.offsetWidth,ph=panel.offsetHeight,pad=8,gap=14;
+ if(!mw||!mh||!pw||!ph)return;
+ // Build valid positions around the selected marker. Never blindly clamp a preferred
+ // position onto the marker: that was causing the preview to cover the clicked price pin.
+ const candidates=[
+  {side:"below",left:point.x-pw/2,top:point.y+gap,priority:0},
+  {side:"above",left:point.x-pw/2,top:point.y-ph-gap,priority:1},
+  {side:"right",left:point.x+gap,top:point.y-ph/2,priority:2},
+  {side:"left",left:point.x-pw-gap,top:point.y-ph/2,priority:3}
+ ];
+ const markerPad=22;
+ const valid=candidates.map(c=>({...c,left:Math.max(pad,Math.min(c.left,mw-pw-pad)),top:Math.max(pad,Math.min(c.top,mh-ph-pad))}))
+  .map(c=>({...c,overlap:!(c.left+pw < point.x-markerPad || c.left > point.x+markerPad || c.top+ph < point.y-markerPad || c.top > point.y+markerPad),
+    displacement:Math.abs(c.left-(c.side==="left"?point.x-pw-gap:c.side==="right"?point.x+gap:point.x-pw/2))+Math.abs(c.top-(c.side==="above"?point.y-ph-gap:c.side==="below"?point.y+gap:point.y-ph/2))}));
+ const clear=valid.filter(c=>!c.overlap);
+ let chosen;
+ if(clear.length){
+  // Prefer the opposite vertical side; if it cannot fit without covering the pin,
+  // use the closest side that keeps the entire panel within the map.
+  chosen=clear.sort((a,b)=>a.priority-b.priority||a.displacement-b.displacement)[0];
  }else{
-   if(aboveFits) top=above;
-   else if(belowFits) top=below;
-   else top=Math.max(pad,Math.min(above,mh-ph-pad));
+  // Extreme small-map case: minimize marker overlap first, then avoid large shifts.
+  chosen=valid.sort((a,b)=>Number(a.overlap)-Number(b.overlap)||a.displacement-b.displacement)[0];
  }
- let left=point.x-pw/2;
- // If there is not enough vertical room on either side, shift the preview beside the marker.
- if(!aboveFits&&!belowFits){
-   const right=point.x+gap, leftSide=point.x-pw-gap;
-   if(right+pw<=mw-pad) left=right;
-   else if(leftSide>=pad) left=leftSide;
- }
- left=Math.max(pad,Math.min(left,mw-pw-pad));
- top=Math.max(pad,Math.min(top,mh-ph-pad));
- panel.style.left=left+"px";panel.style.top=top+"px";
+ panel.style.left=chosen.left+"px";panel.style.top=chosen.top+"px";
 }
 function previewPhotos(x){
  const arr=Array.isArray(x.photos)?x.photos.filter(Boolean):[];
@@ -1191,7 +1188,7 @@ function showMapPreview(ref){
  panel.classList.add("open");
  bindMapPreviewPositioning();
  panel.style.left="8px";panel.style.top="8px";
- requestAnimationFrame(()=>positionMapPreview());
+ requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview));
  const close=()=>{panel.classList.remove("open");if(selectedMapMarker){try{selectedMapMarker.setIcon(mapMarkerIcon(selectedMapMarker.__rwItem,false))}catch(e){}selectedMapMarker=null;}};
  document.getElementById("mapPreviewClose").onclick=close;
  document.getElementById("mapPreviewCloseAction").onclick=close;
@@ -1215,8 +1212,8 @@ function showMapPreview(ref){
 function bindMapPreviewPositioning(){
  if(!mapApi?.map||mapApi.__previewPositionBound)return;
  mapApi.__previewPositionBound=true;
- ["drag","idle","zoom_changed","bounds_changed","resize"].forEach(evt=>{
-  try{naver.maps.Event.addListener(mapApi.map,evt,()=>requestAnimationFrame(positionMapPreview))}catch(e){}
+ ["drag","idle","zoom_changed","bounds_changed","resize","dragend"].forEach(evt=>{
+  try{naver.maps.Event.addListener(mapApi.map,evt,()=>requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview)))}catch(e){}
  });
 }
 function openDetailNewTab(x){
