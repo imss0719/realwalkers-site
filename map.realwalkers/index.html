@@ -29,7 +29,7 @@ function gtag(){dataLayer.push(arguments)}
 gtag('js',new Date());gtag('config','G-VXV88S2RZJ');
 </script>
 <style>
-:root{--navy:#1B2A4A;--navy2:#12203B;--yellow:#F5CC0D;--gold:#C9A227;--paper:#F7F7F5;--ink:#202635;--muted:#778096;--line:#E5E7EB;--white:#fff}
+:root{--navy:#222222;--navy2:#171717;--yellow:#FF385C;--gold:#717171;--paper:#FFFFFF;--ink:#222222;--muted:#778096;--line:#E5E7EB;--white:#fff}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:'Malgun Gothic','맑은 고딕','Apple SD Gothic Neo','Noto Sans KR',sans-serif;color:var(--ink);background:var(--paper);line-height:1.5}
@@ -41,7 +41,7 @@ button{cursor:pointer}
 .header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;position:sticky;top:0;z-index:80}
 .nav{display:flex;align-items:center;justify-content:space-between;gap:20px}
 .logo{display:flex;align-items:center;gap:11px}
-.logo-mark{width:42px;height:42px;border-radius:13px;background:var(--navy);display:grid;place-items:center;color:var(--yellow);font-size:19px;font-weight:900;letter-spacing:-2px}
+.logo-mark{width:42px;height:42px;border-radius:50%;background:var(--navy);display:grid;place-items:center;color:#fff;font-size:17px;font-weight:900;letter-spacing:-2px}
 .logo-text{font-weight:900;color:var(--navy);font-size:18px}
 .logo-text small{display:block;font-size:9px;letter-spacing:.14em;color:#8a93a6;font-weight:800;margin-top:-2px}
 .nav-links{display:flex;align-items:center;gap:7px}
@@ -233,24 +233,24 @@ button{cursor:pointer}
 .detail-actions .outline{background:#fff;color:var(--navy);border:1px solid var(--line)}
 .detail-gallery{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:16px;border-top:1px solid var(--line)}
 .detail-gallery img{width:100%;height:90px;object-fit:cover;border-radius:8px;cursor:pointer;background:#eee}
-.map-view{height:calc(100vh - 72px);min-height:620px;position:relative}
-.map-shell{height:100%;position:relative}
-#map{width:100%;height:100%;background:#eef1f4}
-.map-list{position:absolute;left:18px;top:18px;bottom:18px;width:350px;background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.13);z-index:20;overflow:auto}
-.map-list-head{padding:13px 14px 11px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2}
+.map-view{height:calc(100vh - 72px);min-height:620px;position:relative;background:#fff}
+.map-shell{height:100%;position:relative;display:grid;grid-template-columns:minmax(390px, 46%) minmax(0, 54%)}
+#map{grid-column:2;grid-row:1;width:100%;height:100%;background:#f3f4f4}
+.map-list{position:relative;grid-column:1;grid-row:1;width:100%;height:100%;background:#fff;border-radius:0;box-shadow:none;z-index:20;overflow:auto;border-right:1px solid #e8e8e8}
+.map-list-head{padding:20px 22px 16px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:2}
 .map-list-head strong{color:var(--navy)}
 .map-filter-box{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .map-filter-box input,.map-filter-box select{width:100%;min-width:0;border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 8px;outline:none;color:#4f596a;font-size:11px;font-weight:700}
 .map-filter-box input:focus,.map-filter-box select:focus{border-color:var(--navy)}
 .map-filter-box input{grid-column:1/-1}
 
-.map-card{display:flex;gap:10px;padding:12px;border-bottom:1px solid #f0f1f3;cursor:pointer}
-.map-card:hover{background:#fafafa}
-.map-card .photo{width:82px;height:62px;min-width:82px;flex:0 0 82px;border-radius:7px;background:#eee;overflow:hidden;display:block}
-.map-card .photo img{width:82px;height:62px;min-width:82px;min-height:62px;max-width:none;object-fit:cover;object-position:center;display:block;border-radius:7px;background:#eee}
+.map-card{display:flex;flex-direction:column;gap:0;padding:0;border:0;border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;min-width:0}
+.map-card:hover{background:#fff;transform:translateY(-2px);box-shadow:0 5px 18px rgba(0,0,0,.08)}
+.map-card .photo{width:100%;height:auto;aspect-ratio:1.22/1;min-width:0;flex:0 0 auto;border-radius:10px;background:#f2f2f2;overflow:hidden;display:block}
+.map-card .photo img{width:100%;height:100%;min-width:0;min-height:0;max-width:100%;object-fit:cover;object-position:center;display:block;border-radius:10px;background:#f2f2f2}
 .map-card .photo.no-photo{display:grid;place-items:center;color:#9aa3b5;font-size:10px}
-.map-card b{display:block;color:var(--navy);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.map-card span{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+.map-card b{display:block;color:#222;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.3px}
+.map-card span{display:block;font-size:12px;color:#717171;margin-top:5px}.map-card .map-card-type{font-size:11px;color:#717171;margin:0 0 4px}.map-card .map-card-price{font-size:16px;font-weight:800;color:#222;margin-top:7px}.map-card .map-card-location{font-size:12px;color:#717171}.map-list #mapList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:16px 18px 24px}.map-card>div:last-child{padding:9px 2px 4px}.map-card .map-card-price{font-size:15px;font-weight:800;color:#222;margin-top:6px}.map-card .map-card-type{font-size:11px;color:#717171;margin:0 0 4px}
 .map-loading{position:absolute;inset:0;display:grid;place-items:center;background:#eef1f4;color:var(--muted);z-index:5}
 .rw-map-marker{width:38px;height:38px;border-radius:50% 50% 50% 8px;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.28);box-sizing:border-box}
 .rw-map-marker span{transform:rotate(45deg);color:#fff;font-size:10px;font-weight:900;line-height:1;text-align:center;white-space:nowrap}
@@ -302,7 +302,7 @@ button{cursor:pointer}
  .footer-row{display:block}.footer-row div+div{margin-top:7px}
  .detail-top{grid-template-columns:1fr}.detail-main-photo{height:300px}.detail-info{padding:20px}.detail-info h1{font-size:25px}.detail-nav{margin-bottom:2px}
  .detail-gallery{grid-template-columns:repeat(4,1fr)}.detail-gallery img{height:72px}
- .map-view{height:calc(100vh - 62px);min-height:600px}.map-list{left:10px;right:10px;bottom:10px;top:auto;width:auto;max-height:38vh}
+ .map-view{height:calc(100vh - 62px);min-height:600px}.map-shell{grid-template-columns:1fr;grid-template-rows:minmax(300px,48%) minmax(0,52%)}#map{grid-column:1;grid-row:1}.map-list{grid-column:1;grid-row:2;height:100%;max-height:none;border-right:0;border-top:1px solid #e8e8e8}.map-list-head{padding:12px 14px 10px}.map-list #mapList{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:10px 12px 18px}.map-card{padding:0;gap:0}.map-card .photo,.map-card .photo img{width:100%;height:auto;min-width:0;min-height:0;flex-basis:auto;aspect-ratio:1.15/1}.map-card b{font-size:13px}.map-card .map-card-price{font-size:14px}
 }
 @media(max-width:480px){
  .listings{grid-template-columns:1fr}.photo{height:190px}.hero-tags{gap:6px}.hero-tags button{font-size:11px}
@@ -331,7 +331,7 @@ button{cursor:pointer}
 </header>
 
 <main>
-<section id="homeView" class="view active">
+<section id="homeView" class="view">
   <section class="hero">
     <div class="container hero-inner">
       <div class="eyebrow">REAL WALKERS · MAPO REAL ESTATE</div>
@@ -437,12 +437,12 @@ button{cursor:pointer}
   </div>
 </section>
 
-<section id="mapView" class="view map-view">
+<section id="mapView" class="view map-view active">
   <div class="map-shell">
     <div id="map"><div class="map-loading" id="mapLoading">지도를 준비하고 있습니다…</div></div>
     <aside class="map-list">
       <div class="map-list-head">
-        <div>현재 <strong id="mapCount">0</strong>건 <button type="button" id="mapDoneToggle" class="map-done-toggle" aria-pressed="false">완료표시</button></div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px">매물 둘러보기</div><div style="font-size:13px;color:#717171">현재 <strong id="mapCount">0</strong>건 <button type="button" id="mapDoneToggle" class="map-done-toggle active" aria-pressed="true">완료표시</button></div>
         <div class="map-filter-box">
           <input id="mapSearch" type="search" placeholder="지역·매물명·주소 검색" autocomplete="off">
           <select id="mapTypeFilter"><option value="all">유형 전체</option></select>
@@ -1613,7 +1613,7 @@ async function openMap(){
     for(;li<end;li++){
      const x=visibleItems[li];
      const isDone=String(x.status||"").trim().toLowerCase()==="completed";
-     chunkHtml+=`<div class="map-card" data-id="${escapeHtml(String(x.id||""))}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0"><b>${escapeHtml(x.name)}</b>${showCompletedOnMap&&isDone?'<span class="map-done-badge">완료</span>':""}<span>${escapeHtml(x.deal)} ${escapeHtml(x.price)}</span><span>${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
+     chunkHtml+=`<div class="map-card" data-id="${escapeHtml(String(x.id||""))}"><div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="" loading="lazy" decoding="async" onerror="this.parentElement.classList.add("no-photo");this.innerHTML="사진 준비중";">`:"사진 준비중"}</div><div style="min-width:0;flex:1"><span class="map-card-type">${escapeHtml(x.type||"기타")} · ${escapeHtml(x.deal||"거래")}</span><b>${escapeHtml(x.name)}</b>${showCompletedOnMap&&isDone?'<span class="map-done-badge">완료</span>':""}<span class="map-card-price">${x.originalPrice&&x.discountPrice?`<del style="color:#888;font-weight:500;margin-right:5px">${escapeHtml(x.originalPrice)}</del>${escapeHtml(x.discountPrice)}`:escapeHtml(x.price||"가격 문의")}</span><span class="map-card-location">${escapeHtml(publicAddress(x.addr,x.type))}</span></div></div>`;
     }
     mapList.insertAdjacentHTML("beforeend",chunkHtml);
     if(li<visibleItems.length)requestAnimationFrame(paintList);
@@ -1625,14 +1625,12 @@ async function openMap(){
   if(doneToggle){
    doneToggle.classList.toggle("active",showCompletedOnMap);
    doneToggle.setAttribute("aria-pressed",String(showCompletedOnMap));
-   doneToggle.textContent=showCompletedOnMap?"완료감추기":"완료표시";
    doneToggle.onclick=(e)=>{
     e.preventDefault();
     e.stopPropagation();
     showCompletedOnMap=!showCompletedOnMap;
     doneToggle.classList.toggle("active",showCompletedOnMap);
     doneToggle.setAttribute("aria-pressed",String(showCompletedOnMap));
-    doneToggle.textContent=showCompletedOnMap?"완료감추기":"완료표시";
     openMap();
    };
   }
@@ -1764,9 +1762,9 @@ function idle(fn){if("requestIdleCallback" in window)requestIdleCallback(fn,{tim
   }
  }else{
   resetHomeSeo();
-  renderHome();
-  if(initialView==="list")showView("list",true);
-  else if(initialView==="map")showView("map",true);
+  if(initialView==="home")showView("home",true);
+  else if(initialView==="list")showView("list",true);
+  else showView("map",true);
  }
  const first=LISTINGS.find(x=>!x.done&&x.photo);
  if(first){
