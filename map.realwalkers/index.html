@@ -346,9 +346,21 @@ button{cursor:pointer}
 }
 @media(max-width:480px){
  .map-view{height:calc(100dvh - 62px);min-height:360px}
- .map-preview{width:calc(100% - 20px);max-height:calc(100% - 20px)}
- .map-preview-gallery{height:clamp(125px,22vh,185px)}
- .map-preview-location{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+ .map-preview{width:min(276px,calc(100% - 16px));max-height:calc(100% - 12px);border-radius:13px}
+ .map-preview-gallery{height:clamp(88px,15vh,122px);touch-action:pan-y;user-select:none;-webkit-user-select:none}
+ .map-preview-content{padding:8px 10px 9px}
+ .map-preview-top{gap:4px;margin-bottom:3px}
+ .map-preview-type{font-size:10px;padding:2px 5px}
+ .map-preview-deal{font-size:10px}
+ .map-preview-name{font-size:12px;line-height:1.25;margin-bottom:3px;-webkit-line-clamp:2}
+ .map-preview-price{font-size:14px;line-height:1.2}
+ .map-preview-location{font-size:10px;margin-top:3px;line-height:1.25;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+ .map-preview-close,.map-preview-favorite{width:26px;height:26px;top:6px;font-size:17px}
+ .map-preview-close{right:6px}.map-preview-favorite{right:38px;font-size:14px}
+ .map-preview-arrow{display:flex;align-items:center;justify-content:center;width:27px;height:27px;font-size:19px}
+ .map-preview-dots{bottom:6px;gap:4px}.map-preview-dots span{width:4px;height:4px}
+ .map-preview-actions{gap:6px;margin:0 10px 10px}
+ .map-preview-actions button{padding:7px 5px;font-size:11px;border-radius:7px}
 }
 </style>
 <script id="listingJsonLd" type="application/ld+json">{}</script>
@@ -1130,9 +1142,30 @@ function positionMapPreview(){
  let point; try{point=projection.fromCoordToOffset(selectedMapMarker.getPosition())}catch(e){return}
  if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
  const mw=mapEl.clientWidth,mh=mapEl.clientHeight,pw=panel.offsetWidth,ph=panel.offsetHeight,pad=8;
+ const gap=18;
+ // Keep the clicked marker/button visible: prefer the side opposite the marker,
+ // and if the map edge prevents that, try the other side before using a side offset.
+ const below=point.y+gap;
+ const above=point.y-ph-gap;
+ const belowFits=below+ph<=mh-pad;
+ const aboveFits=above>=pad;
+ let top;
+ if(point.y<mh/2){
+   if(belowFits) top=below;
+   else if(aboveFits) top=above;
+   else top=Math.max(pad,Math.min(below,mh-ph-pad));
+ }else{
+   if(aboveFits) top=above;
+   else if(belowFits) top=below;
+   else top=Math.max(pad,Math.min(above,mh-ph-pad));
+ }
  let left=point.x-pw/2;
- // Marker in upper half => popup below; marker in lower half => popup above.
- let top=point.y<mh/2 ? point.y+18 : point.y-ph-18;
+ // If there is not enough vertical room on either side, shift the preview beside the marker.
+ if(!aboveFits&&!belowFits){
+   const right=point.x+gap, leftSide=point.x-pw-gap;
+   if(right+pw<=mw-pad) left=right;
+   else if(leftSide>=pad) left=leftSide;
+ }
  left=Math.max(pad,Math.min(left,mw-pw-pad));
  top=Math.max(pad,Math.min(top,mh-ph-pad));
  panel.style.left=left+"px";panel.style.top=top+"px";
@@ -1169,6 +1202,14 @@ function showMapPreview(ref){
  const movePhoto=(delta)=>{const pics=previewPhotos(x);if(!pics.length)return;activePreviewPhoto=(activePreviewPhoto+delta+pics.length)%pics.length;const img=document.getElementById("mapPreviewPhoto");if(img)img.src=pics[activePreviewPhoto];const dots=panel.querySelectorAll(".map-preview-dots span");dots.forEach((d,i)=>d.classList.toggle("active",i===activePreviewPhoto));};
  const prev=document.getElementById("mapPreviewPrev"),next=document.getElementById("mapPreviewNext");
  if(prev)prev.onclick=()=>movePhoto(-1);if(next)next.onclick=()=>movePhoto(1);
+ // Mobile: swipe the gallery left/right to browse photos without opening the detail page.
+ const gallery=document.querySelector("#mapPreviewContent .map-preview-gallery");
+ if(gallery){
+  let touchStartX=0,touchStartY=0,touchTracking=false;
+  gallery.ontouchstart=(ev)=>{if(!ev.touches||ev.touches.length!==1)return;touchStartX=ev.touches[0].clientX;touchStartY=ev.touches[0].clientY;touchTracking=true;};
+  gallery.ontouchend=(ev)=>{if(!touchTracking||!ev.changedTouches||!ev.changedTouches.length)return;touchTracking=false;const dx=ev.changedTouches[0].clientX-touchStartX;const dy=ev.changedTouches[0].clientY-touchStartY;if(Math.abs(dx)>35&&Math.abs(dx)>Math.abs(dy)*1.15){movePhoto(dx<0?1:-1);}};
+  gallery.ontouchcancel=()=>{touchTracking=false;};
+ }
  document.getElementById("mapPreviewFavorite").textContent=isFav(x)?"♥":"♡";
 }
 function bindMapPreviewPositioning(){
