@@ -252,13 +252,13 @@ button{cursor:pointer}
 .map-card b{display:block;color:#222;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.3px}
 .map-card span{display:block;font-size:12px;color:#717171;margin-top:5px}.map-card .map-card-type{font-size:11px;color:#717171;margin:0 0 4px}.map-card .map-card-price{font-size:16px;font-weight:800;color:#222;margin-top:7px}.map-card .map-card-location{font-size:12px;color:#717171}.map-list #mapList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:16px 18px 24px}.map-card>div:last-child{padding:9px 2px 4px}.map-card .map-card-price{font-size:15px;font-weight:800;color:#222;margin-top:6px}.map-card .map-card-type{font-size:11px;color:#717171;margin:0 0 4px}
 .map-loading{position:absolute;inset:0;display:grid;place-items:center;background:#eef1f4;color:var(--muted);z-index:5}
- .rw-map-marker{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:74px;height:34px;padding:0 11px;border-radius:20px;background:var(--marker-bg,#fff);border:1px solid rgba(0,0,0,.12);box-shadow:0 2px 7px rgba(0,0,0,.16);box-sizing:border-box;white-space:nowrap;transform:none}
-.rw-map-marker .marker-price{color:var(--marker-text,#222);font-size:13px;font-weight:900;line-height:1}
-.rw-map-marker .marker-type{position:absolute;right:-3px;top:-9px;padding:2px 5px;border-radius:6px;background:#fff;color:#555;font-size:9px;font-weight:700;line-height:1.2;border:1px solid #e4e4e4;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+ .rw-map-marker{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:74px;height:34px;padding:0 11px;border-radius:20px;background:#fff;border:1px solid #d8d8d8;box-shadow:0 2px 7px rgba(0,0,0,.16);box-sizing:border-box;white-space:nowrap;transform:none}
+.rw-map-marker .marker-price{color:#222;font-size:13px;font-weight:900;line-height:1}
+.rw-map-marker .marker-type{position:absolute;right:-3px;top:-9px;padding:3px 6px;border-radius:6px;background:var(--type-bg,#5A6478);color:#fff;font-size:9px;font-weight:700;line-height:1.2;border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .rw-map-marker.picked{border:2px solid #222;box-shadow:0 3px 10px rgba(0,0,0,.22);z-index:10}
 .rw-map-marker.completed{background:#e5e5e5;border-color:#d2d2d2;box-shadow:0 1px 4px rgba(0,0,0,.10)}
-.rw-map-marker.completed .marker-price{color:#999}.rw-map-marker.completed .marker-type{background:#ededed;color:#aaa;border-color:#ddd}
-.rw-map-marker.completed .marker-type{background:#ededed;color:#aaa;border-color:#ddd}
+.rw-map-marker.completed .marker-price{color:#999}.rw-map-marker.completed .marker-type{background:#cfcfcf;color:#777;border-color:#ddd}
+.rw-map-marker.completed .marker-type{background:#cfcfcf;color:#777;border-color:#ddd}
 .detail-done-badge{display:inline-flex;align-items:center;justify-content:center;margin-left:7px;padding:4px 8px;border-radius:6px;background:#B42318;color:#fff;font-size:11px;font-weight:900;vertical-align:middle}
 .map-card{position:relative}
 .map-done-badge{display:inline-block;margin-top:5px;padding:0;background:transparent;color:#d92d20;font-size:11px;font-weight:900;border:0;border-radius:0}
@@ -1129,7 +1129,7 @@ function mapMarkerIcon(item,picked){
  const bg=completed?"#E5E5E5":cfg.bg;
  const fg=completed?"#999":"#FFFFFF";
  const title=`${completed?"거래완료 · ":""}${typeLabel} · ${item.name||""} · ${price}`;
- const html=`<div class="${cls}" style="--marker-bg:${bg};--marker-text:${fg}" title="${escapeHtml(title)}"><span class="marker-price">${escapeHtml(price)}</span><span class="marker-type">${escapeHtml(typeLabel)}</span></div>`;
+ const html=`<div class="${cls}" style="--type-bg:${completed?"#cfcfcf":cfg.bg};--marker-text:${fg}" title="${escapeHtml(title)}"><span class="marker-price">${escapeHtml(price)}</span><span class="marker-type">${escapeHtml(typeLabel)}</span></div>`;
  return {content:html,anchor:new naver.maps.Point(picked?44:37,picked?17:17)};
 }
 function ensureSeoMeta(id,attrs){
