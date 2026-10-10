@@ -1187,8 +1187,13 @@ function showMapPreview(ref){
  content.innerHTML=`<div class="map-preview-row"><div class="map-preview-gallery">${photoHtml}${photos.length>1?`<button type="button" class="map-preview-arrow map-preview-prev" id="mapPreviewPrev" aria-label="이전 사진">‹</button><button type="button" class="map-preview-arrow map-preview-next" id="mapPreviewNext" aria-label="다음 사진">›</button><div class="map-preview-dots">${photos.map((_,i)=>`<span class="${i===0?'active':''}"></span>`).join('')}</div>`:""}</div><button type="button" class="map-preview-favorite" id="mapPreviewFavorite" aria-label="찜하기">♡</button><div class="map-preview-content"><div class="map-preview-top"><span class="map-preview-type">${escapeHtml(x.type||"기타")}</span><span class="map-preview-deal">${escapeHtml(x.deal||"거래")}</span>${done?'<span style="color:#d92d20;font-size:11px;font-weight:900">거래완료</span>':""}</div><div class="map-preview-name">${escapeHtml(x.name||"매물 정보")}</div><div class="map-preview-price">${escapeHtml(x.price||"가격 문의")}</div><div class="map-preview-location">${escapeHtml(publicAddress(x.addr,x.type)||"주소 정보 없음")}${x.no?" · "+escapeHtml(x.no):""}</div></div></div><div class="map-preview-actions"><button type="button" id="mapPreviewCloseAction">닫기</button><button type="button" class="primary" id="mapPreviewDetail">상세정보 보기 ↗</button></div>`;
  panel.classList.add("open");
  bindMapPreviewPositioning();
- panel.style.left="8px";panel.style.top="8px";
- requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview));
+ // Keep the panel hidden until the current map projection and its dimensions are measured.
+ // This avoids briefly showing it at a stale/default position after rapid pan + click.
+ panel.style.visibility="hidden";
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  positionMapPreview();
+  panel.style.visibility="visible";
+ }));
  const close=()=>{panel.classList.remove("open");if(selectedMapMarker){try{selectedMapMarker.setIcon(mapMarkerIcon(selectedMapMarker.__rwItem,false))}catch(e){}selectedMapMarker=null;}};
  document.getElementById("mapPreviewClose").onclick=close;
  document.getElementById("mapPreviewCloseAction").onclick=close;
@@ -1213,7 +1218,13 @@ function bindMapPreviewPositioning(){
  if(!mapApi?.map||mapApi.__previewPositionBound)return;
  mapApi.__previewPositionBound=true;
  ["drag","idle","zoom_changed","bounds_changed","resize","dragend"].forEach(evt=>{
-  try{naver.maps.Event.addListener(mapApi.map,evt,()=>requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview)))}catch(e){}
+  try{
+   naver.maps.Event.addListener(mapApi.map,evt,()=>{
+    // Reposition throughout dragging and once more after Naver Maps settles its projection.
+    positionMapPreview();
+    requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview));
+   });
+  }catch(e){}
  });
 }
 function openDetailNewTab(x){
