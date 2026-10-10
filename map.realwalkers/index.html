@@ -1217,15 +1217,44 @@ function showMapPreview(ref){
 function bindMapPreviewPositioning(){
  if(!mapApi?.map||mapApi.__previewPositionBound)return;
  mapApi.__previewPositionBound=true;
- ["drag","idle","zoom_changed","bounds_changed","resize","dragend"].forEach(evt=>{
-  try{
-   naver.maps.Event.addListener(mapApi.map,evt,()=>{
-    // Reposition throughout dragging and once more after Naver Maps settles its projection.
-    positionMapPreview();
-    requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview));
-   });
-  }catch(e){}
+ const map=mapApi.map;
+ let rafId=0, pointerDown=false;
+ const tick=()=>{
+  rafId=0;
+  if(!pointerDown || !document.getElementById("mapPreview")?.classList.contains("open"))return;
+  positionMapPreview();
+  rafId=requestAnimationFrame(tick);
+ };
+ const startTracking=()=>{
+  pointerDown=true;
+  if(!rafId)rafId=requestAnimationFrame(tick);
+ };
+ const stopTracking=()=>{
+  pointerDown=false;
+  if(rafId){cancelAnimationFrame(rafId);rafId=0;}
+  // One final measurement after the map's projection has settled.
+  requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview));
+ };
+ // Map API events cover normal mouse/touch pan and zoom.
+ ["dragstart","drag","dragend","idle","zoom_changed","bounds_changed","resize"].forEach(evt=>{
+  try{naver.maps.Event.addListener(map,evt,()=>{
+   positionMapPreview();
+   requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview));
+   if(evt==="dragstart")startTracking();
+   if(evt==="dragend"||evt==="idle")stopTracking();
+  });}catch(e){}
  });
+ // Keep the preview synchronized frame-by-frame while the user physically drags the map.
+ // This avoids relying only on a delayed map event, which can leave the panel at its old pixel position.
+ const mapEl=document.getElementById("map");
+ if(mapEl){
+  mapEl.addEventListener("pointerdown",startTracking,{passive:true});
+  window.addEventListener("pointerup",stopTracking,{passive:true});
+  window.addEventListener("pointercancel",stopTracking,{passive:true});
+  mapEl.addEventListener("touchstart",startTracking,{passive:true});
+  window.addEventListener("touchend",stopTracking,{passive:true});
+  window.addEventListener("touchcancel",stopTracking,{passive:true});
+ }
 }
 function openDetailNewTab(x){
  const stable=String(x.id||"").trim();
