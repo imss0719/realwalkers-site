@@ -147,7 +147,7 @@ button{cursor:pointer}
 .card-fav:active{transform:scale(.9)}
 .urgent-badge{position:absolute;left:10px;top:10px;background:#b43b4b;color:#fff;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:900;z-index:2;box-shadow:0 3px 8px rgba(0,0,0,.12)}
 .card.is-urgent{border-color:#e4bfc4}
-.card.is-done{filter:none}
+.card.is-done{filter:none}.listing-done-text{position:relative;z-index:2;margin-top:5px;color:#d92d20;font-size:12px;font-weight:900;line-height:1.3}
 .card-done-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:4;pointer-events:none}
 .card-done-overlay span{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:0;padding:0;background:transparent;color:#d92d20;font-size:13px;font-weight:900;letter-spacing:-.03em;text-shadow:0 1px 3px rgba(255,255,255,.95);box-shadow:none}
 #sortFilter{min-width:105px}
@@ -252,12 +252,12 @@ button{cursor:pointer}
 .map-card b{display:block;color:#222;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.3px}
 .map-card span{display:block;font-size:12px;color:#717171;margin-top:5px}.map-card .map-card-type{font-size:11px;color:#717171;margin:0 0 4px}.map-card .map-card-price{font-size:16px;font-weight:800;color:#222;margin-top:7px}.map-card .map-card-location{font-size:12px;color:#717171}.map-list #mapList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:16px 18px 24px}.map-card>div:last-child{padding:9px 2px 4px}.map-card .map-card-price{font-size:15px;font-weight:800;color:#222;margin-top:6px}.map-card .map-card-type{font-size:11px;color:#717171;margin:0 0 4px}
 .map-loading{position:absolute;inset:0;display:grid;place-items:center;background:#eef1f4;color:var(--muted);z-index:5}
- .rw-map-marker{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:74px;height:34px;padding:0 11px;border-radius:20px;background:#fff;border:1px solid #d8d8d8;box-shadow:0 2px 7px rgba(0,0,0,.16);box-sizing:border-box;white-space:nowrap;transform:none}
-.rw-map-marker .marker-price{color:#222;font-size:13px;font-weight:900;line-height:1}
+ .rw-map-marker{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:74px;height:34px;padding:0 11px;border-radius:20px;background:var(--marker-bg,#fff);border:1px solid rgba(0,0,0,.12);box-shadow:0 2px 7px rgba(0,0,0,.16);box-sizing:border-box;white-space:nowrap;transform:none}
+.rw-map-marker .marker-price{color:var(--marker-text,#222);font-size:13px;font-weight:900;line-height:1}
 .rw-map-marker .marker-type{position:absolute;right:-3px;top:-9px;padding:2px 5px;border-radius:6px;background:#fff;color:#555;font-size:9px;font-weight:700;line-height:1.2;border:1px solid #e4e4e4;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .rw-map-marker.picked{border:2px solid #222;box-shadow:0 3px 10px rgba(0,0,0,.22);z-index:10}
 .rw-map-marker.completed{background:#e5e5e5;border-color:#d2d2d2;box-shadow:0 1px 4px rgba(0,0,0,.10)}
-.rw-map-marker.completed .marker-price{color:#999}
+.rw-map-marker.completed .marker-price{color:#999}.rw-map-marker.completed .marker-type{background:#ededed;color:#aaa;border-color:#ddd}
 .rw-map-marker.completed .marker-type{background:#ededed;color:#aaa;border-color:#ddd}
 .detail-done-badge{display:inline-flex;align-items:center;justify-content:center;margin-left:7px;padding:4px 8px;border-radius:6px;background:#B42318;color:#fff;font-size:11px;font-weight:900;vertical-align:middle}
 .map-card{position:relative}
@@ -987,11 +987,11 @@ function cardHtml(x){
  const stable=String(x.id||"").trim();
  const href=stable?`?id=${encodeURIComponent(stable)}`:(x.no?`?m=${encodeURIComponent(x.no)}`:"#");
  const ref=stable||x.no||"";
- return `<article class="card ${isUrgent(x)?"is-urgent":""}" data-id="${escapeHtml(String(x.id||""))}" data-status="${escapeHtml(String(x.status||""))}">
+ return `<article class="card ${isUrgent(x)?"is-urgent":""} ${isDoneStatus(x)?"is-done":""}" data-id="${escapeHtml(String(x.id||""))}" data-status="${escapeHtml(String(x.status||""))}">
   <a class="card-link" href="${escapeHtml(href)}" aria-label="${escapeHtml(x.name)} 상세 매물 보기" onclick="event.preventDefault();event.stopPropagation();openDetail('${escapeHtml(ref)}')"></a>
   <div class="photo ${x.photo?"":"no-photo"}">${x.photo?`<img src="${escapeHtml(x.photo)}" alt="${escapeHtml(x.name)}" loading="lazy" decoding="async">`:"사진 준비중"}<button class="card-fav ${isFav(x)?"on":""}" type="button" aria-label="${isFav(x)?"찜 취소":"찜하기"}" onclick="cardToggleFav('${escapeHtml(String(x.id||''))}',event)">${isFav(x)?"♥":"♡"}</button>${isUrgent(x)?'<span class="urgent-badge">급매</span>':''}</div>
   <div class="card-body"><div class="top"><span class="badge" style="background:${typeColor(x.type)}">${escapeHtml(x.type)}</span><span class="deal">${escapeHtml(x.deal)}</span>${x.no?`<span class="no">No.${escapeHtml(x.no)}</span>`:""}</div>
-  <h3>${escapeHtml(x.name)}</h3><div class="price">${escapeHtml(x.deal)} ${escapeHtml(x.price)}</div><div class="meta">${escapeHtml(x.meta||publicAddress(x.addr,x.type))}</div></div>
+  <h3>${escapeHtml(x.name)}</h3><div class="price">${escapeHtml(x.deal)} ${escapeHtml(x.price)}</div>${isDoneStatus(x)?'<div class="listing-done-text">거래완료</div>':""}<div class="meta">${escapeHtml(x.meta||publicAddress(x.addr,x.type))}</div></div>
  </article>`;
 }
 
@@ -1122,12 +1122,14 @@ const MAP_TYPE_MARKERS={
 let showCompletedOnMap=true;
 function mapMarkerIcon(item,picked){
  const cfg=MAP_TYPE_MARKERS[item.type]||{bg:"#5A6478",label:item.type||"기타"};
- const completed=String(item.status||"").trim().toLowerCase()==="completed";
+ const completed=String(item.status||"").trim().toLowerCase()==="completed" || isDoneStatus(item);
  const price=String(item.price||"가격문의").trim();
  const typeLabel=String(cfg.label||item.type||"기타");
  const cls=`rw-map-marker${picked?" picked":""}${completed?" completed":""}`;
+ const bg=completed?"#E5E5E5":cfg.bg;
+ const fg=completed?"#999":"#FFFFFF";
  const title=`${completed?"거래완료 · ":""}${typeLabel} · ${item.name||""} · ${price}`;
- const html=`<div class="${cls}" title="${escapeHtml(title)}"><span class="marker-price">${escapeHtml(price)}</span><span class="marker-type">${escapeHtml(typeLabel)}</span></div>`;
+ const html=`<div class="${cls}" style="--marker-bg:${bg};--marker-text:${fg}" title="${escapeHtml(title)}"><span class="marker-price">${escapeHtml(price)}</span><span class="marker-type">${escapeHtml(typeLabel)}</span></div>`;
  return {content:html,anchor:new naver.maps.Point(picked?44:37,picked?17:17)};
 }
 function ensureSeoMeta(id,attrs){
