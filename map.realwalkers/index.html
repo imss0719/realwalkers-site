@@ -1187,6 +1187,7 @@ function showMapPreview(ref){
  content.innerHTML=`<div class="map-preview-row"><div class="map-preview-gallery">${photoHtml}${photos.length>1?`<button type="button" class="map-preview-arrow map-preview-prev" id="mapPreviewPrev" aria-label="이전 사진">‹</button><button type="button" class="map-preview-arrow map-preview-next" id="mapPreviewNext" aria-label="다음 사진">›</button><div class="map-preview-dots">${photos.map((_,i)=>`<span class="${i===0?'active':''}"></span>`).join('')}</div>`:""}</div><button type="button" class="map-preview-favorite" id="mapPreviewFavorite" aria-label="찜하기">♡</button><div class="map-preview-content"><div class="map-preview-top"><span class="map-preview-type">${escapeHtml(x.type||"기타")}</span><span class="map-preview-deal">${escapeHtml(x.deal||"거래")}</span>${done?'<span style="color:#d92d20;font-size:11px;font-weight:900">거래완료</span>':""}</div><div class="map-preview-name">${escapeHtml(x.name||"매물 정보")}</div><div class="map-preview-price">${escapeHtml(x.price||"가격 문의")}</div><div class="map-preview-location">${escapeHtml(publicAddress(x.addr,x.type)||"주소 정보 없음")}${x.no?" · "+escapeHtml(x.no):""}</div></div></div><div class="map-preview-actions"><button type="button" id="mapPreviewCloseAction">닫기</button><button type="button" class="primary" id="mapPreviewDetail">상세정보 보기 ↗</button></div>`;
  panel.classList.add("open");
  bindMapPreviewPositioning();
+ mapApi?.__startPreviewTracking?.();
  // Keep the panel hidden until the current map projection and its dimensions are measured.
  // This avoids briefly showing it at a stale/default position after rapid pan + click.
  panel.style.visibility="hidden";
@@ -1194,7 +1195,7 @@ function showMapPreview(ref){
   positionMapPreview();
   panel.style.visibility="visible";
  }));
- const close=()=>{panel.classList.remove("open");if(selectedMapMarker){try{selectedMapMarker.setIcon(mapMarkerIcon(selectedMapMarker.__rwItem,false))}catch(e){}selectedMapMarker=null;}};
+ const close=()=>{panel.classList.remove("open");mapApi?.__stopPreviewTracking?.();if(selectedMapMarker){try{selectedMapMarker.setIcon(mapMarkerIcon(selectedMapMarker.__rwItem,false))}catch(e){}selectedMapMarker=null;}};
  document.getElementById("mapPreviewClose").onclick=close;
  document.getElementById("mapPreviewCloseAction").onclick=close;
  document.getElementById("mapPreviewDetail").onclick=()=>openDetailNewTab(x);
@@ -1215,47 +1216,37 @@ function showMapPreview(ref){
  document.getElementById("mapPreviewFavorite").textContent=isFav(x)?"♥":"♡";
 }
 function bindMapPreviewPositioning(){
- if(!mapApi?.map||mapApi.__previewPositionBound)return;
+ if(!mapApi?.map)return;
+ if(mapApi.__previewPositionBound)return;
  mapApi.__previewPositionBound=true;
  const map=mapApi.map;
- let rafId=0, pointerDown=false;
+ let rafId=0;
+ // While a preview is open, recalculate its screen position continuously.
+ // Do not depend on pointer/drag events: map SDKs can capture pointer events internally,
+ // which means a DOM pointerdown handler may not run consistently on every device.
  const tick=()=>{
   rafId=0;
-  if(!pointerDown || !document.getElementById("mapPreview")?.classList.contains("open"))return;
+  const panel=document.getElementById("mapPreview");
+  if(!panel||!panel.classList.contains("open"))return;
   positionMapPreview();
   rafId=requestAnimationFrame(tick);
  };
- const startTracking=()=>{
-  pointerDown=true;
-  if(!rafId)rafId=requestAnimationFrame(tick);
- };
- const stopTracking=()=>{
-  pointerDown=false;
-  if(rafId){cancelAnimationFrame(rafId);rafId=0;}
-  // One final measurement after the map's projection has settled.
-  requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview));
- };
- // Map API events cover normal mouse/touch pan and zoom.
- ["dragstart","drag","dragend","idle","zoom_changed","bounds_changed","resize"].forEach(evt=>{
+ const startTracking=()=>{if(!rafId)rafId=requestAnimationFrame(tick);};
+ const stopTracking=()=>{if(rafId){cancelAnimationFrame(rafId);rafId=0;}};
+ mapApi.__startPreviewTracking=startTracking;
+ mapApi.__stopPreviewTracking=stopTracking;
+ // SDK events are useful for final alignment after drag, pan, zoom and resize.
+ ["dragstart","drag","dragend","idle","center_changed","bounds_changed","zoom_changed","resize"].forEach(evt=>{
   try{naver.maps.Event.addListener(map,evt,()=>{
+   startTracking();
    positionMapPreview();
    requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview));
-   if(evt==="dragstart")startTracking();
-   if(evt==="dragend"||evt==="idle")stopTracking();
+   if(evt==="dragend"||evt==="idle")requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview));
   });}catch(e){}
  });
- // Keep the preview synchronized frame-by-frame while the user physically drags the map.
- // This avoids relying only on a delayed map event, which can leave the panel at its old pixel position.
- const mapEl=document.getElementById("map");
- if(mapEl){
-  mapEl.addEventListener("pointerdown",startTracking,{passive:true});
-  window.addEventListener("pointerup",stopTracking,{passive:true});
-  window.addEventListener("pointercancel",stopTracking,{passive:true});
-  mapEl.addEventListener("touchstart",startTracking,{passive:true});
-  window.addEventListener("touchend",stopTracking,{passive:true});
-  window.addEventListener("touchcancel",stopTracking,{passive:true});
- }
+ window.addEventListener("resize",()=>{startTracking();requestAnimationFrame(()=>requestAnimationFrame(positionMapPreview));},{passive:true});
 }
+
 function openDetailNewTab(x){
  const stable=String(x.id||"").trim();
  const url=stable?`?id=${encodeURIComponent(stable)}`:`?m=${encodeURIComponent(x.no)}`;
