@@ -46,18 +46,21 @@ function fmtDate(v){if(!v)return "";const d=new Date(v);return Number.isNaN(d.ge
 function coverHtml(p){const u=String(p.cover_image_url||"").trim();return u?`<img src="${esc(u)}" alt="" loading="lazy">`:'<span>REAL WALKERS</span>';}
 function cardHtml(p){const target=encodeURIComponent(p.slug||p.id);return `<a class="card" href="/blog.html?slug=${target}"><div class="cover">${coverHtml(p)}</div><div class="card-body"><div class="date">${esc(fmtDate(p.published_at||p.created_at))}</div><h2>${esc(p.title||"제목 없는 글")}</h2><p class="summary">${esc(p.summary||"리얼워커스 부동산블로그")}</p></div></a>`;}
 
+
 async function getPosts(){
- const u=SUPABASE_URL+"/rest/v1/blog_posts?select=id,title,slug,summary,content_html,cover_image_url,listing_no,status,created_at,published_at&status=eq.published&order=published_at.desc.nullslast,created_at.desc&limit=100";
- const r=await fetch(u,{headers});
- const body=await r.text();
+  const u = SUPABASE_URL +
+    "/rest/v1/blog_posts?select=id,title,slug,summary,content_html,cover_image_url,listing_no,status,created_at,published_at&status=eq.published&order=published_at.desc.nullslast,created_at.desc&limit=100";
 
- if(!r.ok){
-   console.error("Supabase 조회 오류:",r.status,body);
-   throw new Error("HTTP "+r.status+" / "+body);
- }
+  const r = await fetch(u, { headers });
+  const body = await r.text();
 
- return JSON.parse(body);
+  if (!r.ok) {
+    throw new Error("HTTP " + r.status + ": " + body);
+  }
+
+  return JSON.parse(body);
 }
+
 
 function safeArticleHtml(html){
  // The current Apps Script writer stores plain text escaped into <p> elements.
