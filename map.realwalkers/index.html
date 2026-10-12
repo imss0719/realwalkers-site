@@ -269,9 +269,9 @@ button{cursor:pointer}
 .map-preview-full .map-preview-name{font-size:19px;line-height:1.4;display:block;overflow:visible;margin:8px 0}
 .map-preview-full .map-preview-price{font-size:21px;margin:10px 0}
 .map-preview-full .map-preview-location{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
-.map-preview-all-photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:0 14px 14px}
-.map-preview-all-photos button{border:1px solid #eee;border-radius:8px;padding:0;overflow:hidden;background:#f5f5f5;cursor:pointer;min-width:0}
-.map-preview-all-photos img{display:block;width:100%;height:82px;object-fit:cover}
+.map-preview-all-photos{display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px}
+.map-preview-all-photos .map-preview-photo-row{display:block;width:100%;margin:0}
+.map-preview-all-photos img{display:block;width:100%;height:auto;max-height:none;object-fit:contain;background:#f5f5f5;border-radius:8px}
 .map-preview-all-photos button.active{border:0}
 .map-preview-photo-row{width:100%;margin:0}
 .map-preview-photo-item{display:block;width:100%;height:auto;max-height:none;object-fit:contain;background:#f4f4f4;border-radius:8px}
@@ -413,6 +413,24 @@ button{cursor:pointer}
  .map-preview-dots{bottom:6px;gap:4px}.map-preview-dots span{width:4px;height:4px}
  .map-preview-actions{gap:6px;margin:0 10px 10px}.map-preview-actions button{padding:7px 5px;font-size:11px;border-radius:7px}
 }
+
+/* v22: 오른쪽 패널의 요청 순서 - 대표사진 → 매물정보 → 추가 사진 → 정보/블로그 → 버튼 */
+.map-preview-full{position:relative;display:block;min-width:0}
+.map-preview-full .map-preview-hero{width:100%;background:#f4f4f4;line-height:0}
+.map-preview-full .map-preview-hero img{display:block;width:100%;height:auto;max-height:none;object-fit:contain}
+.map-preview-full .map-preview-content{padding:14px 16px 16px}
+.map-preview-full .map-preview-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}
+.map-preview-full .map-preview-name{font-size:19px;line-height:1.45;display:block;white-space:normal;overflow:visible;margin:5px 0 8px}
+.map-preview-full .map-preview-price{font-size:21px;line-height:1.4;margin:8px 0}
+.map-preview-full .map-preview-location{font-size:12px;line-height:1.6;white-space:normal;overflow-wrap:anywhere}
+.map-preview-full .map-preview-favorite{top:10px;right:10px}
+.map-preview-full .map-preview-photos-section{padding-top:14px}
+.map-preview-full .map-preview-all-photos{display:flex;flex-direction:column;gap:10px;padding:0;margin:0}
+.map-preview-full .map-preview-photo-row{display:block;width:100%;height:auto;margin:0}
+.map-preview-full .map-preview-photo-item{display:block;width:100%;height:auto;max-height:none;object-fit:contain;background:#f4f4f4;border-radius:7px}
+.map-preview-full .map-preview-actions{position:sticky;bottom:0;z-index:5;display:flex;gap:7px;background:#fff;padding:10px 12px;margin:0;border-top:1px solid #eee}
+.map-preview-full .map-preview-actions button{flex:1;min-width:0;font-size:12px;padding:10px 5px}
+@media(max-width:820px){.map-preview-full .map-preview-content{padding:12px}.map-preview-full .map-preview-name{font-size:17px}.map-preview-full .map-preview-all-photos{gap:8px}.map-preview-full .map-preview-actions{position:sticky;bottom:0}}
 </style>
 <script id="listingJsonLd" type="application/ld+json">{}</script>
 </head>
@@ -1243,26 +1261,30 @@ function showMapPreview(ref){
  selectedMapMarker=(mapApi?.markers||[]).find(m=>String(m.__rwItem?.id||m.__rwItem?.no||m.__rwItem?.listingNo)===String(x.id||x.no||x.listingNo))||null;
  if(selectedMapMarker){try{selectedMapMarker.setIcon(mapMarkerIcon(x,true))}catch(e){}}
  const photos=previewPhotos(x);
+ const heroPhoto=photos[0]||"";
+ const extraPhotos=photos.slice(1);
  const done=isDoneStatus(x);
- // 오른쪽 창에서는 대표 사진을 따로 크게 띄우지 않고, 등록된 사진을 위에서 아래로 모두 나열합니다.
- const photoHtml=photos.length?photos.map((p,i)=>`<div class="map-preview-photo-row"><img class="map-preview-photo-item" src="${escapeHtml(p)}" alt="${escapeHtml(x.name||'매물 사진')} ${i+1}" loading="lazy" onerror="this.style.display='none'"></div>`).join(''):`<div class="map-preview-no-photo">사진이 등록되어 있지 않습니다.</div>`;
- const galleryHtml=photos.length?`<div class="map-preview-all-photos" id="mapPreviewAllPhotos">${photoHtml}</div>`:"";
  const address=publicAddress(x.addr,x.type);
+ const heroHtml=heroPhoto
+   ? `<div class="map-preview-hero"><img src="${escapeHtml(heroPhoto)}" alt="${escapeHtml(x.name||'대표 매물 사진')}" onerror="this.style.display='none'"></div>`
+   : `<div class="map-preview-no-photo">대표 사진이 등록되어 있지 않습니다.</div>`;
+ const extraPhotosHtml=extraPhotos.length
+   ? `<section class="map-preview-section map-preview-photos-section"><h3>추가 사진</h3><div class="map-preview-all-photos">${extraPhotos.map((p,i)=>`<div class="map-preview-photo-row"><img class="map-preview-photo-item" src="${escapeHtml(p)}" alt="${escapeHtml(x.name||'매물 사진')} 사진 ${i+1}" loading="lazy" onerror="this.style.display='none'"></div>`).join('')}</div></section>`
+   : "";
  content.innerHTML=`<div class="map-preview-full">
-  <div class="map-preview-row">
-   <button type="button" class="map-preview-favorite" id="mapPreviewFavorite" aria-label="찜하기">♡</button>
-   <div class="map-preview-content">
-    <div class="map-preview-top"><span class="map-preview-type">${escapeHtml(x.type||"기타")}</span><span class="map-preview-deal">${escapeHtml(x.deal||"거래")}</span>${done?'<span style="color:#d92d20;font-size:11px;font-weight:900">거래완료</span>':""}</div>
-    <div class="map-preview-name">${escapeHtml(x.name||"매물 정보")}</div>
-    <div class="map-preview-price">${escapeHtml(x.deal||"")} ${escapeHtml(x.price||"가격 문의")}</div>
-    <div class="map-preview-location">${escapeHtml(address||"주소 정보 없음")}${x.no?" · 매물번호 "+escapeHtml(x.no):""}</div>
-   </div>
+  ${heroHtml}
+  <button type="button" class="map-preview-favorite" id="mapPreviewFavorite" aria-label="찜하기">♡</button>
+  <div class="map-preview-content">
+   <div class="map-preview-top"><span class="map-preview-type">${escapeHtml(x.type||"기타")}</span><span class="map-preview-deal">${escapeHtml(x.deal||"거래")}</span>${done?'<span style="color:#d92d20;font-size:11px;font-weight:900">거래완료</span>':""}</div>
+   <div class="map-preview-name">${escapeHtml(x.name||"매물 정보")}</div>
+   <div class="map-preview-price">${escapeHtml(x.deal||"")} ${escapeHtml(x.price||"가격 문의")}</div>
+   <div class="map-preview-location">${escapeHtml(address||"주소 정보 없음")}${x.no?" · 매물번호 "+escapeHtml(x.no):""}</div>
   </div>
-  ${galleryHtml}
-  <section class="map-preview-section"><h3>매물 설명</h3><div class="map-preview-description">${escapeHtml(x.meta||"상세 설명이 등록되어 있지 않습니다.")}</div></section>
+  ${extraPhotosHtml}
+  <section class="map-preview-section"><h3>추가 정보</h3><div class="map-preview-description">${escapeHtml(x.meta||"상세 설명이 등록되어 있지 않습니다.")}</div></section>
   ${address?`<section class="map-preview-section"><h3>위치 정보</h3><div class="map-preview-address">${escapeHtml(address)}</div>${x.lat!=null&&x.lng!=null?'<div class="map-preview-address" style="margin-top:5px;color:#888">지도에서 선택한 매물의 위치를 표시하고 있습니다.</div>':""}</section>`:""}
-  ${x.blog?`<section class="map-preview-section"><h3>관련 글</h3><a href="${escapeHtml(x.blog)}" target="_blank" rel="noopener" style="font-size:13px;color:#222;text-decoration:underline;overflow-wrap:anywhere">관련 블로그 글 보기 ↗</a></section>`:""}
-  <div class="map-preview-actions"><button type="button" id="mapPreviewCloseAction">닫기</button><button type="button" id="mapPreviewAsk">매물 문의</button><button type="button" class="primary" id="mapPreviewDetail">상세보기 ↗</button></div>
+  ${x.blog?`<section class="map-preview-section"><h3>관련 블로그</h3><a href="${escapeHtml(x.blog)}" target="_blank" rel="noopener" style="font-size:13px;color:#222;text-decoration:underline;overflow-wrap:anywhere">관련 블로그 글 보기 ↗</a></section>`:""}
+  <div class="map-preview-actions"><button type="button" id="mapPreviewCloseAction">닫기</button><button type="button" id="mapPreviewAsk">문의하기</button><button type="button" class="primary" id="mapPreviewDetail">상세정보 ↗</button></div>
  </div>`;
  panel.classList.add("open");
  document.querySelector(".map-shell")?.classList.add("preview-open");
@@ -1272,7 +1294,6 @@ function showMapPreview(ref){
  document.getElementById("mapPreviewCloseAction").onclick=close;
  document.getElementById("mapPreviewDetail").onclick=()=>openDetailNewTab(x);
  document.getElementById("mapPreviewAsk").onclick=()=>openAsk(x);
- // 패널의 빈 곳을 클릭해도 상세 페이지로 강제 이동하지 않습니다. 스크롤을 자유롭게 할 수 있습니다.
  panel.onclick=null;
  panel.style.cursor="default";
  document.getElementById("mapPreviewFavorite").onclick=()=>{toggleFav(x);document.getElementById("mapPreviewFavorite").textContent=isFav(x)?"♥":"♡";};
