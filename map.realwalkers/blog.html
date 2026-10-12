@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>부동산 정보 | 리얼워커스</title>
-<meta name="description" content="리얼워커스가 전하는 부동산 정보와 매물 검토 가이드.">
+<title>부동산블로그 | 리얼워커스</title>
+<meta name="description" content="리얼워커스가 전하는 부동산블로그와 매물 검토 가이드.">
 <link rel="canonical" href="https://www.realwalkers.com/blog.html">
-<meta property="og:title" content="부동산 정보 | 리얼워커스">
-<meta property="og:description" content="리얼워커스가 전하는 부동산 정보와 매물 검토 가이드.">
+<meta property="og:title" content="부동산블로그 | 리얼워커스">
+<meta property="og:description" content="리얼워커스가 전하는 부동산블로그와 매물 검토 가이드.">
 <meta property="og:url" content="https://www.realwalkers.com/blog.html">
 <meta property="og:type" content="website">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
@@ -30,7 +30,7 @@ footer{background:#222;color:#bbb;padding:24px 0;font-size:12px}footer b{color:#
 <main class="wrap">
   <div id="listingView">
     <div class="eyebrow">REAL WALKERS JOURNAL</div>
-    <h1 class="page-title">부동산 정보</h1>
+    <h1 class="page-title">부동산블로그</h1>
     <p class="lead">부동산 시장과 매물 검토에 도움이 되는 정보를 전합니다.</p>
     <div id="posts" class="grid"><div class="empty">공개된 글을 불러오는 중입니다…</div></div>
   </div>
@@ -44,7 +44,7 @@ const headers={apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY};
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function fmtDate(v){if(!v)return "";const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric"});}
 function coverHtml(p){const u=String(p.cover_image_url||"").trim();return u?`<img src="${esc(u)}" alt="" loading="lazy">`:'<span>REAL WALKERS</span>';}
-function cardHtml(p){const target=encodeURIComponent(p.slug||p.id);return `<a class="card" href="/blog.html?slug=${target}"><div class="cover">${coverHtml(p)}</div><div class="card-body"><div class="date">${esc(fmtDate(p.published_at||p.created_at))}</div><h2>${esc(p.title||"제목 없는 글")}</h2><p class="summary">${esc(p.summary||"리얼워커스 부동산 정보")}</p></div></a>`;}
+function cardHtml(p){const target=encodeURIComponent(p.slug||p.id);return `<a class="card" href="/blog.html?slug=${target}"><div class="cover">${coverHtml(p)}</div><div class="card-body"><div class="date">${esc(fmtDate(p.published_at||p.created_at))}</div><h2>${esc(p.title||"제목 없는 글")}</h2><p class="summary">${esc(p.summary||"리얼워커스 부동산블로그")}</p></div></a>`;}
 async function getPosts(){
  const u=SUPABASE_URL+"/rest/v1/blog_posts?select=id,title,slug,summary,content_html,cover_image_url,listing_no,status,created_at,published_at&status=eq.published&order=published_at.desc.nullslast,created_at.desc&limit=100";
  const r=await fetch(u,{headers});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json();
@@ -74,12 +74,12 @@ async function init(){
    const rows=await r.json();const p=rows[0];
    if(!p){listing.hidden=false;document.getElementById("posts").innerHTML='<div class="empty">글을 찾을 수 없거나 아직 공개되지 않았습니다.</div>';return;}
    listing.hidden=true;article.hidden=false;
-   document.title=(p.title||"부동산 정보")+" | 리얼워커스";
-   document.querySelector('meta[name="description"]').content=p.summary||"리얼워커스 부동산 정보";
+   document.title=(p.title||"부동산블로그")+" | 리얼워커스";
+   document.querySelector('meta[name="description"]').content=p.summary||"리얼워커스 부동산블로그";
    article.innerHTML=`<div class="article-head"><div class="eyebrow">REAL WALKERS JOURNAL</div><h1>${esc(p.title||"제목 없는 글")}</h1><div class="date">${esc(fmtDate(p.published_at||p.created_at))}</div>${p.summary?`<p class="article-summary">${esc(p.summary)}</p>`:""}</div>${p.cover_image_url?`<img class="article-cover" src="${esc(p.cover_image_url)}" alt="">`:""}<div class="article-content">${safeArticleHtml(p.content_html||"<p>본문이 없습니다.</p>")}</div><div class="article-footer"><a class="back" href="/blog.html">← 글 목록</a><a class="primary" href="/">매물 둘러보기</a></div>`;
   }else{
    const posts=await getPosts(),grid=document.getElementById("posts");
-   grid.innerHTML=posts.length?posts.map(cardHtml).join(""):'<div class="empty">아직 공개된 부동산 정보 글이 없습니다.</div>';
+   grid.innerHTML=posts.length?posts.map(cardHtml).join(""):'<div class="empty">아직 공개된 부동산블로그 글이 없습니다.</div>';
   }
  }catch(e){
   console.error("블로그 불러오기 오류",e);
