@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부동산 정보 | 리얼워커스</title>
+<meta name="description" content="리얼워커스가 전하는 부동산 정보와 매물 검토 가이드.">
+<link rel="canonical" href="https://www.realwalkers.com/blog.html">
+<meta property="og:title" content="부동산 정보 | 리얼워커스">
+<meta property="og:description" content="리얼워커스가 전하는 부동산 정보와 매물 검토 가이드.">
+<meta property="og:url" content="https://www.realwalkers.com/blog.html">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<style>
+:root{--ink:#222;--muted:#717171;--line:#e5e7eb;--accent:#ff385c;--soft:#f7f7f7}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);font-family:'Malgun Gothic','맑은 고딕','Apple SD Gothic Neo','Noto Sans KR',sans-serif;line-height:1.65;background:#fff}a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer}
+.wrap{width:min(1080px,calc(100% - 36px));margin:auto}
+header{height:72px;border-bottom:1px solid var(--line);display:flex;align-items:center;position:sticky;top:0;background:#fff;z-index:5}
+.head{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:10px;font-weight:900}.mark{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#222;color:#fff;font-size:15px}.brand small{display:block;color:#888;font-size:9px;letter-spacing:.12em}.back{font-size:13px;font-weight:800;border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+main{padding:42px 0 72px}.eyebrow{font-size:12px;color:var(--accent);font-weight:900;letter-spacing:.1em}.page-title{font-size:clamp(29px,4vw,42px);letter-spacing:-.05em;line-height:1.2;margin:8px 0}.lead{color:var(--muted);margin:0 0 28px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.card{border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:.16s;background:#fff}.card:hover{transform:translateY(-2px);box-shadow:0 10px 24px #0000000d}.cover{height:190px;background:var(--soft);display:grid;place-items:center;overflow:hidden}.cover img{width:100%;height:100%;object-fit:cover}.cover span{font-size:22px;font-weight:900;letter-spacing:-1px;color:#aaa}.card-body{padding:16px}.date{font-size:12px;color:var(--muted);margin-bottom:5px}.card h2{font-size:17px;line-height:1.45;margin:0 0 7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.summary{font-size:13px;color:#626262;line-height:1.7;margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.empty{padding:34px 20px;text-align:center;border:1px dashed var(--line);border-radius:14px;color:var(--muted);grid-column:1/-1}
+.article{max-width:800px;margin:0 auto}.article-head{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:28px}.article h1{font-size:clamp(28px,4vw,42px);line-height:1.3;letter-spacing:-.04em;margin:8px 0 12px}.article-summary{font-size:17px;color:#666}.article-cover{width:100%;max-height:480px;object-fit:cover;border-radius:14px;margin:0 0 28px}.article-content{font-size:16px;line-height:1.95;overflow-wrap:anywhere}.article-content p{margin:0 0 1.1em}.article-content img{max-width:100%;height:auto;border-radius:10px}.article-content h2,.article-content h3{line-height:1.4;margin:1.8em 0 .7em}.article-content ul,.article-content ol{padding-left:1.5em}.article-content a{color:#2459a9;text-decoration:underline}.article-footer{margin-top:36px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.primary{background:#222;color:#fff;border-radius:9px;padding:11px 15px;font-weight:800;border:0}.status{color:var(--muted);padding:36px 0;text-align:center}
+footer{background:#222;color:#bbb;padding:24px 0;font-size:12px}footer b{color:#fff}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cover{height:160px}}
+@media(max-width:520px){.wrap{width:calc(100% - 24px)}header{height:62px}.grid{grid-template-columns:1fr;gap:13px}.cover{height:190px}.card-body{padding:14px}main{padding-top:30px}.article-content{font-size:15px}}
+</style>
+</head>
+<body>
+<header><div class="wrap head"><a class="brand" href="/"><span class="mark">RW</span><span>리얼워커스<small>REAL WALKERS · REAL ESTATE</small></span></a><a class="back" href="/">홈페이지로 돌아가기</a></div></header>
+<main class="wrap">
+  <div id="listingView">
+    <div class="eyebrow">REAL WALKERS JOURNAL</div>
+    <h1 class="page-title">부동산 정보</h1>
+    <p class="lead">부동산 시장과 매물 검토에 도움이 되는 정보를 전합니다.</p>
+    <div id="posts" class="grid"><div class="empty">공개된 글을 불러오는 중입니다…</div></div>
+  </div>
+  <article id="articleView" class="article" hidden></article>
+</main>
+<footer><div class="wrap"><b>리얼워커스 공인중개사사무소</b> · 서울 마포구 · 02-393-7676</div></footer>
+<script>
+const SUPABASE_URL="https://ggnpjqqjwkxptbvkvgpc.supabase.co";
+const SUPABASE_KEY="sb_publishable_IfevSekhTOzwlFBzRvd0gw_VHq2A9LO";
+const headers={apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY};
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function fmtDate(v){if(!v)return "";const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric"});}
+function coverHtml(p){const u=String(p.cover_image_url||"").trim();return u?`<img src="${esc(u)}" alt="" loading="lazy">`:'<span>REAL WALKERS</span>';}
+function cardHtml(p){const target=encodeURIComponent(p.slug||p.id);return `<a class="card" href="/blog.html?slug=${target}"><div class="cover">${coverHtml(p)}</div><div class="card-body"><div class="date">${esc(fmtDate(p.published_at||p.created_at))}</div><h2>${esc(p.title||"제목 없는 글")}</h2><p class="summary">${esc(p.summary||"리얼워커스 부동산 정보")}</p></div></a>`;}
+async function getPosts(){
+ const u=SUPABASE_URL+"/rest/v1/blog_posts?select=id,title,slug,summary,content_html,cover_image_url,listing_no,status,created_at,published_at&status=eq.published&order=published_at.desc.nullslast,created_at.desc&limit=100";
+ const r=await fetch(u,{headers});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json();
+}
+function safeArticleHtml(html){
+ // The current Apps Script writer stores plain text escaped into <p> elements.
+ // Keep only a small allowlist if content is later edited manually.
+ const template=document.createElement("template");template.innerHTML=String(html||"");
+ template.content.querySelectorAll("script,style,iframe,object,embed,form").forEach(n=>n.remove());
+ template.content.querySelectorAll("*").forEach(el=>{
+  [...el.attributes].forEach(a=>{
+   const n=a.name.toLowerCase(),v=a.value.trim().toLowerCase();
+   if(n.startsWith("on")||n==="srcdoc"||((n==="href"||n==="src")&&(v.startsWith("javascript:")||v.startsWith("data:"))))el.removeAttribute(a.name);
+  });
+ });
+ return template.innerHTML;
+}
+async function init(){
+ const params=new URLSearchParams(location.search),slug=params.get("slug");
+ const listing=document.getElementById("listingView"),article=document.getElementById("articleView");
+ try{
+  if(slug){
+   const isUuid=/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(slug);
+   const field=isUuid?"id":"slug";
+   const url=SUPABASE_URL+"/rest/v1/blog_posts?select=id,title,slug,summary,content_html,cover_image_url,listing_no,status,created_at,published_at&status=eq.published&"+field+"=eq."+encodeURIComponent(slug)+"&limit=1";
+   const r=await fetch(url,{headers});if(!r.ok)throw new Error("HTTP "+r.status);
+   const rows=await r.json();const p=rows[0];
+   if(!p){listing.hidden=false;document.getElementById("posts").innerHTML='<div class="empty">글을 찾을 수 없거나 아직 공개되지 않았습니다.</div>';return;}
+   listing.hidden=true;article.hidden=false;
+   document.title=(p.title||"부동산 정보")+" | 리얼워커스";
+   document.querySelector('meta[name="description"]').content=p.summary||"리얼워커스 부동산 정보";
+   article.innerHTML=`<div class="article-head"><div class="eyebrow">REAL WALKERS JOURNAL</div><h1>${esc(p.title||"제목 없는 글")}</h1><div class="date">${esc(fmtDate(p.published_at||p.created_at))}</div>${p.summary?`<p class="article-summary">${esc(p.summary)}</p>`:""}</div>${p.cover_image_url?`<img class="article-cover" src="${esc(p.cover_image_url)}" alt="">`:""}<div class="article-content">${safeArticleHtml(p.content_html||"<p>본문이 없습니다.</p>")}</div><div class="article-footer"><a class="back" href="/blog.html">← 글 목록</a><a class="primary" href="/">매물 둘러보기</a></div>`;
+  }else{
+   const posts=await getPosts(),grid=document.getElementById("posts");
+   grid.innerHTML=posts.length?posts.map(cardHtml).join(""):'<div class="empty">아직 공개된 부동산 정보 글이 없습니다.</div>';
+  }
+ }catch(e){
+  console.error("블로그 불러오기 오류",e);
+  if(slug){listing.hidden=true;article.hidden=false;article.innerHTML='<div class="status">글을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div><a class="back" href="/blog.html">글 목록으로</a>';}
+  else document.getElementById("posts").innerHTML='<div class="empty">글을 불러오지 못했습니다. Supabase 권한과 연결 상태를 확인해 주세요.</div>';
+ }
+}
+init();
+</script>
+</body>
+</html>
