@@ -400,7 +400,7 @@ button{cursor:pointer}
       <button data-view="list">매물</button>
       <button data-view="map">지도 보기</button>
       <button data-open="about">사무소 소개</button>
-      <a class="blog-nav" href="/blog.html">부동산 정보</a>
+      <a class="blog-nav" href="/blog.html">부동산블로그</a>
       <a class="nav-call" href="tel:023937676">02-393-7676</a>
     </nav>
   </div>
@@ -464,10 +464,10 @@ button{cursor:pointer}
   <section class="section" id="homeBlogSection">
     <div class="container">
       <div class="section-head">
-        <div><h2>부동산 정보</h2><p>리얼워커스가 전하는 부동산 소식과 매물 검토 포인트</p></div>
+        <div><h2>부동산블로그</h2><p>리얼워커스가 전하는 부동산 소식과 매물 검토 포인트</p></div>
         <a class="more" href="/blog.html">블로그 전체 보기 →</a>
       </div>
-      <div id="homeBlogGrid" class="blog-grid"><div class="blog-empty">부동산 정보를 불러오는 중입니다…</div></div>
+      <div id="homeBlogGrid" class="blog-grid"><div class="blog-empty">부동산블로그를 불러오는 중입니다…</div></div>
     </div>
   </section>
   <section class="section info" id="about">
@@ -1147,7 +1147,7 @@ async function loadPublishedBlogPosts(limit=6){
 }
 function blogCardHtml(post){
  const title=escapeHtml(post.title||"제목 없는 글");
- const summary=escapeHtml(post.summary||"리얼워커스 부동산 정보");
+ const summary=escapeHtml(post.summary||"리얼워커스 부동산블로그");
  const dateValue=post.published_at||post.created_at;
  const date=dateValue?new Date(dateValue).toLocaleDateString("ko-KR"):"";
  const cover=String(post.cover_image_url||"").trim();
@@ -1160,10 +1160,10 @@ async function renderHomeBlog(){
  if(!grid)return;
  try{
   const posts=await loadPublishedBlogPosts(6);
-  grid.innerHTML=posts.length?posts.map(blogCardHtml).join(""):'<div class="blog-empty">아직 공개된 부동산 정보 글이 없습니다.</div>';
+  grid.innerHTML=posts.length?posts.map(blogCardHtml).join(""):'<div class="blog-empty">아직 공개된 부동산블로그 글이 없습니다.</div>';
  }catch(e){
   console.error("홈페이지 블로그 로딩 오류:",e);
-  grid.innerHTML='<div class="blog-empty">부동산 정보를 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</div>';
+  grid.innerHTML='<div class="blog-empty">부동산블로그를 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</div>';
  }
 }
 function renderHome(){
