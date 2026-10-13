@@ -240,7 +240,7 @@ function safeArticleHtml(html){const template=document.createElement("template")
 function watermarkArticlePhotos(root){
   if(!root)return;
   root.querySelectorAll(".article-content img").forEach(img=>{
-    if(img.closest(".rw-watermark-wrap"))return;
+    if(img.closest(".rw-watermark-wrap, .rw-watermark-frame, .rw-watermarked-photo"))return;
     const wrap=document.createElement("span");
     wrap.className="rw-watermark-wrap";
     img.parentNode.insertBefore(wrap,img);
