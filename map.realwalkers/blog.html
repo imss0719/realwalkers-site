@@ -39,9 +39,16 @@ function classifyPost(p){
   let kind="";
   const kinds=[[/공장|창고/,"공장·창고"],[/오피스텔/,"오피스텔"],[/아파트/,"아파트"],[/빌라|다세대|연립/,"빌라"],[/상가|점포/,"상가"],[/토지|대지|임야|전답/,"토지"],[/단독주택|전원주택|다가구/,"주택"],[/건물|빌딩/,"건물"]];
   for(const [re,label] of kinds){if(re.test(t)){kind=label;break;}}
+  // 거래 방식은 제목의 명시적 거래 표현을 최우선으로 판별합니다.
+  // 본문 설명에 임대/월세가 언급되어도 제목이 매매이면 매매로 표시합니다.
   let deal="";
-  const deals=[[/전세/,"전세"],[/월세|월 임대료/,"월세"],[/매매|매도/,"매매"],[/임대차|임대\s/,"임대"]];
-  for(const [re,label] of deals){if(re.test(t)){deal=label;break;}}
+  const titleText=String(p.title||"");
+  const titleDeal=[[/전세/,"전세"],[/매매|매각|매도/,"매매"],[/월세|월 임대료/,"월세"],[/임대차|임대\s/,"임대"]];
+  for(const [re,label] of titleDeal){if(re.test(titleText)){deal=label;break;}}
+  if(!deal){
+    const deals=[[/전세/,"전세"],[/매매|매각|매도/,"매매"],[/월세|월 임대료/,"월세"],[/임대차|임대\s/,"임대"]];
+    for(const [re,label] of deals){if(re.test(t)){deal=label;break;}}
+  }
   let price="";
   // 먼저 본문 매물정보 표의 가격 항목을 확인합니다. AI가 작성한 제목·요약보다
   // 본문에 구조화되어 들어간 매물정보를 우선 사용합니다.
@@ -64,6 +71,16 @@ function classifyPost(p){
   if(!price){
     const allText=[p.title,p.summary,String(p.content_html||"").replace(/<[^>]*>/g," ")]
       .filter(Boolean).join(" ").replace(/&nbsp;|&#160;/g," ").replace(/\s+/g," ");
+    // 대표님이 쓰는 "5,000-100만원" 형식(보증금-월세)을 먼저 인식합니다.
+    // 양쪽 금액이 만원 단위인 경우 마지막 '만원'을 앞 금액에도 적용합니다.
+    const rentPair=allText.match(/(?:보증금\s*)?([0-9][0-9,]*(?:\.[0-9]+)?\s*(?:억|만)?원?)\s*[-–~]\s*([0-9][0-9,]*(?:\.[0-9]+)?\s*만?\s*원)(?:\s*월세)?/);
+    if(rentPair){
+      let deposit=rentPair[1].replace(/\s+/g,"").replace(/원$/,"");
+      const rent=rentPair[2].replace(/\s+/g,"");
+      if(!/(억|만)$/.test(deposit) && /만원$/.test(rent)) deposit += "만원";
+      else if(/만$/.test(deposit)) deposit += "원";
+      price=deposit+"-"+rent;
+    }
     const patterns=[
       /(?:매매가|매매가격|희망가|희망가격|매매금액|매도가)\s*[:：]?\s*([0-9][0-9,]*(?:\.[0-9]+)?\s*(?:억(?:\s*[0-9,]+\s*만(?:원)?)?|만\s*원|원))/,
       /(?:전세가|전세금|보증금)\s*[:：]?\s*([0-9][0-9,]*(?:\.[0-9]+)?\s*(?:억(?:\s*[0-9,]+\s*만(?:원)?)?|만\s*원|원))/,
@@ -71,7 +88,7 @@ function classifyPost(p){
       /([0-9][0-9,]*(?:\.[0-9]+)?\s*억(?:\s*[0-9,]+\s*만(?:원)?)?)/,
       /([0-9][0-9,]*(?:\.[0-9]+)?\s*만\s*원)/
     ];
-    for(const re of patterns){const m=allText.match(re);if(m){price=m[1].replace(/\s+/g," ").trim();break;}}
+    if(!price){for(const re of patterns){const m=allText.match(re);if(m){price=m[1].replace(/\s+/g," ").trim();break;}}}
   }
   if(price && /가격\s*문의|문의|협의|미정/.test(price)) price="";
   return {kind,deal,price};
