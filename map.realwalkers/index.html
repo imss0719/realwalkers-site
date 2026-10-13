@@ -673,7 +673,7 @@ const INQUIRY_FORM={
   ENTRY_TYPE:"entry.1301252049",ENTRY_NAME:"entry.937381770",ENTRY_PHONE:"entry.1036584187",
   ENTRY_CONTENT:"entry.1899967904",ENTRY_DEVICE:"entry.2116220552",ENTRY_LISTING:"entry.1786545952"
 };
-const TYPE_COLORS={"아파트":"#2E4A7A","건물":"#8A6D1F","빌딩":"#8A6D1F","상가":"#5C7A4A","토지":"#7A4A4A","공장":"#4A6E7A","창고":"#3F6060","주택":"#6E4A7A","오피스텔":"#5A6478"};
+const TYPE_COLORS={"아파트":"#2E4A7A","건물":"#8A6D1F","빌딩":"#8A6D1F","상가":"#5C7A4A","토지":"#7A4A4A","공장":"#4A6E7A","창고":"#3F6060","주택":"#6E4A7A","다가구주택":"#6E4A7A","단독주택":"#6E4A7A","다세대주택":"#8A5A7A","연립주택":"#8A5A7A","전원주택":"#6E4A7A","상가주택":"#8A6D1F","오피스텔":"#5A6478"};
 const EXTRA_COLORS=["#5A6478","#7A6A4A","#4A5E7A","#7A4A5E","#4F7A5E","#6B5A7A"];
 let extraColorIdx=0;
 function typeColor(t){if(!TYPE_COLORS[t])TYPE_COLORS[t]=EXTRA_COLORS[extraColorIdx++%EXTRA_COLORS.length];return TYPE_COLORS[t]}
@@ -729,14 +729,18 @@ function rowsToListings(rows){
   let raw=photoIdxs.map(i=>String(x[i]||"").trim()).filter(Boolean);
   if(!raw.length&&legacy>=0&&x[legacy])raw=[String(x[legacy]).trim()];
   const lat=parseFloat(x[iLat]),lng=parseFloat(x[iLng]);
+  const rowName=String(x[iN]).trim();
+  const rowMeta=iM>=0?String(x[iM]||"").trim():"";
+  const rowAddr=iAddr>=0?String(x[iAddr]||"").trim():"";
+  const rowType=correctListingType(iT>=0?String(x[iT]||"").trim()||"기타":"기타",rowName,rowMeta,rowAddr);
   out.push({
    no:iNo>=0?String(x[iNo]||"").trim():"",
-   type:iT>=0?String(x[iT]||"").trim()||"기타":"기타",
+   type:rowType,
    deal:iD>=0?String(x[iD]||"").trim():"",
-   name:String(x[iN]).trim(),
+   name:rowName,
    price:iP>=0?String(x[iP]||"").trim():"",
-   meta:iM>=0?String(x[iM]||"").trim():"",
-   addr:iAddr>=0?String(x[iAddr]||"").trim():"",
+   meta:rowMeta,
+   addr:rowAddr,
    lat:Number.isFinite(lat)?lat:null,lng:Number.isFinite(lng)?lng:null,
    photos:raw.map(u=>toImageUrl(u,1200)).filter(Boolean),
    photo:raw[0]?toImageUrl(raw[0],640):"",
@@ -989,16 +993,28 @@ function rwStatusFlags(value){
   hold:/^(보류|HOLD|보류중|대기)$/.test(compact)
  };
 }
+function correctListingType(rawType, name, meta, addr){
+ const raw=String(rawType??"").trim();
+ const text=[name,meta,addr].map(v=>String(v??"")).join(" ");
+ if(/다가구\s*주택|다가구/.test(text)) return "다가구주택";
+ if(/단독\s*주택/.test(text)) return "단독주택";
+ if(/다세대\s*주택/.test(text)) return "다세대주택";
+ if(/연립\s*주택/.test(text)) return "연립주택";
+ if(/전원\s*주택/.test(text)) return "전원주택";
+ if(/상가\s*주택/.test(text)) return "상가주택";
+ return raw||"기타";
+}
 function normalizeListingObject(o){
  if(!o||typeof o!=="object")return null;
  const no=String(o.no??o["매물번호"]??o["번호"]??"").trim();
- const type=String(o.type??o.kind??o["유형"]??o["매물유형"]??"기타").trim()||"기타";
+ const rawType=String(o.type??o.kind??o["유형"]??o["매물유형"]??"기타").trim()||"기타";
  const deal=String(o.deal??o["거래"]??o["거래유형"]??"").trim();
  const name=String(o.name??o["매물명"]??o["제목"]??o["물건명"]??"").trim();
  if(!name)return null;
  const price=String(o.price??o["가격"]??o["매매가"]??o["거래가"]??"").trim();
  const meta=String(o.meta??o.desc??o.description??o["설명"]??o["상세설명"]??o["매물설명"]??"").trim();
  const addr=String(o.addr??o.address??o["주소"]??o["소재지"]??"").trim();
+ const type=correctListingType(rawType,name,meta,addr);
  const statusRaw=String(
   o.status ??
   o.show ??
@@ -1345,7 +1361,7 @@ function publicAddress(addr, type){
 }
 const MAP_TYPE_MARKERS={
  "아파트":{bg:"#2E4A7A",label:"아파트"},"상가":{bg:"#5C7A4A",label:"상가"},
- "빌라":{bg:"#8A5A7A",label:"빌라"},"주택":{bg:"#7A5A3A",label:"주택"},
+ "빌라":{bg:"#8A5A7A",label:"빌라"},"주택":{bg:"#7A5A3A",label:"주택"},"다가구주택":{bg:"#7A5A3A",label:"다가구"},"단독주택":{bg:"#7A5A3A",label:"단독주택"},"다세대주택":{bg:"#8A5A7A",label:"다세대"},"연립주택":{bg:"#8A5A7A",label:"연립주택"},"전원주택":{bg:"#7A5A3A",label:"전원주택"},"상가주택":{bg:"#8A6D1F",label:"상가주택"},
  "건물":{bg:"#8A6D1F",label:"건물"},"빌딩":{bg:"#8A6D1F",label:"빌딩"},
  "토지":{bg:"#7A4A4A",label:"토지"},"공장":{bg:"#4A6E7A",label:"공장"},
  "창고":{bg:"#3F6060",label:"창고"},"오피스텔":{bg:"#5A6478",label:"오피스텔"}
