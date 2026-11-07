@@ -64,6 +64,37 @@ h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
 .btn-ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
 .btn:hover{filter:brightness(1.05)}
 
+
+/* analysis report */
+.report-sec{padding-block:8px 20px}
+.report{background:var(--paper);color:var(--paper-fg);border-radius:22px;padding:22px 20px;display:flex;flex-direction:column;gap:18px;box-shadow:0 20px 60px rgba(0,0,0,.35);position:relative;overflow:hidden}
+.report::after{content:"예시 리포트";position:absolute;top:0;right:0;background:var(--yellow);color:var(--yellow-ink);font-size:11px;font-weight:700;padding:4px 10px;border-bottom-left-radius:10px}
+.rp-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;border-bottom:2px solid var(--paper-fg);padding-bottom:12px}
+.rp-head h3{font-size:19px;font-weight:900}
+.rp-head .meta{font-size:12px;color:var(--paper-muted);display:flex;flex-wrap:wrap;gap:4px 12px}
+.rp-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:680px){.rp-grid{grid-template-columns:1fr 1fr}}
+.mod{border:1px solid #e7e9f0;border-radius:14px;padding:14px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.mod h4{margin:0;font-size:14px;font-weight:900;display:flex;justify-content:space-between;gap:8px}
+.mod h4 span{font-weight:500;color:var(--paper-muted);font-size:12px}
+.mod p.cap{margin:0;font-size:13px;color:#40475c;line-height:1.55}
+.mod p.cap b{color:var(--red)}
+.meter{display:grid;gap:5px}
+.meter .row{display:flex;justify-content:space-between;font-size:12px;color:var(--paper-muted)}
+.meter .row b{color:var(--paper-fg);font-family:var(--f-num)}
+.meter .track{position:relative;height:10px;border-radius:5px;background:#eceef4}
+.meter .fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:#1d3fb8}
+.meter .cap-line{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--red)}
+.maxbox{background:#f2f4f9;border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.maxbox span{font-size:12px;color:var(--paper-muted)}
+.maxbox b{font-family:var(--f-num);font-size:22px;color:#1d3fb8}
+.vars{display:flex;flex-wrap:wrap;gap:6px}
+.vars span{font-size:12px;font-weight:700;background:#eef1fb;color:#1d3fb8;border-radius:6px;padding:4px 8px}
+.mod.wide{grid-column:1/-1}
+.mod.wide svg{max-width:560px;margin:0 auto;display:block}
+.rp-foot{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:#40475c;border-top:1px dashed #d6d9e3;padding-top:12px}
+.rp-foot b{color:var(--paper-fg)}
+
 /* steps */
 section{padding-block:44px}
 .sec-head{display:flex;flex-direction:column;gap:8px;margin-bottom:26px}
@@ -170,6 +201,48 @@ footer a{color:var(--fg)}
     <a class="btn btn-ghost" href="#steps">상담 과정 보기</a>
   </div>
 </div></div>
+
+<div class="wrap">
+<section class="report-sec" id="report">
+  <div class="sec-head">
+    <span class="eyebrow" style="margin:0">리얼워커스 분석 리포트</span>
+    <h2>감이 아니라 숫자로<br>매물을 고릅니다</h2>
+    <p>대출 규제, 실거래 흐름, 층 · 향 · 역 거리까지 한 장의 리포트로 정리해 드립니다.</p>
+  </div>
+  <div class="report">
+    <div class="rp-head">
+      <h3>내집마련 분석 리포트</h3>
+      <div class="meta"><span>홍길동 님</span><span>후보 3개 단지</span><span>비교 매물 24건</span><span>최근 2년 실거래</span></div>
+    </div>
+    <div class="rp-grid">
+      <div class="mod">
+        <h4>① 자금 한도 <span>대출 규제 반영</span></h4>
+        <div class="meter">
+          <div class="row"><span>LTV (담보인정비율)</span><b>70% / 한도 70%</b></div>
+          <div class="track"><div class="fill" style="width:70%"></div><div class="cap-line" style="left:70%"></div></div>
+        </div>
+        <div class="meter">
+          <div class="row"><span>DSR (총부채원리금상환비율)</span><b>38.2% / 한도 40%</b></div>
+          <div class="track"><div class="fill" style="width:38.2%"></div><div class="cap-line" style="left:40%"></div></div>
+        </div>
+        <div class="maxbox"><span>취득세 · 중개보수 반영 최대 매매가</span><b>12억 5,000만</b></div>
+        <div class="vars"><span>보유 현금</span><span>소득</span><span>주담대 한도</span><span>취득세</span><span>중개보수</span></div>
+      </div>
+      <div class="mod">
+        <h4>② 실거래 흐름과 매물 위치 <span>84㎡ · 최근 2년</span></h4>
+        <svg viewBox="0 0 420 300" width="100%" role="img" aria-label="예시: 최근 2년 실거래와 시세선, 매물 3건 위치"><line x1="46" x2="346" y1="221.0" y2="221.0" stroke="#e7e9f0" stroke-width="1"/><text x="38" y="225.0" text-anchor="end" font-size="14" fill="#6b7389">11억</text><line x1="46" x2="346" y1="172.2" y2="172.2" stroke="#e7e9f0" stroke-width="1"/><text x="38" y="176.2" text-anchor="end" font-size="14" fill="#6b7389">11.5억</text><line x1="46" x2="346" y1="123.5" y2="123.5" stroke="#e7e9f0" stroke-width="1"/><text x="38" y="127.5" text-anchor="end" font-size="14" fill="#6b7389">12억</text><line x1="46" x2="346" y1="74.7" y2="74.7" stroke="#e7e9f0" stroke-width="1"/><text x="38" y="78.7" text-anchor="end" font-size="14" fill="#6b7389">12.5억</text><line x1="46" x2="346" y1="26.0" y2="26.0" stroke="#e7e9f0" stroke-width="1"/><text x="38" y="30.0" text-anchor="end" font-size="14" fill="#6b7389">13억</text><text x="46.0" y="286" text-anchor="middle" font-size="14" fill="#6b7389">24.11</text><text x="121.0" y="286" text-anchor="middle" font-size="14" fill="#6b7389">25.05</text><text x="196.0" y="286" text-anchor="middle" font-size="14" fill="#6b7389">25.11</text><text x="271.0" y="286" text-anchor="middle" font-size="14" fill="#6b7389">26.05</text><text x="346.0" y="286" text-anchor="middle" font-size="14" fill="#6b7389">26.11</text><circle cx="113.9" cy="162.4" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="90.6" cy="172.8" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="65.1" cy="220.9" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="276.1" cy="104.1" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="266.0" cy="125.1" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="125.5" cy="151.8" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="95.6" cy="172.3" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="312.6" cy="107.2" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="284.3" cy="112.7" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="101.6" cy="207.3" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="135.1" cy="187.9" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="291.7" cy="140.0" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="299.0" cy="99.2" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="239.1" cy="125.3" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="191.5" cy="143.5" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="71.7" cy="171.8" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="314.7" cy="99.8" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="132.3" cy="185.6" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="307.3" cy="146.8" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="289.8" cy="136.4" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="192.2" cy="170.7" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="169.9" cy="146.8" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="92.4" cy="192.6" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="58.4" cy="164.3" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="59.3" cy="201.9" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="199.7" cy="158.8" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="181.5" cy="186.2" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="102.2" cy="131.7" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="164.7" cy="153.1" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><circle cx="125.4" cy="149.7" r="4.5" fill="#b9bfce" stroke="#fff" stroke-width="2"/><line x1="46.0" y1="196.6" x2="346.0" y2="104.0" stroke="#1d3fb8" stroke-width="2.5" stroke-linecap="round"/><text x="221.0" y="128.6" font-size="14" font-weight="700" fill="#1d3fb8">시세선</text><rect x="340.0" y="98.0" width="12" height="12" rx="2" fill="#1b2238" stroke="#fff" stroke-width="2" transform="rotate(45 346.0 104.0)"/><text x="358.0" y="109.0" font-size="14" font-weight="700" fill="#1b2238">F 12층</text><rect x="340.0" y="127.2" width="12" height="12" rx="2" fill="#2f9e62" stroke="#fff" stroke-width="2" transform="rotate(45 346.0 133.2)"/><text x="358.0" y="141.2" font-size="14" font-weight="700" fill="#1b2238">D 8층</text><rect x="340.0" y="166.2" width="12" height="12" rx="2" fill="#d9473b" stroke="#fff" stroke-width="2" transform="rotate(45 346.0 172.2)"/><text x="358.0" y="180.2" font-size="14" font-weight="700" fill="#1b2238">E 2층</text><text x="46" y="16" font-size="13" fill="#6b7389">● 실거래   ◆ 현재 매물 호가</text></svg>
+        <p class="cap">호가만 보면 E단지 2층이 시세선보다 한참 아래라 가장 싸 보입니다.</p>
+      </div>
+      <div class="mod wide">
+        <h4>③ 조건 보정 환산가 <span>층 · 향 · 역 거리 보정</span></h4>
+        <svg viewBox="0 0 420 300" width="100%" role="img" aria-label="예시: E단지 2층 호가 11억 5천에서 저층·북향·역거리 보정 후 환산가 12억 3천"><line x1="8" x2="412" y1="157.9" y2="157.9" stroke="#2f9e62" stroke-width="2" stroke-dasharray="6 5"/><line x1="8" x2="36" y1="14" y2="14" stroke="#2f9e62" stroke-width="2" stroke-dasharray="6 5"/><text x="44" y="19" font-size="14" font-weight="700" fill="#2f9e62">비교 기준: D단지 8층 환산가 11억 6,500</text><rect x="8.0" y="178.7" width="72.8" height="69.3" rx="4" fill="#1b2238"/><text x="44.4" y="198.7" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">11.5억</text><text x="44.4" y="268.0" text-anchor="middle" font-size="14" fill="#6b7389">E 2층</text><text x="44.4" y="283.0" text-anchor="middle" font-size="14" fill="#6b7389">호가</text><line x1="80.8" x2="90.8" y1="178.7" y2="178.7" stroke="#6b7389" stroke-width="1"/><rect x="90.8" y="130.1" width="72.8" height="48.5" rx="4" fill="#e88b82"/><text x="127.2" y="122.1" text-anchor="middle" font-size="14" font-weight="700" fill="#1b2238">+3,500</text><text x="127.2" y="268.0" text-anchor="middle" font-size="14" fill="#6b7389">저층</text><text x="127.2" y="283.0" text-anchor="middle" font-size="14" fill="#6b7389">보정</text><line x1="163.6" x2="173.6" y1="130.1" y2="130.1" stroke="#6b7389" stroke-width="1"/><rect x="173.6" y="95.5" width="72.8" height="34.7" rx="4" fill="#e88b82"/><text x="210.0" y="87.5" text-anchor="middle" font-size="14" font-weight="700" fill="#1b2238">+2,500</text><text x="210.0" y="268.0" text-anchor="middle" font-size="14" fill="#6b7389">북향</text><text x="210.0" y="283.0" text-anchor="middle" font-size="14" fill="#6b7389">보정</text><line x1="246.4" x2="256.4" y1="95.5" y2="95.5" stroke="#6b7389" stroke-width="1"/><rect x="256.4" y="67.7" width="72.8" height="27.7" rx="4" fill="#e88b82"/><text x="292.8" y="59.7" text-anchor="middle" font-size="14" font-weight="700" fill="#1b2238">+2,000</text><text x="292.8" y="268.0" text-anchor="middle" font-size="14" fill="#6b7389">역 거리</text><text x="292.8" y="283.0" text-anchor="middle" font-size="14" fill="#6b7389">보정</text><line x1="329.2" x2="339.2" y1="67.7" y2="67.7" stroke="#6b7389" stroke-width="1"/><rect x="339.2" y="67.7" width="72.8" height="180.3" rx="4" fill="#d9473b"/><text x="375.6" y="59.7" text-anchor="middle" font-size="14" font-weight="700" fill="#1b2238">12.3억</text><text x="375.6" y="268.0" text-anchor="middle" font-size="14" fill="#6b7389">환산가</text></svg>
+        <p class="cap">층 · 향 · 역 거리를 같은 기준으로 맞추면 E단지 2층은 <b>12억 3,000만</b>으로 오히려 비쌉니다. 조건 대비 진짜 싼 매물은 D단지 8층입니다.</p>
+      </div>
+    </div>
+    <div class="rp-foot"><span>최종 추천 <b>D단지 8층</b></span><span>임장 대상 <b>2곳</b>으로 압축</span></div>
+  </div>
+</section>
+</div>
 
 <div class="wrap">
 <section id="steps">
