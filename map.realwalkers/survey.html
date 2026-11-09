@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:title" content="리얼워커스 상담 사전 설문">
+<meta property="og:description" content="1분이면 끝나는 내집마련 상담 사전 설문입니다.">
+<meta property="og:image" content="https://www.realwalkers.com/consult-og.png">
+<link rel="icon" href="/favicon-32.png">
+<title>리얼워커스 상담 사전 설문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: one-column phone questionnaire, 5 steps + summary; navy ground, CI yellow only for progress, selection and the send button */
+:root{
+  --ink:#0b1430;--ink-2:#121f45;--line:#24345f;--fg:#f3f5fb;--muted:#a9b3cc;
+  --yellow:#f6e544;--yellow-ink:#2f2625;--sel:#1b2c5e;
+  --f:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--ink);color:var(--fg);font-family:var(--f);font-size:16px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-block:20px 120px}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:3px;border-radius:8px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.top img{width:44px;height:44px}
+.top b{display:block;font-size:15px}
+.top .back{margin-left:auto;flex:none;font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 12px;text-decoration:none}.top span{font-size:12.5px;color:var(--muted)}
+.intro h1{font-size:clamp(24px,6.4vw,30px);line-height:1.35;font-weight:900;margin:0 0 10px;text-wrap:balance}
+.intro h1 em{font-style:normal;color:var(--yellow)}
+.intro p{margin:0;color:var(--muted);font-size:15px}
+.prog{display:flex;gap:6px;margin:24px 0 8px}
+.prog i{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.prog i.on{background:var(--yellow)}
+.stepname{font-size:13px;color:var(--muted);margin-bottom:18px}
+.step{display:none;flex-direction:column;gap:26px}
+.step.cur{display:flex}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+legend{font-weight:700;font-size:17px;margin-bottom:10px;padding:0}
+legend small{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:2px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.opts.one{grid-template-columns:1fr}
+.opt{position:relative}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt span{display:flex;align-items:center;min-height:50px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--ink-2);font-size:15px;cursor:pointer;line-height:1.4}
+.opt input:checked+span{border-color:var(--yellow);background:var(--sel);box-shadow:inset 0 0 0 1px var(--yellow)}
+.opt input:focus-visible+span{outline:3px solid var(--yellow);outline-offset:2px}
+input[type=text],textarea{width:100%;min-height:50px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--ink-2);color:var(--fg);font-family:var(--f);font-size:16px}
+textarea{min-height:90px;resize:vertical}
+label.tx{font-weight:700;font-size:17px;display:flex;flex-direction:column;gap:8px}
+label.tx small{font-weight:400;color:var(--muted);font-size:13px}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(11,20,48,.95);border-top:1px solid var(--line);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+.nav .in{max-width:560px;margin:0 auto;display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 20px;border-radius:14px;font-weight:700;font-size:16px;border:0;cursor:pointer;font-family:var(--f);text-decoration:none}
+.btn-y{background:var(--yellow);color:var(--yellow-ink);flex:1}
+.btn-g{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+[hidden]{display:none!important}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:6px;margin-right:7px;vertical-align:2px}
+.t-req{background:var(--yellow);color:var(--yellow-ink)}
+.t-opt{background:var(--line);color:var(--muted)}
+.amt{display:flex;flex-direction:column;gap:6px;margin-top:4px;font-size:14px;color:var(--muted)}
+.amt.need .amt-l{color:var(--yellow);font-weight:700}
+.amt.need input{border-color:var(--yellow)}
+.err{color:#ff8a80;font-size:14px;min-height:20px;margin:0}
+.consent{background:var(--ink-2);border:1px solid var(--line);border-radius:14px;padding:16px;font-size:13.5px;color:var(--muted);line-height:1.7}
+.consent b{color:var(--fg)}
+.check{display:flex;gap:10px;align-items:center;font-weight:700;color:var(--fg);margin-top:10px;font-size:15px;cursor:pointer}
+.check input{width:22px;height:22px;accent-color:var(--yellow)}
+.result{background:#fff;color:#1b2238;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.result h3{margin:0;font-size:18px;font-weight:900}
+.badge{align-self:flex-start;background:var(--yellow);color:var(--yellow-ink);font-weight:900;font-size:14px;padding:6px 12px;border-radius:999px}
+.result pre{margin:0;white-space:pre-wrap;font-family:var(--f);font-size:14px;line-height:1.7;background:#f2f4f9;border-radius:10px;padding:14px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--yellow);color:var(--yellow-ink);font-weight:700;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <img alt="" src="data:image/png;base64,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">
+    <div><b>리얼워커스 공인중개사사무소</b><span>아파트 전문상담 · 내집마련 데이터 분석</span></div>
+    <a class="back" href="https://www.realwalkers.com/consult">상담 안내</a>
+  </header>
+
+  <section class="intro">
+    <h1>상담 전, <em>1분 설문</em>으로<br>맞춤 분석을 준비합니다</h1>
+    <p><b style="color:var(--fg)">필수</b> 항목만 답해도 됩니다. 정확한 금액이 아니어도 괜찮습니다. 가까운 범위를 골라 주세요. 다 고르시면 답변이 문자로 정리되어 리얼워커스에 전달됩니다.</p>
+  </section>
+
+  <div class="prog" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <p class="stepname" id="stepname" aria-live="polite"></p>
+
+  <form id="f" novalidate>
+    <div class="step" data-name="1/6 기본 정보">
+      <label class="tx" for="name"><span><span class="tag t-req">필수</span>성함</span><small>문자로 확인할 때 쓸 이름 (성만 적으셔도 됩니다)</small><input type="text" data-reqtext="성함" id="name" name="name" maxlength="20" autocomplete="name" placeholder="예: 김○○"></label>
+      <fieldset data-req data-multi><legend><span class="tag t-req">필수</span>상담 가능한 시간<small>여러 개 골라도 됩니다</small></legend>
+        <div class="opts">
+          <label class="opt"><input type="checkbox" name="time" value="평일 낮"><span>평일 낮</span></label>
+          <label class="opt"><input type="checkbox" name="time" value="평일 저녁"><span>평일 저녁</span></label>
+          <label class="opt"><input type="checkbox" name="time" value="토요일 오전"><span>토요일 오전</span></label>
+          <label class="opt"><input type="checkbox" name="time" value="토요일 오후"><span>토요일 오후</span></label>
+        </div>
+      </fieldset>
+      <fieldset data-req><legend><span class="tag t-req">필수</span>상담 방식</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="way" value="사무실 방문"><span>사무실 방문</span></label>
+          <label class="opt"><input type="radio" name="way" value="전화 · 화상"><span>전화 · 화상</span></label>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="step" data-name="2/6 자금 상황">
+      <fieldset data-req><legend><span class="tag t-req">필수</span>바로 쓸 수 있는 현금<small>전세보증금 · 예적금 · 주식 등 포함</small></legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="cash" value="1억 미만"><span>1억 미만</span></label>
+          <label class="opt"><input type="radio" name="cash" value="1~3억"><span>1~3억</span></label>
+          <label class="opt"><input type="radio" name="cash" value="3~5억"><span>3~5억</span></label>
+          <label class="opt"><input type="radio" name="cash" value="5~8억"><span>5~8억</span></label>
+          <label class="opt"><input type="radio" name="cash" value="8억 이상"><span>8억 이상</span></label>
+        </div>
+              <label class="amt" for="amt-cash"><span class="amt-l" id="amt-cash-l">정확한 금액을 아시면 적어 주세요 (선택)</span><input type="text" id="amt-cash" data-for="cash" data-top="8억 이상" data-label="현금" inputmode="text" maxlength="20" placeholder="예: 12억"></label>
+      </fieldset>
+      <fieldset data-req><legend><span class="tag t-req">필수</span>연소득 (부부 합산)</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="inc" value="5천만 미만"><span>5천만 미만</span></label>
+          <label class="opt"><input type="radio" name="inc" value="5천~8천만"><span>5천~8천만</span></label>
+          <label class="opt"><input type="radio" name="inc" value="8천만~1.2억"><span>8천만~1.2억</span></label>
+          <label class="opt"><input type="radio" name="inc" value="1.2억 이상"><span>1.2억 이상</span></label>
+        </div>
+              <label class="amt" for="amt-inc"><span class="amt-l" id="amt-inc-l">정확한 금액을 아시면 적어 주세요 (선택)</span><input type="text" id="amt-inc" data-for="inc" data-top="1.2억 이상" data-label="연소득" inputmode="text" maxlength="20" placeholder="예: 1억 8천"></label>
+      </fieldset>
+      <fieldset data-req><legend><span class="tag t-req">필수</span>지금 주택 보유</legend>
+        <div class="opts one">
+          <label class="opt"><input type="radio" name="own" value="무주택 (집을 가진 적 없음)"><span>무주택 · 집을 가진 적 없음 (생애최초)</span></label>
+          <label class="opt"><input type="radio" name="own" value="무주택 (과거 보유)"><span>무주택 · 예전에 가진 적 있음</span></label>
+          <label class="opt"><input type="radio" name="own" value="1주택 갈아타기"><span>1주택 · 팔고 갈아타기</span></label>
+          <label class="opt"><input type="radio" name="own" value="2주택 이상"><span>2주택 이상</span></label>
+        </div>
+      </fieldset>
+      <fieldset data-req><legend><span class="tag t-req">필수</span>지금 받고 있는 대출</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="loan" value="없음"><span>없음</span></label>
+          <label class="opt"><input type="radio" name="loan" value="있음"><span>있음 (신용 · 전세 · 차량 등)</span></label>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="step" data-name="3/6 매수 목적과 성향">
+      <fieldset data-req><legend><span class="tag t-req">필수</span>집을 사려는 가장 큰 이유</legend>
+        <div class="opts one">
+          <label class="opt"><input type="radio" name="goal" value="실거주" data-inv="0"><span>오래 살 우리 집이 필요해서</span></label>
+          <label class="opt"><input type="radio" name="goal" value="실거주 + 자산 상승" data-inv="1"><span>살면서 집값도 오르길 기대해서</span></label>
+          <label class="opt"><input type="radio" name="goal" value="투자" data-inv="2"><span>투자 목적이 더 커서</span></label>
+        </div>
+      </fieldset>
+      <fieldset data-req><legend><span class="tag t-req">필수</span>산 집이 1년 뒤 10% 떨어진다면?</legend>
+        <div class="opts one">
+          <label class="opt"><input type="radio" name="drop" value="불안해서 팔고 싶을 것" data-sens="2" data-inv="0"><span>불안해서 팔고 싶을 것 같다</span></label>
+          <label class="opt"><input type="radio" name="drop" value="신경 쓰이지만 기다린다" data-sens="1" data-inv="1"><span>신경 쓰이지만 기다린다</span></label>
+          <label class="opt"><input type="radio" name="drop" value="살 집이라 크게 상관없다" data-sens="0" data-inv="0"><span>살 집이라 크게 상관없다</span></label>
+          <label class="opt"><input type="radio" name="drop" value="오히려 추가 매수 기회" data-sens="0" data-inv="2"><span>오히려 더 살 기회로 본다</span></label>
+        </div>
+      </fieldset>
+      <fieldset><legend><span class="tag t-opt">선택</span>신축과 구축 중 끌리는 쪽</legend>
+        <div class="opts one">
+          <label class="opt"><input type="radio" name="age" value="신축 · 준신축" data-inv="0"><span>신축 · 준신축 (지금 살기 편한 집)</span></label>
+          <label class="opt"><input type="radio" name="age" value="구축이라도 입지 우선" data-inv="1"><span>구축이라도 입지가 좋으면</span></label>
+          <label class="opt"><input type="radio" name="age" value="재건축 · 재개발 기대" data-inv="2"><span>재건축 · 재개발 기대감이 있는 곳</span></label>
+        </div>
+      </fieldset>
+      <fieldset><legend><span class="tag t-opt">선택</span>매달 갚을 수 있는 대출 원리금</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="pay" value="100만 원 이하" data-risk="0"><span>100만 원 이하</span></label>
+          <label class="opt"><input type="radio" name="pay" value="100~200만 원" data-risk="1"><span>100~200만 원</span></label>
+          <label class="opt"><input type="radio" name="pay" value="200~300만 원" data-risk="1"><span>200~300만 원</span></label>
+          <label class="opt"><input type="radio" name="pay" value="300만 원 이상" data-risk="2"><span>300만 원 이상</span></label>
+        </div>
+              <label class="amt" for="amt-pay"><span class="amt-l" id="amt-pay-l">정확한 금액을 아시면 적어 주세요 (선택)</span><input type="text" id="amt-pay" data-for="pay" data-top="300만 원 이상" data-label="월 상환 가능액" inputmode="text" maxlength="20" placeholder="예: 400만 원"></label>
+      </fieldset>
+      <fieldset data-req><legend><span class="tag t-req">필수</span>매수 희망 시기</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="when" value="3개월 안"><span>3개월 안</span></label>
+          <label class="opt"><input type="radio" name="when" value="6개월 안"><span>6개월 안</span></label>
+          <label class="opt"><input type="radio" name="when" value="1년 안"><span>1년 안</span></label>
+          <label class="opt"><input type="radio" name="when" value="아직 미정"><span>아직 미정</span></label>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="step" data-name="4/6 중요하게 보는 것">
+      <fieldset data-multi data-max="3"><legend><span class="tag t-opt">선택</span>가장 중요한 것<small>3개까지 골라 주세요</small></legend>
+        <div class="opts">
+          <label class="opt"><input type="checkbox" name="pri" value="출퇴근 · 역세권"><span>출퇴근 · 역세권</span></label>
+          <label class="opt"><input type="checkbox" name="pri" value="학군 · 학원가"><span>학군 · 학원가</span></label>
+          <label class="opt"><input type="checkbox" name="pri" value="가격 상승 가능성" data-inv="1"><span>가격 상승 가능성</span></label>
+          <label class="opt"><input type="checkbox" name="pri" value="신축 · 커뮤니티"><span>신축 · 커뮤니티</span></label>
+          <label class="opt"><input type="checkbox" name="pri" value="대단지 · 관리"><span>대단지 · 관리</span></label>
+          <label class="opt"><input type="checkbox" name="pri" value="조용한 환경"><span>조용한 환경</span></label>
+          <label class="opt"><input type="checkbox" name="pri" value="생활 편의 · 상권"><span>생활 편의 · 상권</span></label>
+          <label class="opt"><input type="checkbox" name="pri" value="조망 · 채광"><span>조망 · 채광</span></label>
+        </div>
+      </fieldset>
+      <fieldset><legend><span class="tag t-opt">선택</span>함께 살 가족</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="fam" value="1인"><span>1인</span></label>
+          <label class="opt"><input type="radio" name="fam" value="부부"><span>부부</span></label>
+          <label class="opt"><input type="radio" name="fam" value="자녀 있음 (미취학)"><span>자녀 · 미취학</span></label>
+          <label class="opt"><input type="radio" name="fam" value="자녀 있음 (초 · 중 · 고)"><span>자녀 · 초중고</span></label>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="step" data-name="5/6 지역과 단지">
+      <label class="tx" for="area"><span><span class="tag t-req">필수</span>원하시는 지역</span><small>예: 마포구 공덕동, 서대문구 북아현동</small><input type="text" data-reqtext="원하시는 지역" id="area" name="area" maxlength="60" placeholder="구 · 동 이름"></label>
+      <label class="tx" for="apt"><span><span class="tag t-opt">선택</span>눈여겨보고 있는 아파트 단지</span><small>있으면 적어 주세요 (여러 곳 가능)</small><input type="text" id="apt" name="apt" maxlength="60" placeholder="예: ○○아파트, ○○단지"></label>
+      <label class="tx" for="memo"><span><span class="tag t-opt">선택</span>상담 때 꼭 묻고 싶은 것</span><small>자유롭게 적어 주세요</small><textarea id="memo" name="memo" maxlength="200" placeholder="예: 지금 사는 게 맞는지, 몇 년 기다리는 게 나은지"></textarea></label>
+    </div>
+
+    <div class="step" data-name="6/6 확인 후 보내기">
+      <div class="consent">
+        <b>개인정보 수집 · 이용 안내</b><br>
+        수집 항목: 성함, 자금 · 소득 범위, 주택 보유, 선호 사항<br>
+        이용 목적: 상담 일정 안내와 맞춤 분석 준비<br>
+        보유 기간: 상담 종료 후 1년 (요청 시 즉시 삭제)<br>
+        답변은 이 화면에 저장되지 않고, 보내 주시는 문자로만 전달됩니다.<br>동의하지 않으셔도 되며, 이 경우 설문 대신 전화나 문자로 상담 예약을 도와드립니다.
+        <label class="check" for="agree"><input type="checkbox" id="agree" name="agree"> 위 내용에 동의합니다</label>
+      </div>
+      <div class="result">
+        <span class="badge" id="type">-</span>
+        <h3>보내실 내용 미리보기</h3>
+        <pre id="msg"></pre>
+      </div>
+      <p class="note">문자 앱이 열리지 않으면 [내용 복사]를 누른 뒤 010-4280-0869로 문자나 카톡으로 붙여 넣어 주세요.</p>
+      <p class="note pc" id="pcnote" hidden><b style="color:var(--yellow)">PC에서 보고 계신가요?</b> PC에서는 문자 앱이 열리지 않습니다. [내용 복사] 후 휴대폰 문자나 카카오톡으로 010-4280-0869에 보내 주세요.</p>
+      <p class="note" id="sent" hidden><b style="color:var(--yellow)">문자를 보내셨나요?</b> 확인하는 대로 상담료 입금 안내와 함께 예약 일정을 답장드립니다. 급하시면 02-393-7676으로 전화 주세요.</p>
+    </div>
+    <p class="err" id="err" role="alert"></p>
+  </form>
+</div>
+
+<div class="nav"><div class="in">
+  <button type="button" class="btn btn-g" id="prev">이전</button>
+  <button type="button" class="btn btn-y" id="next">다음</button>
+  <a class="btn btn-y" id="send" href="#" hidden>문자로 보내기</a>
+  <button type="button" class="btn btn-g" id="copy" hidden>내용 복사</button>
+</div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  var TO='01042800869';
+  var steps=[].slice.call(document.querySelectorAll('.step')),bars=[].slice.call(document.querySelectorAll('.prog i'));
+  var cur=0,f=document.getElementById('f'),err=document.getElementById('err');
+  var prev=document.getElementById('prev'),next=document.getElementById('next'),send=document.getElementById('send'),copy=document.getElementById('copy');
+  function vals(n){return [].slice.call(f.querySelectorAll('[name="'+n+'"]:checked')).map(function(e){return e.value})}
+  function one(n){var e=f.querySelector('[name="'+n+'"]:checked');return e?e.value:'-'}
+  function num(n,k){var e=f.querySelector('[name="'+n+'"]:checked');return e&&e.dataset[k]?+e.dataset[k]:0}
+  function amt(n){var t=document.getElementById('amt-'+n),v=t?t.value.trim():'';return one(n)+(v?' (약 '+v+')':'')}
+  function profile(){
+    var inv=num('goal','inv')+num('drop','inv')+num('age','inv')+(vals('pri').indexOf('가격 상승 가능성')>-1?1:0);
+    var type=inv<=2?'실거주 안정형':(inv<=4?'실거주 · 투자 균형형':'투자 적극형');
+    var s=num('drop','sens'),sens=s===2?'높음':(s===1?'보통':'낮음');
+    var r=num('pay','risk'),risk=!f.querySelector('[name="pay"]:checked')?'-':(r===0?'보수적':(r===1?'보통':'적극적'));
+    return {type:type,sens:sens,risk:risk};
+  }
+  function text(){
+    var p=profile(),g=function(id){return (document.getElementById(id).value||'').trim()||'-'};
+    return ['[리얼워커스 상담 사전 설문]',
+      '성함: '+g('name'),
+      '상담 시간: '+(vals('time').join(', ')||'-')+' / '+(one('way')||'-'),
+      '','■ 자금',
+      '현금: '+amt('cash')+' / 연소득: '+amt('inc'),
+      '주택: '+one('own')+' / 기존 대출: '+one('loan'),
+      '월 상환 가능: '+amt('pay'),
+      '','■ 목적 · 성향',
+      '목적: '+one('goal')+' / 시기: '+one('when'),
+      '10% 하락 시: '+one('drop'),
+      '선호: '+one('age'),
+      '중요 3가지: '+(vals('pri').join(', ')||'-'),
+      '가족: '+one('fam'),
+      '','■ 지역 · 단지',
+      '지역: '+g('area'),'단지: '+g('apt'),'질문: '+g('memo'),
+      '','▶ 성향 요약: '+p.type+' · 가격 변동 민감도 '+p.sens+' · 대출 태도 '+p.risk].join('\n');
+  }
+  function check(i){
+    var bad='';
+    [].slice.call(steps[i].querySelectorAll('[data-reqtext]')).some(function(t){if(!t.value.trim()){bad=t.dataset.reqtext+' 항목을 적어 주세요.';t.focus();return true}});
+    if(bad)return bad;
+    [].slice.call(steps[i].querySelectorAll('.amt input')).some(function(t){if(one(t.dataset.for)===t.dataset.top&&!t.value.trim()){bad=t.dataset.label+'이 '+t.dataset.top+'이면 대략 얼마인지 적어 주세요.';t.focus();return true}});
+    if(bad)return bad;
+    [].slice.call(steps[i].querySelectorAll('fieldset[data-req]')).some(function(fs){
+      var n=fs.querySelector('input').name,c=fs.querySelectorAll('input:checked').length,mx=+fs.dataset.max||0;
+      if(!c){bad=fs.querySelector('legend').childNodes[1].textContent.trim()+' 항목을 골라 주세요.';return true}
+      if(mx&&c>mx){bad=mx+'개까지만 골라 주세요.';return true}
+    });
+    if(!bad){[].slice.call(steps[i].querySelectorAll('[data-reqtext]')).some(function(t){if(!t.value.trim()){bad=t.dataset.reqtext+' 항목을 적어 주세요.';t.focus();return true}})}
+    return bad;
+  }
+  function show(i){
+    cur=i;steps.forEach(function(s,k){s.classList.toggle('cur',k===i)});
+    bars.forEach(function(b,k){b.classList.toggle('on',k<=i)});
+    document.getElementById('stepname').textContent=steps[i].dataset.name;
+    prev.disabled=i===0;err.textContent='';
+    var last=i===steps.length-1;next.hidden=last;send.hidden=!last;copy.hidden=!last;
+    if(last)refresh();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function refresh(){
+    var t=text();document.getElementById('msg').textContent=t;
+    var p=profile();document.getElementById('type').textContent=p.type;
+    var sep=/iPhone|iPad|iPod/.test(navigator.userAgent)?'&':'?';
+    send.href='sms:'+TO+sep+'body='+encodeURIComponent(t);
+  }
+  next.addEventListener('click',function(){var b=check(cur);if(b){err.textContent=b;return}show(cur+1)});
+  prev.addEventListener('click',function(){if(cur>0)show(cur-1)});
+  function amtState(){[].slice.call(f.querySelectorAll('.amt')).forEach(function(l){var t=l.querySelector('input'),need=one(t.dataset.for)===t.dataset.top;l.classList.toggle('need',need);l.querySelector('.amt-l').textContent=need?t.dataset.top+'을 고르셨네요. 대략 얼마인지 적어 주세요 (필수)':'정확한 금액을 아시면 적어 주세요 (선택)'})}
+  f.addEventListener('change',amtState);f.addEventListener('input',function(){if(cur===steps.length-1)refresh()});
+  f.addEventListener('change',function(e){
+    var fs=e.target.closest('fieldset[data-max]');
+    if(fs&&e.target.checked&&fs.querySelectorAll('input:checked').length>+fs.dataset.max){e.target.checked=false;err.textContent=fs.dataset.max+'개까지만 고를 수 있습니다.'}
+    if(cur===steps.length-1)refresh();
+  });
+  f.addEventListener('submit',function(e){e.preventDefault()});
+  function needAgree(e){if(!document.getElementById('agree').checked){e&&e.preventDefault();err.textContent='개인정보 수집 · 이용에 동의해 주세요.';return true}return false}
+  send.addEventListener('click',function(e){if(!needAgree(e)){setTimeout(function(){document.getElementById('sent').hidden=false},800)}});
+  var mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));
+  if(!mobile){document.getElementById('pcnote').hidden=false;}
+  var toast=document.getElementById('toast'),tm;
+  function say(m){toast.textContent=m;toast.classList.add('on');clearTimeout(tm);tm=setTimeout(function(){toast.classList.remove('on')},1800)}
+  copy.addEventListener('click',function(){
+    if(needAgree())return;var t=text();
+    var fail=function(){var r=document.createRange();r.selectNodeContents(document.getElementById('msg'));var s=getSelection();s.removeAllRanges();s.addRange(r);say('내용을 선택했습니다. 길게 눌러 복사하세요')};
+    try{navigator.clipboard.writeText(t).then(function(){say('복사했습니다. 010-4280-0869로 보내 주세요')},fail)}catch(x){fail()}
+  });
+  show(0);
+})();
+</script>
+
+</body>
+</html>
