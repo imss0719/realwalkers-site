@@ -638,7 +638,7 @@ button{cursor:pointer}
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" fill="currentColor" opacity=".18"/><path d="M8.6 16V8h2.3l2.5 4.1V8h2V16h-2.3l-2.5-4.1V16H8.6Z" fill="currentColor"/></svg>
         네이버 블로그
       </a>
-      <a href="https://www.youtube.com/@realwalkers" target="_blank" rel="noopener">
+      <a href="https://www.youtube.com/@REALWALKERS_MAPO" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4" fill="currentColor" opacity=".18"/><path d="M10 8.9 15.6 12 10 15.1V8.9Z" fill="currentColor"/></svg>
         유튜브
       </a>
@@ -2098,9 +2098,9 @@ function idle(fn){if("requestIdleCallback" in window)requestIdleCallback(fn,{tim
   }
  }else{
   resetHomeSeo();
-  if(initialView==="home")showView("home",true);
+  if(initialView==="map")showView("map",true);
   else if(initialView==="list")showView("list",true);
-  else showView("map",true);
+  else showView("home",true);
  }
  const first=LISTINGS.find(x=>!x.done&&x.photo);
  if(first){
