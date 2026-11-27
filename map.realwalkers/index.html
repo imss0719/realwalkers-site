@@ -49,7 +49,13 @@ button{cursor:pointer}
 .nav-links a:hover,.nav-links button:hover{background:#f2f3f5;color:var(--navy)}
 .nav-call{background:var(--navy)!important;color:#fff!important;border-radius:999px!important;padding:9px 16px!important}
 .hero{background:var(--navy);color:#fff;padding:70px 0 82px;position:relative;overflow:hidden}
-.hero:after{content:'RW';position:absolute;right:-30px;bottom:-95px;font-size:330px;font-weight:900;line-height:1;color:rgba(255,255,255,.035);letter-spacing:-.08em}
+.hero:before{content:"";position:absolute;inset:0;background:url("/office-hero.jpg") center 42% / cover no-repeat;z-index:0}
+.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(14,17,24,.93) 0%,rgba(14,17,24,.88) 38%,rgba(14,17,24,.52) 66%,rgba(14,17,24,.34) 100%);z-index:0}
+.hero-hot{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:16px}
+.hero-hot[hidden]{display:none}
+.hero-hot .hot-label{font-size:12px;color:rgba(255,255,255,.58);font-weight:800;margin-right:2px}
+.hero-hot button{border:1px solid rgba(255,255,255,.26);background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700}
+.hero-hot button:hover{background:rgba(255,255,255,.2)}
 .hero-inner{position:relative;z-index:1}
 .eyebrow{color:var(--yellow);font-size:13px;font-weight:900;letter-spacing:.08em;margin-bottom:15px}
 .hero h1{font-size:clamp(31px,5vw,56px);line-height:1.12;letter-spacing:-.055em;margin-bottom:17px}
@@ -72,6 +78,20 @@ button{cursor:pointer}
 .section-head p{color:var(--muted);font-size:14px}
 .more{font-size:13px;font-weight:900;color:var(--navy);white-space:nowrap;border:0;background:none}
 .category-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.action-band{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.action-card{display:flex;align-items:center;gap:14px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:14px;padding:18px 20px;transition:.16s;width:100%}
+.action-card:hover{transform:translateY(-2px);border-color:var(--navy);box-shadow:0 8px 22px rgba(27,42,74,.10)}
+.action-card .ac-ico{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#f0f2f5;color:var(--navy)}
+.action-card .ac-ico svg{width:22px;height:22px}
+.action-card.is-dark .ac-ico{background:rgba(255,255,255,.14);color:#fff}
+.action-card .ac-txt{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.action-card .ac-txt b{font-size:17px;color:var(--navy);letter-spacing:-.03em}
+.action-card .ac-txt small{font-size:13px;color:var(--muted)}
+.action-card .ac-go{font-size:18px;color:var(--muted);flex:none;font-weight:900}
+.action-card.is-dark{background:var(--navy);border-color:var(--navy)}
+.action-card.is-dark .ac-txt b{color:#fff}
+.action-card.is-dark .ac-txt small{color:rgba(255,255,255,.72)}
+.action-card.is-dark .ac-go{color:rgba(255,255,255,.72)}
 /* 메인 유형 카드: 기존 크기/4열 구조는 유지하고 배경 이미지만 추가 */
 .category{
  background:#fff;
@@ -107,18 +127,10 @@ button{cursor:pointer}
  transform:scale(1.01);
  transition:transform .25s ease;
 }
-.category[data-type="아파트"]::after{
- background-image:url("https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=82");
-}
-.category[data-type="상가"]::after{
- background-image:url("https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=82");
-}
-.category[data-type="건물"]::after{
- background-image:url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=82");
-}
-.category[data-type="토지"]::after{
- background-image:url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=900&q=82");
-}
+.category[data-type="아파트"]::after{background:linear-gradient(145deg,#2b3a5c 0%,#16203a 100%)}
+.category[data-type="상가"]::after{background:linear-gradient(145deg,#3a4a3a 0%,#1a241a 100%)}
+.category[data-type="건물"]::after{background:linear-gradient(145deg,#4a4030 0%,#241e14 100%)}
+.category[data-type="토지"]::after{background:linear-gradient(145deg,#3f4a52 0%,#1b2228 100%)}
 .category > *{position:relative;z-index:1}
 .category .cat-icon{
  background:rgba(255,255,255,.90);
@@ -130,8 +142,8 @@ button{cursor:pointer}
 .category:hover::after{transform:scale(1.045)}
 .category:hover{border-color:#fff;box-shadow:0 10px 28px rgba(27,42,74,.16)}
 .category:hover{transform:translateY(-2px);border-color:var(--navy);box-shadow:0 8px 22px rgba(27,42,74,.08)}
-.cat-icon{width:40px;height:40px;border-radius:11px;background:#f0f2f5;color:var(--navy);display:grid;place-items:center;font-weight:900;margin-bottom:14px}
-.category h3{font-size:17px;color:var(--navy);margin-bottom:3px}
+.cat-icon{min-width:40px;width:-moz-fit-content;width:fit-content;height:40px;padding:0 11px;border-radius:11px;background:#f0f2f5;color:var(--navy);display:inline-grid;place-items:center;font-weight:900;font-size:13px;letter-spacing:-.02em;margin-bottom:14px}
+.category h3{font-size:17px;color:#fff;margin-bottom:3px;text-shadow:0 1px 5px rgba(0,0,0,.35)}
 .category p{
   color:#fff;
   font-size:13px;
@@ -198,6 +210,10 @@ button{cursor:pointer}
 .footer{background:var(--navy);color:rgba(255,255,255,.65);padding:25px 0;font-size:12px}
 .footer b{color:#fff}
 .footer-row{display:flex;justify-content:space-between;gap:20px}
+.footer-sns{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:17px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,.13)}
+.footer-sns a{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.24);border-radius:999px;padding:8px 14px;font-size:13px;color:#fff;font-weight:800;line-height:1}
+.footer-sns a:hover{background:rgba(255,255,255,.1)}
+.footer-sns svg{width:16px;height:16px;flex:none}
 .footer a{color:#fff;font-weight:800}
 
 .blog-grid{columns:3;column-gap:16px;display:block}
@@ -217,6 +233,7 @@ button{cursor:pointer}
 .blog-card p{font-size:13px;color:#667085;line-height:1.65;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .blog-empty{grid-column:1/-1;padding:28px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center}
 .blog-nav{white-space:nowrap}
+.consult-nav{white-space:nowrap;color:var(--navy)!important}
 @media(max-width:820px){.blog-grid{columns:2}.nav-links a.blog-nav{display:inline-flex!important;padding:8px 9px;font-size:12px}}
 @media(max-width:480px){.blog-grid{columns:1}.blog-card-body{padding:13px}}
 
@@ -351,7 +368,8 @@ button{cursor:pointer}
  .search-box{border-radius:12px}.search-box input{padding:12px;font-size:14px}.search-box button{padding:0 15px}
  .quick-grid{grid-template-columns:repeat(2,1fr)}.quick-item{padding:15px 8px;border-bottom:1px solid var(--line)}
  .quick-item:nth-child(2){border-right:0}.quick-item strong{font-size:18px}
- .section{padding:42px 0}.section-head h2{font-size:23px}.category-grid{grid-template-columns:repeat(2,1fr)}
+ .section{padding:42px 0}.section-head h2{font-size:23px}.category-grid{grid-template-columns:repeat(2,1fr)}.action-band{grid-template-columns:1fr}
+ .hero:after{background:linear-gradient(180deg,rgba(14,17,24,.90) 0%,rgba(14,17,24,.80) 52%,rgba(14,17,24,.88) 100%)}
  .category{padding:17px}.category::before{background:linear-gradient(180deg,rgba(10,18,34,.08) 0%,rgba(10,18,34,.30) 45%,rgba(10,18,34,.78) 100%)}.listings{grid-template-columns:1fr 1fr;gap:10px}.photo{height:145px}.card-body{padding:12px}
  .card h3{font-size:14px}.price{font-size:15px}.meta{font-size:11px}
  .info-grid{grid-template-columns:1fr;gap:25px}.info h2{font-size:25px}.cta-box{display:block;padding:26px}.cta-actions{margin-top:18px}
@@ -451,6 +469,7 @@ button{cursor:pointer}
       <button data-view="list">매물</button>
       <button data-view="map">지도 보기</button>
       <button data-open="about">사무소 소개</button>
+      <a class="consult-nav" href="/consult">내집마련 상담</a>
       <a class="blog-nav" href="/blog.html">부동산블로그</a>
       <a class="nav-call" href="tel:023937676">02-393-7676</a>
     </nav>
@@ -461,9 +480,9 @@ button{cursor:pointer}
 <section id="homeView" class="view">
   <section class="hero">
     <div class="container hero-inner">
-      <div class="eyebrow">REAL WALKERS · MAPO REAL ESTATE</div>
-      <h1>내가 필요한 부동산,<br><span>더 쉽게 찾으세요.</span></h1>
-      <p class="hero-copy">아파트부터 상가·건물·토지까지. 리얼워커스가 직접 확인한 매물을 한곳에서 살펴보고, 필요한 경우 대표 공인중개사와 바로 상담할 수 있습니다.</p>
+      <div class="eyebrow">마포 · 서대문 · 은평 &nbsp;|&nbsp; 아파트 · 빌라 · 재개발 구역 전문</div>
+      <h1>발로 뛰는 중개,<br><span>리얼워커스</span></h1>
+      <p class="hero-copy">아파트와 빌라, 재개발 구역 물건을 중심으로 상가·건물·토지까지 직접 확인하고 안내해 드립니다. 궁금한 물건은 대표 공인중개사가 바로 상담해 드립니다.</p>
       <div class="search-box">
         <input id="homeSearch" type="search" placeholder="지역·매물명·주소로 검색해 보세요" autocomplete="off">
         <button id="homeSearchBtn">매물 찾기</button>
@@ -475,6 +494,7 @@ button{cursor:pointer}
         <button data-type="건물">건물</button>
         <button data-type="토지">토지</button>
       </div>
+      <div class="hero-hot" id="heroHot" hidden><span class="hot-label">많이 찾는 지역</span></div>
     </div>
   </section>
   <section class="quick">
@@ -495,6 +515,18 @@ button{cursor:pointer}
         <button class="category" data-type="상가"><div class="cat-icon">SHOP</div><h3>상가</h3><p>상가·임대·매매</p></button>
         <button class="category" data-type="건물"><div class="cat-icon">BLD</div><h3>건물</h3><p>꼬마빌딩·통건물·수익형</p></button>
         <button class="category" data-type="토지"><div class="cat-icon">LAND</div><h3>토지</h3><p>서울·수도권 토지 매물</p></button>
+      </div>
+      <div class="action-band">
+        <button type="button" class="action-card" data-ask="request">
+          <span class="ac-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4.5" y="3.5" width="15" height="17" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 9h7M8.5 13h7M8.5 17h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span class="ac-txt"><b>매물 의뢰</b><small>내 물건을 내놓고 싶습니다</small></span>
+          <span class="ac-go" aria-hidden="true">→</span>
+        </button>
+        <a class="action-card is-dark" href="/consult">
+          <span class="ac-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.8 10.4 12 4l8.2 6.4V20a1 1 0 0 1-1 1H4.8a1 1 0 0 1-1-1v-9.6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.6 21v-6h4.8v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+          <span class="ac-txt"><b>내집마련 상담</b><small>자금부터 단지까지, 상담료 무료</small></span>
+          <span class="ac-go" aria-hidden="true">→</span>
+        </a>
       </div>
     </div>
   </section>
@@ -600,9 +632,29 @@ button{cursor:pointer}
 </main>
 
 <footer class="footer">
-  <div class="container footer-row">
-    <div><b>리얼워커스 공인중개사사무소</b> · 대표 임승재 · 등록번호 11440-2025-00089</div>
-    <div>서울특별시 마포구 신촌로34길 39 · <a href="tel:023937676">02-393-7676</a></div>
+  <div class="container">
+    <div class="footer-sns">
+      <a href="https://blog.naver.com/realwalkers" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" fill="currentColor" opacity=".18"/><path d="M8.6 16V8h2.3l2.5 4.1V8h2V16h-2.3l-2.5-4.1V16H8.6Z" fill="currentColor"/></svg>
+        네이버 블로그
+      </a>
+      <a href="https://www.youtube.com/@realwalkers" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4" fill="currentColor" opacity=".18"/><path d="M10 8.9 15.6 12 10 15.1V8.9Z" fill="currentColor"/></svg>
+        유튜브
+      </a>
+      <a href="https://www.instagram.com/realwalkers.seoul" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/></svg>
+        인스타그램
+      </a>
+      <a href="/consult">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10H9.5L5.5 19v-3.5H4v-10Z" fill="currentColor" opacity=".18"/><path d="M4 5.5h16v10H9.5L5.5 19v-3.5H4v-10Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        내집마련 상담
+      </a>
+    </div>
+    <div class="footer-row">
+      <div><b>리얼워커스 공인중개사사무소</b> · 대표 임승재 · 등록번호 11440-2025-00089</div>
+      <div>서울특별시 마포구 신촌로34길 39 · <a href="tel:023937676">02-393-7676</a></div>
+    </div>
   </div>
 </footer>
 
@@ -610,6 +662,7 @@ button{cursor:pointer}
   <div class="modal">
     <div class="modal-head"><h2>리얼워커스 공인중개사사무소</h2><button class="modal-close" data-close="about">×</button></div>
     <div class="form" style="line-height:1.8;color:#667085;font-size:14px">
+      <img src="/office.jpg" alt="리얼워커스 공인중개사사무소 전경" loading="lazy" style="width:100%;border-radius:12px;margin-bottom:14px;display:block">
       <p><b style="color:var(--navy)">대표 임승재</b></p>
       <p>서울특별시 마포구 신촌로34길 39</p>
       <p>대표전화 02-393-7676<br>휴대전화 010-4280-0869</p>
@@ -622,7 +675,7 @@ button{cursor:pointer}
 
 <div class="modal-backdrop" id="askModal">
   <div class="modal">
-    <div class="modal-head"><h2>매물 문의</h2><button class="modal-close" data-close="ask">×</button></div>
+    <div class="modal-head"><h2 id="askTitle">매물 문의</h2><button class="modal-close" data-close="ask">×</button></div>
     <form class="form" id="askForm">
       <input type="hidden" id="askListing">
       <label>성함</label><input id="askName" required placeholder="성함을 입력해 주세요">
@@ -1235,6 +1288,7 @@ async function renderHomeBlog(){
 }
 function renderHome(){
  renderHomeBlog();
+ renderHeroHot();
  homeFeaturedPage=0;
  renderHomeFeatured();
  console.log("[RW STATUS] 전체:",LISTINGS.length,"거래완료:",LISTINGS.filter(x=>x.status==="completed").length,"active:",LISTINGS.filter(x=>x.status==="active").length);
@@ -1539,9 +1593,35 @@ function showView(v,skipHistory=false){
  if(!skipHistory&&v!=="detail")history.pushState({view:v},"",v==="home"?location.pathname:`?view=${v}`);
 }
 function openAsk(x){
+ const t=document.getElementById("askTitle");if(t)t.textContent="매물 문의";
+ const c=document.getElementById("askContent");
+ c.placeholder="궁금하신 내용을 입력해 주세요";
  document.getElementById("askListing").value=x.no||x.name;
- document.getElementById("askContent").value=`${x.no?"매물번호 "+x.no+" ":""}${x.name} / ${x.deal} ${x.price} 매물 문의드립니다.`;
+ c.value=`${x.no?"매물번호 "+x.no+" ":""}${x.name} / ${x.deal} ${x.price} 매물 문의드립니다.`;
  document.getElementById("askModal").classList.add("open");document.body.classList.add("lock");
+}
+/* 매물 의뢰: 기존 문의 폼을 그대로 쓰고 구분값만 '매물의뢰'로 보냅니다. */
+function openRequest(){
+ const t=document.getElementById("askTitle");if(t)t.textContent="매물 의뢰";
+ const c=document.getElementById("askContent");
+ document.getElementById("askListing").value="매물의뢰";
+ c.value="";
+ c.placeholder="예) 마포구 아현동 ○○아파트 84㎡ 매매로 내놓고 싶습니다. 희망가 ○억 ○천.";
+ document.getElementById("askModal").classList.add("open");document.body.classList.add("lock");
+}
+/* 많이 찾는 지역: 현재 등록된 매물에서 직접 뽑아 보여 줍니다. */
+function renderHeroHot(){
+ const box=document.getElementById("heroHot");if(!box)return;
+ const counts=new Map();
+ LISTINGS.forEach(x=>{const r=regionOf(x);if(!r||r==="기타")return;counts.set(r,(counts.get(r)||0)+1)});
+ const top=[...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+ if(!top.length){box.hidden=true;return}
+ const shortName=r=>String(r).replace(/^(서울특별시|서울시|서울|경기도|경기|인천광역시|인천광역시|인천)\s*/,"").trim()||String(r);
+ box.innerHTML='<span class="hot-label">많이 찾는 지역</span>'+top.map(([r,n])=>{
+  const s=shortName(r);
+  return `<button type="button" data-hot="${escapeHtml(s)}">${escapeHtml(s)} <b style="font-weight:700;opacity:.62">${n}</b></button>`;
+ }).join("");
+ box.hidden=false;
 }
 async function submitInquiry(e){
  e.preventDefault();
@@ -1954,6 +2034,8 @@ async function openMap(){
 /* 이벤트는 위임 방식으로 최소화 */
 document.addEventListener("click",e=>{
  const view=e.target.closest("[data-view]");if(view){e.preventDefault();showView(view.dataset.view);return}
+ const ask=e.target.closest("[data-ask='request']");if(ask){openRequest();return}
+ const hot=e.target.closest("[data-hot]");if(hot){current.type="all";current.q=hot.dataset.hot;showView("list");const ls=document.getElementById("listSearch");if(ls)ls.value=current.q;return}
  const type=e.target.closest("[data-type]");if(type){current.type=type.dataset.type;current.q="";showView("list");return}
  const card=e.target.closest(".card");if(card){openDetail(card.dataset.id||card.dataset.no);return}
  const about=e.target.closest("[data-open='about']");if(about){document.getElementById("aboutModal").classList.add("open");document.body.classList.add("lock");return}
